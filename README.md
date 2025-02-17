@@ -1,4 +1,4 @@
-<p align="center"><img src="https://images.gamebanana.com/img/ss/tools/61fae9df3fd04.jpg](https://media.moddb.com/images/mods/1/60/59849/anh_bg_moddbimage.1.png"></p>
+<p align="center"><img src="https://media.moddb.com/images/mods/1/60/59849/anh_bg_moddbimage.1.png"></p>
 No solution rebuilt mod file system included, source code only.
 
 http://drn0.site.nfoservers.com/hub/drn0/motdpage.php
