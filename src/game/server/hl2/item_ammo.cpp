@@ -589,6 +589,76 @@ public:
 
 LINK_ENTITY_TO_CLASS( item_ammo_ar2_altfire, CItem_AR2AltFireRound );
 
+// ========================================================================
+//	>> Box Sniperrifle Rounds
+// ========================================================================
+class CItem_BoxSniperrifleRounds : public CItem
+{
+public:
+	DECLARE_CLASS(CItem_BoxSniperrifleRounds, CItem);
+
+	void Spawn()
+	{
+		Precache();
+		SetModel("models/items/boxbuckshot.mdl");
+
+		BaseClass::Spawn();
+	}
+	void Precache()
+	{
+		PrecacheModel("models/items/boxbuckshot.mdl");
+	}
+	bool MyTouch(CBasePlayer* pPlayer)
+	{
+		if (ITEM_GiveAmmo(pPlayer, SIZE_AMMO_SNIPERRIFLE, "Sniperrifle"))
+		{
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO)
+			{
+				UTIL_Remove(this);
+			}
+			return true;
+		}
+		return false;
+	}
+};
+LINK_ENTITY_TO_CLASS(item_box_sniperriflerounds, CItem_BoxSniperrifleRounds);
+LINK_ENTITY_TO_CLASS(item_ammo_sniperrifle, CItem_BoxSniperrifleRounds);
+
+// ========================================================================
+//	>> Large Box Sniperrifle Rounds
+// ========================================================================
+class CItem_LargeBoxSniperrifleRounds : public CItem
+{
+public:
+	DECLARE_CLASS(CItem_LargeBoxSniperrifleRounds, CItem);
+
+	void Spawn()
+	{
+		Precache();
+		SetModel("models/items/boxbuckshot.mdl");
+
+		BaseClass::Spawn();
+	}
+	void Precache()
+	{
+		PrecacheModel("models/items/boxbuckshot.mdl");
+	}
+	bool MyTouch(CBasePlayer* pPlayer)
+	{
+		if (ITEM_GiveAmmo(pPlayer, SIZE_AMMO_SNIPERRIFLE_LARGE, "Sniperrifle"))
+		{
+			if (g_pGameRules->ItemShouldRespawn(this) == GR_ITEM_RESPAWN_NO)
+			{
+				UTIL_Remove(this);
+			}
+			return true;
+		}
+		return false;
+	}
+};
+LINK_ENTITY_TO_CLASS(item_large_box_sniperriflerounds, CItem_LargeBoxSniperrifleRounds);
+LINK_ENTITY_TO_CLASS(item_ammo_sniperrifle_large, CItem_LargeBoxSniperrifleRounds);
+
 // ==================================================================
 // Ammo crate which will supply infinite ammo of the specified type
 // ==================================================================

@@ -27,8 +27,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define SMG1_GRENADE_DAMAGE 100.0f
-#define SMG1_GRENADE_RADIUS 250.0f
+//#define SMG1_GRENADE_DAMAGE 100.0f
+//#define SMG1_GRENADE_RADIUS 250.0f
 
 class CWeaponSMG1 : public CHL2MPMachineGun
 {
@@ -43,7 +43,7 @@ public:
 
 	void	Precache(void);
 	void	AddViewKick(void);
-	void	SecondaryAttack(void);
+	//void	SecondaryAttack(void);
 
 	int		GetMinBurst() { return 2; }
 	int		GetMaxBurst() { return 5; }
@@ -345,7 +345,7 @@ void CWeaponSMG1::AddViewKick(void)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CWeaponSMG1::SecondaryAttack(void)
+/*void CWeaponSMG1::SecondaryAttack(void)
 {
 	// Only the player fires this way so we can cast
 	CBasePlayer *pPlayer = ToBasePlayer(GetOwner());
@@ -407,7 +407,7 @@ void CWeaponSMG1::SecondaryAttack(void)
 	CSoundEnt::InsertSound(SOUND_COMBAT, pPlayer->GetAbsOrigin(), SOUNDENT_VOLUME_MACHINEGUN, 0.2, pPlayer);
 #endif
 }
-
+*/
 //-----------------------------------------------------------------------------
 const WeaponProficiencyInfo_t *CWeaponSMG1::GetProficiencyValues()
 {

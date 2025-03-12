@@ -115,9 +115,49 @@ ConVar	sk_plr_dmg_pistol		( "sk_plr_dmg_pistol","0", FCVAR_REPLICATED );
 ConVar	sk_npc_dmg_pistol		( "sk_npc_dmg_pistol","0", FCVAR_REPLICATED);
 ConVar	sk_max_pistol			( "sk_max_pistol","0", FCVAR_REPLICATED);
 
+ConVar	sk_plr_dmg_p228("sk_plr_dmg_p228", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_p228("sk_npc_dmg_p228", "0", FCVAR_REPLICATED);
+ConVar	sk_max_p228("sk_max_p228", "0", FCVAR_REPLICATED);
+
+ConVar	sk_plr_dmg_glock("sk_plr_dmg_glock", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_glock("sk_npc_dmg_glock", "0", FCVAR_REPLICATED);
+ConVar	sk_max_glock("sk_max_glock", "0", FCVAR_REPLICATED);
+
 ConVar	sk_plr_dmg_smg1			( "sk_plr_dmg_smg1","0", FCVAR_REPLICATED );
 ConVar	sk_npc_dmg_smg1			( "sk_npc_dmg_smg1","0", FCVAR_REPLICATED);
 ConVar	sk_max_smg1				( "sk_max_smg1","0", FCVAR_REPLICATED);
+
+ConVar	sk_plr_dmg_ak47("sk_plr_dmg_ak47", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_ak47("sk_npc_dmg_ak47", "0", FCVAR_REPLICATED);
+ConVar	sk_max_ak47("sk_max_ak47", "0", FCVAR_REPLICATED);
+
+ConVar	sk_plr_dmg_galil("sk_plr_dmg_galil", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_galil("sk_npc_dmg_galil", "0", FCVAR_REPLICATED);
+ConVar	sk_max_galil("sk_max_galil", "0", FCVAR_REPLICATED);
+
+ConVar	sk_plr_dmg_sg552("sk_plr_dmg_sg552", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_sg552("sk_npc_dmg_sg552", "0", FCVAR_REPLICATED);
+ConVar	sk_max_sg552("sk_max_sg552", "0", FCVAR_REPLICATED);
+
+ConVar	sk_plr_dmg_m4a1("sk_plr_dmg_m4a1", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_m4a1("sk_npc_dmg_m4a1", "0", FCVAR_REPLICATED);
+ConVar	sk_max_m4a1("sk_max_m4a1", "0", FCVAR_REPLICATED);
+
+ConVar	sk_plr_dmg_m249("sk_plr_dmg_m249", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_m249("sk_npc_dmg_m249", "0", FCVAR_REPLICATED);
+ConVar	sk_max_m249("sk_max_m249", "0", FCVAR_REPLICATED);
+
+ConVar	sk_plr_dmg_scout("sk_plr_dmg_scout", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_scout("sk_npc_dmg_scout", "0", FCVAR_REPLICATED);
+ConVar	sk_max_scout("sk_max_scout", "0", FCVAR_REPLICATED);
+
+ConVar	sk_plr_dmg_patriot("sk_plr_dmg_patriot", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_patriot("sk_npc_dmg_patriot", "0", FCVAR_REPLICATED);
+ConVar	sk_max_patriot("sk_max_patriot", "0", FCVAR_REPLICATED);
+
+ConVar	sk_plr_dmg_baikal56("sk_plr_dmg_baikal56", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_baikal56("sk_npc_dmg_baikal56", "0", FCVAR_REPLICATED);
+ConVar	sk_max_baikal56("sk_max_baikal56", "0", FCVAR_REPLICATED);
 
 // FIXME: remove these
 //ConVar	sk_plr_dmg_flare_round	( "sk_plr_dmg_flare_round","0", FCVAR_REPLICATED);
@@ -128,6 +168,11 @@ ConVar	sk_plr_dmg_buckshot		( "sk_plr_dmg_buckshot","0", FCVAR_REPLICATED);
 ConVar	sk_npc_dmg_buckshot		( "sk_npc_dmg_buckshot","0", FCVAR_REPLICATED);
 ConVar	sk_max_buckshot			( "sk_max_buckshot","0", FCVAR_REPLICATED);
 ConVar	sk_plr_num_shotgun_pellets( "sk_plr_num_shotgun_pellets","7", FCVAR_REPLICATED);
+
+ConVar	sk_plr_dmg_m3pump("sk_plr_dmg_m3pump", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_m3pump("sk_npc_dmg_m3pump", "0", FCVAR_REPLICATED);
+ConVar	sk_max_m3pump("sk_max_m3pump", "0", FCVAR_REPLICATED);
+ConVar	sk_plr_num_m3pump_pellets("sk_plr_num_m3pump_pellets", "8", FCVAR_REPLICATED);
 
 ConVar	sk_plr_dmg_rpg_round	( "sk_plr_dmg_rpg_round","0", FCVAR_REPLICATED);
 ConVar	sk_npc_dmg_rpg_round	( "sk_npc_dmg_rpg_round","0", FCVAR_REPLICATED);
@@ -160,6 +205,10 @@ ConVar	sk_max_striderbuster	( "sk_max_striderbuster", "3", FCVAR_REPLICATED);
 ConVar	sk_plr_dmg_smg1_grenade	( "sk_plr_dmg_smg1_grenade","0", FCVAR_REPLICATED);
 ConVar	sk_npc_dmg_smg1_grenade	( "sk_npc_dmg_smg1_grenade","0", FCVAR_REPLICATED);
 ConVar	sk_max_smg1_grenade		( "sk_max_smg1_grenade","0", FCVAR_REPLICATED );
+
+ConVar	sk_plr_dmg_ump45_grenade("sk_plr_dmg_ump45_grenade", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_ump45_grenade("sk_npc_dmg_ump45_grenade", "0", FCVAR_REPLICATED);
+ConVar	sk_max_ump45_grenade("sk_max_ump45_grenade", "0", FCVAR_REPLICATED);
 
 ConVar	sk_plr_dmg_357			( "sk_plr_dmg_357", "0", FCVAR_REPLICATED );
 ConVar	sk_npc_dmg_357			( "sk_npc_dmg_357", "0", FCVAR_REPLICATED );

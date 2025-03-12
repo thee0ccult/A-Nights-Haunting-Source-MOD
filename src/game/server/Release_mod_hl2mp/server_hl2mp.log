@@ -1,10 +1,38 @@
 ﻿  Compiling pointeroverride.asm
-   Assembling: C:\anh\src\public\tier0\pointeroverride.asm
   Microsoft (R) Macro Assembler Version 12.00.31101.0
   Copyright (C) Microsoft Corporation.  All rights reserved.
   
+   Assembling: C:\anh\src\public\tier0\pointeroverride.asm
   Running VPC CRC Check - server_hl2mp.vpc
   stdafx.cpp
+  weapon_ak47.cpp
+  weapon_axe.cpp
+  weapon_baikal56.cpp
+  weapon_bat.cpp
+  weapon_blowtorch.cpp
+  weapon_cicle.cpp
+  weapon_fiveseven.cpp
+  weapon_cleaver.cpp
+  weapon_galil.cpp
+  weapon_glock.cpp
+  weapon_hammer.cpp
+  weapon_hockeystick.cpp
+  weapon_knife.cpp
+  weapon_m249.cpp
+  weapon_m3pump.cpp
+  weapon_m4a1.cpp
+  weapon_mp5.cpp
+  weapon_p228.cpp
+  weapon_patriot.cpp
+  weapon_pickaxe.cpp
+  weapon_pipe.cpp
+  weapon_pipewrench.cpp
+  weapon_pitchfork.cpp
+  weapon_scout.cpp
+  weapon_sg552.cpp
+  weapon_shovel.cpp
+  weapon_sledgehammer.cpp
+  weapon_ump45.cpp
   achievements_mod.cpp
   gamedll_replay.cpp
   achievement_saverestore.cpp

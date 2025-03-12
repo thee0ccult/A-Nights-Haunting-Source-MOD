@@ -178,12 +178,40 @@ void CHL2MP_Player::GiveAllItems( void )
 
 	GiveNamedItem( "weapon_crowbar" );
 	GiveNamedItem( "weapon_stunstick" );
+	GiveNamedItem("weapon_shovel");
+	GiveNamedItem("weapon_knife");
+	GiveNamedItem("weapon_pipewrench");
+	GiveNamedItem("weapon_pitchfork");
+	GiveNamedItem("weapon_axe");
+	GiveNamedItem("weapon_bat");
+	GiveNamedItem("weapon_cleaver");
+	GiveNamedItem("weapon_hockeystick");
+	GiveNamedItem("weapon_sledgehammer");
+	GiveNamedItem("weapon_hammer");
+	GiveNamedItem("weapon_blowtorch");
+	GiveNamedItem("weapon_pickaxe");
+	GiveNamedItem("weapon_pipe");
+	GiveNamedItem("weapon_cicle");
 	GiveNamedItem( "weapon_pistol" );
 	GiveNamedItem( "weapon_357" );
+	GiveNamedItem("weapon_p228");
+	GiveNamedItem("weapon_glock");
+	GiveNamedItem("weapon_fiveseven");
 
 	GiveNamedItem( "weapon_smg1" );
+	GiveNamedItem("weapon_ump45");
+	GiveNamedItem("weapon_mp5");
 	GiveNamedItem( "weapon_ar2" );
-	
+	GiveNamedItem("weapon_ak47");
+	GiveNamedItem("weapon_galil");
+	GiveNamedItem("weapon_sg552");
+	GiveNamedItem("weapon_m4a1");
+	GiveNamedItem("weapon_m249");
+	GiveNamedItem("weapon_scout");
+	GiveNamedItem("weapon_baikal56");
+	GiveNamedItem("weapon_patriot");
+
+	GiveNamedItem("weapon_m3pump");
 	GiveNamedItem( "weapon_shotgun" );
 	GiveNamedItem( "weapon_frag" );
 	

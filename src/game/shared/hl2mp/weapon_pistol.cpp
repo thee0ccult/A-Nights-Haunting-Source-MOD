@@ -52,8 +52,8 @@ public:
 	void	UpdatePenaltyTime( void );
 
 #ifndef CLIENT_DLL
-	int		CapabilitiesGet(void) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
-	Activity	GetPrimaryAttackActivity( void );
+	 int		CapabilitiesGet(void) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
+	 Activity	GetPrimaryAttackActivity( void );
 #endif
 
 	virtual bool Reload( void );
@@ -367,6 +367,7 @@ Activity CWeaponPistol::GetPrimaryAttackActivity( void )
 		return ACT_VM_RECOIL2;
 
 	return ACT_VM_RECOIL3;
+	// return ACT_VM_PRIMARYATTACK; // replace all above with code commented out to reimplement css import.
 }
 #endif
 

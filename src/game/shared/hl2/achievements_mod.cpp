@@ -9,7 +9,7 @@ CAchievementMgr g_AchievementMgrMod; // Global achievement mgr for mod
 
 #define ACHIEVEMENT_MOD_HIT_TRIGGER 1
 #define ACHIEVEMENT_MOD_GOT_SECRET_WEAPON 2
-// #define ACHIEVEMENT_MOD_GOT_COP_KILLS 3
+#define ACHIEVEMENT_MOD_GOT_COP_KILLS 3
 #define ACHIEVEMENT_MOD_KILL_BIRDIE 4
 #define ACHIEVEMENT_MOD_FIND_BATTERY 5
 #define ACHIEVEMENT_MOD_JUMP_GAP 6
@@ -46,7 +46,7 @@ CAchievementMgr g_AchievementMgrMod; // Global achievement mgr for mod
 #define ACHIEVEMENT_MOD_FIRING_SQUAD 37
 #define ACHIEVEMENT_MOD_AIM_SMALL 38
 #define ACHIEVEMENT_MOD_DUMPSTER_DIVER 39
-// #define ACHIEVEMENT_MOD_POP_WEASEL 40
+#define ACHIEVEMENT_MOD_POP_WEASEL 40
 #define ACHIEVEMENT_MOD_STORY_BEGINS 41
 #define ACHIEVEMENT_MOD_BODY_BAG 42
 #define ACHIEVEMENT_MOD_REPEAT_OFFENDER 43
@@ -56,12 +56,12 @@ CAchievementMgr g_AchievementMgrMod; // Global achievement mgr for mod
 
 
 // Storyline get 5 guard kills achievement
-/*
+
 class CAchievementModCopKills : public CBaseAchievement
 {
 	void Init()
 	{
-		SetFlags( ACH_LISTEN_PLAYER_KILL_ENEMY_EVENTS | ACH_SAVE_WITH_GAME );
+		SetFlags( ACH_LISTEN_PLAYER_KILL_ENEMY_EVENTS | ACH_SAVE_GLOBAL );
 		SetVictimFilter( "npc_metropolice" );
 		SetGoal( 5 );
 	}
@@ -73,7 +73,7 @@ class CAchievementModPopWeasel : public CBaseAchievement
 {
 	void Init()
 	{
-		SetFlags( ACH_LISTEN_PLAYER_KILL_ENEMY_EVENTS | ACH_SAVE_WITH_GAME );
+		SetFlags( ACH_LISTEN_PLAYER_KILL_ENEMY_EVENTS | ACH_SAVE_GLOBAL );
 		SetInflictorFilter( "prop_physics" );
 		SetGoal(1);
 	}
@@ -92,7 +92,7 @@ class CAchievementModPopWeasel : public CBaseAchievement
 	}
 };
 DECLARE_ACHIEVEMENT( CAchievementModPopWeasel, ACHIEVEMENT_MOD_POP_WEASEL, "MOD_POP_WEASEL", 5 );
-*/
+
 
 // Storyline hop the fence into junk yard achivement
 DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_HIT_TRIGGER, "MOD_HIT_TRIGGER", 5);

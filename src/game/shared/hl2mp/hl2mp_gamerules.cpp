@@ -929,6 +929,7 @@ CAmmoDef *GetAmmoDef()
 		//																								plr dmg		npc dmg	max carry	impulse
 		def.AddAmmoType("AR2", DMG_BULLET, TRACER_LINE_AND_WHIZ, 0, 35, 60, BULLET_IMPULSE(200, 1225), 0);
 		def.AddAmmoType("AR2AltFire", DMG_DISSOLVE, TRACER_NONE, 0, 0, 3, 0, 0);
+		def.AddAmmoType("Sniperrifle", DMG_BULLET, TRACER_LINE_AND_WHIZ, 0, 0, 500, BULLET_IMPULSE(200, 1225), 0); //added rifle ammo
 		def.AddAmmoType("Pistol", DMG_BULLET, TRACER_LINE_AND_WHIZ, 0, 18, 150, BULLET_IMPULSE(200, 1225), 0);
 		def.AddAmmoType("SMG1", DMG_BULLET, TRACER_LINE_AND_WHIZ, 0, 10, 225, BULLET_IMPULSE(200, 1225), 0);
 		def.AddAmmoType("357", DMG_BULLET, TRACER_LINE_AND_WHIZ, 0, 0, 12, BULLET_IMPULSE(800, 5000), 0);
