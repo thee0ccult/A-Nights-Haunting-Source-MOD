@@ -387,6 +387,7 @@ exit 1
     <ClInclude Include="..\..\game\shared\weapon_ifmsteadycam.h" />
     <ClInclude Include="..\..\game\shared\weapon_parse.h" />
     <ClInclude Include="..\..\game\shared\weapon_proficiency.h" />
+    <ClInclude Include="..\shared\convar_firstperson.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_axe.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_bat.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_blowtorch.h" />
@@ -504,6 +505,7 @@ exit 1
     <ClInclude Include="..\..\game\shared\hintmessage.h" />
     <ClInclude Include="..\..\game\shared\hintsystem.h" />
     <ClInclude Include="history_resource.h" />
+    <ClInclude Include="hl2mp\ui\hud_tasklist.h" />
     <ClInclude Include="hltvcamera.h" />
     <ClInclude Include="hud.h" />
     <ClInclude Include="hud_basechat.h" />
@@ -601,6 +603,7 @@ exit 1
     <ClInclude Include="vgui_helpers.h" />
     <ClInclude Include="vgui_imagehealthpanel.h" />
     <ClInclude Include="vgui_int.h" />
+    <ClInclude Include="vgui_keypad.h" />
     <ClInclude Include="vgui_schemevisualizer.h" />
     <ClInclude Include="vgui_video.h" />
     <ClInclude Include="vgui_video_player.h" />
@@ -907,6 +910,7 @@ exit 1
     <ClCompile Include="..\shared\hl2mp\weapon_bat.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_blowtorch.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_cicle.cpp" />
+    <ClCompile Include="..\shared\hl2mp\weapon_dualies.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_fiveseven.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_cleaver.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_galil.cpp" />
@@ -930,8 +934,10 @@ exit 1
     <ClCompile Include="..\shared\hl2mp\weapon_sledgehammer.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_ump45.cpp" />
     <ClCompile Include="..\shared\hl2\achievements_mod.cpp" />
+    <ClCompile Include="bloodoverlayproxy.cpp" />
     <ClCompile Include="c_message_entity.cpp" />
     <ClCompile Include="fx_css_weaponfx.cpp" />
+    <ClCompile Include="hl2mp\ui\hud_tasklist.cpp" />
     <ClCompile Include="mapload_background.cpp" />
     <ClCompile Include="mp3player.cpp" />
     <ClCompile Include="replay\cdll_replay.cpp" />
@@ -1351,6 +1357,7 @@ exit 1
     <ClCompile Include="vgui_game_viewport.cpp" />
     <ClCompile Include="vgui_grid.cpp" />
     <ClCompile Include="vgui_int.cpp" />
+    <ClCompile Include="vgui_keypad.cpp" />
     <ClCompile Include="vgui_loadingdiscpanel.cpp" />
     <ClCompile Include="vgui_messagechars.cpp" />
     <ClCompile Include="vgui_netgraphpanel.cpp" />

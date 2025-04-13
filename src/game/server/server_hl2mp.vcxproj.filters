@@ -1865,6 +1865,12 @@
     <ClInclude Include="..\shared\hl2mp\weapon_cicle.h">
       <Filter>Source Files\HL2MP\Weapons</Filter>
     </ClInclude>
+    <ClInclude Include="point_keypad.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\convar_firstperson.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gamedll_replay.cpp">
@@ -3683,6 +3689,15 @@
       <Filter>Source Files\HL2MP\Weapons</Filter>
     </ClCompile>
     <ClCompile Include="..\shared\hl2mp\weapon_m4a1.cpp">
+      <Filter>Source Files\HL2MP\Weapons</Filter>
+    </ClCompile>
+    <ClCompile Include="point_keypad.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\client\hl2mp\ui\EnvHudTasklist.cpp">
+      <Filter>Source Files\HL2 DLL</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\hl2mp\weapon_dualies.cpp">
       <Filter>Source Files\HL2MP\Weapons</Filter>
     </ClCompile>
   </ItemGroup>

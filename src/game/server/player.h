@@ -238,6 +238,7 @@ class CBasePlayer : public CBaseCombatCharacter
 {
 public:
 	DECLARE_CLASS( CBasePlayer, CBaseCombatCharacter );
+	CNetworkVar(bool, m_bShouldDrawBloodOverlay); // Have we been hit or have blood splatted on us? adding blood overlay
 protected:
 	// HACK FOR BOTS
 	friend class CBotManager;

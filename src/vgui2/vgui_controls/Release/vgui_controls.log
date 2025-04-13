@@ -18,8 +18,8 @@
   DirectorySelectDialog.cpp
   Divider.cpp
   EditablePanel.cpp
-  ExpandButton.cpp
   FileOpenDialog.cpp
+  ExpandButton.cpp
   FileOpenStateMachine.cpp
   filesystem_helpers.cpp
   FocusNavGroup.cpp

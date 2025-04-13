@@ -100,7 +100,7 @@ public:
 
 #define WATERJUMP_HEIGHT			8
 
-#define MAX_CLIMB_SPEED		200
+#define MAX_CLIMB_SPEED		100
 
 #if defined(TF_DLL) || defined(TF_CLIENT_DLL)
 	#define TIME_TO_DUCK		0.2
@@ -367,8 +367,8 @@ enum PLAYER_ANIM
 // HL2 has 600 gravity by default
 // NOTE: The discrete ticks can have quantization error, so these numbers are biased a little to
 // make the heights more exact
-#define PLAYER_FATAL_FALL_SPEED		922.5f // approx 60 feet sqrt( 2 * gravity * 60 * 12 )
-#define PLAYER_MAX_SAFE_FALL_SPEED	526.5f // approx 20 feet sqrt( 2 * gravity * 20 * 12 )
+#define PLAYER_FATAL_FALL_SPEED		522.5f//922.5f // approx 60 feet sqrt( 2 * gravity * 60 * 12 )
+#define PLAYER_MAX_SAFE_FALL_SPEED	426.5f//526.5f // approx 20 feet sqrt( 2 * gravity * 20 * 12 )
 #define PLAYER_LAND_ON_FLOATING_OBJECT	173 // Can fall another 173 in/sec without getting hurt
 #define PLAYER_MIN_BOUNCE_SPEED		173
 #define PLAYER_FALL_PUNCH_THRESHOLD 303.0f // won't punch player's screen/make scrape noise unless player falling at least this fast - at least a 76" fall (sqrt( 2 * g * 76))

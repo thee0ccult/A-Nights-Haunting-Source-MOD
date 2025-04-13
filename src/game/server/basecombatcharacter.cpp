@@ -2495,7 +2495,20 @@ int CBaseCombatCharacter::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 
 		m_iHealth -= flIntegerDamage;
 	}
+	// Handle the viewmodel blood splatter overlay effect here:
+	if ((info.GetDamageType() & (DMG_BULLET | DMG_SLASH | DMG_BLAST | DMG_CLUB | DMG_BUCKSHOT)))
+	{
+		CBasePlayer* pPlayer = UTIL_GetLocalPlayer();
+		if (pPlayer == this)
+			pPlayer->m_bShouldDrawBloodOverlay = true;
 
+		pPlayer = ToBasePlayer(info.GetAttacker());
+		if (pPlayer && (this->BloodColor() != BLOOD_COLOR_MECH))
+		{
+			if (pPlayer->GetAbsOrigin().DistTo(this->GetAbsOrigin()) < 085.0f)
+				pPlayer->m_bShouldDrawBloodOverlay = true;
+		}
+	} //finished blood overlay
 	return 1;
 }
 
@@ -2847,7 +2860,7 @@ CBaseEntity *CBaseCombatCharacter::Weapon_FindUsable( const Vector &range )
 		}
 	}
 #endif
-
+	
 	CBaseCombatWeapon *weaponList[64];
 	CBaseCombatWeapon *pBestWeapon = NULL;
 
@@ -2865,7 +2878,7 @@ CBaseEntity *CBaseCombatCharacter::Weapon_FindUsable( const Vector &range )
 		CBaseCombatWeapon *pWeapon = weaponList[i];
 		Assert(pWeapon);
 		pWeapon->GetVelocity( &velocity, NULL );
-
+		
 		if ( pWeapon->CanBePickedUpByNPCs() == false )
 			continue;
 

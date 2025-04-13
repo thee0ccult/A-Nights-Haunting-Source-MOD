@@ -133,7 +133,7 @@ BEGIN_PREDICTION_DATA( CWeaponFiveseven)
 END_PREDICTION_DATA()
 #endif
 
-LINK_ENTITY_TO_CLASS( weapon_Fiveseven, CWeaponFiveseven);
+LINK_ENTITY_TO_CLASS( weapon_fiveseven, CWeaponFiveseven);
 PRECACHE_WEAPON_REGISTER( weapon_fiveseven);
 
 #ifndef CLIENT_DLL

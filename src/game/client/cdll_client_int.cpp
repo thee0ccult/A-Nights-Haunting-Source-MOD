@@ -1128,12 +1128,26 @@ bool CHLClient::ReplayPostInit()
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: dr.n0 sdk 2013 previous2021 build error trigger
+//-----------------------------------------------------------------------------
+bool IsNewSDK()
+{
+	return engine->GetProtocolVersion() != 24;
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Called after client & server DLL are loaded and all systems initialized
 //-----------------------------------------------------------------------------
 void CHLClient::PostInit()
 {
 	IGameSystem::PostInitAllSystems();
-
+	//-----------------------------------------------------------------------------
+	// Purpose: dr.n0 sdk 2013 previous2021 build error trigger
+	//-----------------------------------------------------------------------------
+	if (IsNewSDK())
+	{
+		Error("The previous2021 beta must be selected for Source SDK Base 2013 Multiplayer to play this mod.");
+}//--------------------------------------------------------------------------------
 #ifdef SIXENSE
 	// allow sixnese input to perform post-init operations
 	g_pSixenseInput->PostInit();

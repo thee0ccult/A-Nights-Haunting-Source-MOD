@@ -266,6 +266,7 @@ exit 1
     <ClInclude Include="..\..\public\mathlib\amd3dx.h" />
     <ClInclude Include="..\..\game\shared\ammodef.h" />
     <ClInclude Include="..\..\game\shared\base_playeranimstate.h" />
+    <ClInclude Include="..\shared\convar_firstperson.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_axe.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_bat.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_blowtorch.h" />
@@ -422,6 +423,7 @@ exit 1
     <ClInclude Include="..\..\game\shared\saverestore_utlrbtree.h" />
     <ClInclude Include="..\..\public\saverestoretypes.h" />
     <ClInclude Include="..\..\public\scratchpad3d.h" />
+    <ClInclude Include="point_keypad.h" />
     <ClInclude Include="scratchpad_gamedll_helpers.h" />
     <ClInclude Include="..\..\public\ScratchPadUtils.h" />
     <ClInclude Include="sendproxy.h" />
@@ -861,12 +863,14 @@ exit 1
     <ClInclude Include="toolframework_server.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\client\hl2mp\ui\EnvHudTasklist.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_ak47.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_axe.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_baikal56.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_bat.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_blowtorch.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_cicle.cpp" />
+    <ClCompile Include="..\shared\hl2mp\weapon_dualies.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_fiveseven.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_cleaver.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_galil.cpp" />
@@ -1212,6 +1216,7 @@ exit 1
     <ClCompile Include="..\..\game\shared\point_bonusmaps_accessor.cpp" />
     <ClCompile Include="point_camera.cpp" />
     <ClCompile Include="point_devshot_camera.cpp" />
+    <ClCompile Include="point_keypad.cpp" />
     <ClCompile Include="point_playermoveconstraint.cpp" />
     <ClCompile Include="..\..\game\shared\point_posecontroller.cpp" />
     <ClCompile Include="point_spotlight.cpp" />

@@ -12,6 +12,7 @@
   weapon_bat.cpp
   weapon_blowtorch.cpp
   weapon_cicle.cpp
+  weapon_dualies.cpp
   weapon_fiveseven.cpp
   weapon_cleaver.cpp
   weapon_galil.cpp
@@ -35,8 +36,10 @@
   weapon_sledgehammer.cpp
   weapon_ump45.cpp
   achievements_mod.cpp
+  bloodoverlayproxy.cpp
   c_message_entity.cpp
   fx_css_weaponfx.cpp
+  hud_tasklist.cpp
   mapload_background.cpp
   mp3player.cpp
   cdll_replay.cpp
@@ -328,6 +331,7 @@
   vgui_game_viewport.cpp
   vgui_grid.cpp
   vgui_int.cpp
+  vgui_keypad.cpp
   vgui_loadingdiscpanel.cpp
   vgui_messagechars.cpp
   vgui_netgraphpanel.cpp

@@ -229,6 +229,9 @@ public:
 	bool						InFirstPersonView();
 	bool						ShouldDrawThisPlayer();
 
+	//draw blood overlay
+	bool m_bShouldDrawBloodOverlay;
+
 	// Called by the view model if its rendering is being overridden.
 	virtual bool				ViewModel_IsTransparent( void );
 	virtual bool				ViewModel_IsUsingFBTexture( void );

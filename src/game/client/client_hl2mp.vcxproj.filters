@@ -1985,6 +1985,15 @@
     <ClInclude Include="..\shared\hl2mp\weapon_cicle.h">
       <Filter>Source Files\HL2MP\Weapons</Filter>
     </ClInclude>
+    <ClInclude Include="vgui_keypad.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\shared\convar_firstperson.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hl2mp\ui\hud_tasklist.h">
+      <Filter>Source Files\HL2MP\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="mp3player.cpp">
@@ -3641,6 +3650,18 @@
       <Filter>Source Files\HL2MP\Weapons</Filter>
     </ClCompile>
     <ClCompile Include="..\shared\hl2mp\weapon_m4a1.cpp">
+      <Filter>Source Files\HL2MP\Weapons</Filter>
+    </ClCompile>
+    <ClCompile Include="bloodoverlayproxy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vgui_keypad.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2mp\ui\hud_tasklist.cpp">
+      <Filter>Source Files\HL2MP\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\hl2mp\weapon_dualies.cpp">
       <Filter>Source Files\HL2MP\Weapons</Filter>
     </ClCompile>
   </ItemGroup>

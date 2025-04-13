@@ -69,6 +69,7 @@
 #include "dt_utlvector_send.h"
 #include "vote_controller.h"
 #include "ai_speech.h"
+#include "point_keypad.h"
 
 #if defined USES_ECON_ITEMS
 #include "econ_wearable.h"
@@ -258,7 +259,7 @@ BEGIN_DATADESC( CBasePlayer )
 #endif
 	DEFINE_UTLVECTOR( m_hTriggerSoundscapeList, FIELD_EHANDLE ),
 	DEFINE_EMBEDDED( pl ),
-
+	DEFINE_FIELD(m_bShouldDrawBloodOverlay, FIELD_BOOLEAN), //adding bloodoverlay
 	DEFINE_FIELD( m_StuckLast, FIELD_INTEGER ),
 
 	DEFINE_FIELD( m_nButtons, FIELD_INTEGER ),
@@ -581,7 +582,7 @@ CBasePlayer::CBasePlayer( )
 	m_iHealth = 0;
 	Weapon_SetLast( NULL );
 	m_bitsDamageType = 0;
-
+	m_bShouldDrawBloodOverlay = false; //adding bloodoverlay
 	m_bForceOrigin = false;
 	m_hVehicle = NULL;
 	m_pCurrentCommand = NULL;
@@ -862,7 +863,7 @@ int CBasePlayer::TakeHealth( float flHealth, int bitsDamageType )
 		int bitsDmgTimeBased = g_pGameRules->Damage_GetTimeBased();
 		m_bitsDamageType &= ~( bitsDamageType & ~bitsDmgTimeBased );
 	}
-
+	m_bShouldDrawBloodOverlay = false; //add bloodover health kit cleanser
 	// I disabled reporting history into the dbghist because it was super spammy.
 	// But, if you need to reenable it, the code is below in the "else" clause.
 #if 1 // #ifdef DISABLE_DEBUG_HISTORY
@@ -1692,7 +1693,7 @@ void CBasePlayer::Event_Killed( const CTakeDamageInfo &info )
 	{
 		m_iHealth = 0;
 	}
-
+	m_bShouldDrawBloodOverlay = false; //blood overlay removal on death
 	// holster the current weapon
 	if ( GetActiveWeapon() )
 	{
@@ -2011,7 +2012,8 @@ void CBasePlayer::WaterMove()
 			m_bitsDamageType &= ~DMG_DROWN;
 		}
 	}
-
+	if (GetWaterLevel() > WL_Waist) //adding blood overlay water cleanse
+		m_bShouldDrawBloodOverlay = false; //adding blood overlay water cleanse
 	UpdateUnderwaterState();
 }
 
@@ -6571,7 +6573,67 @@ bool CBasePlayer::ClientCommand( const CCommand &args )
 		}
 		return true;
 	}
+	else if (stricmp(cmd, "toggle_ironsight") == 0)
+	{
+		CBaseCombatWeapon* pWeapon = GetActiveWeapon();//add ironsights leave retun false
+		if (pWeapon != NULL)
+			pWeapon->ToggleIronsights();
 
+		return true;
+}
+//Keypad
+	else if (stricmp(cmd, "keypad_codematch"))
+	{
+
+		CBaseEntity* pEntity = NULL;
+
+		//while ((pEntity = gEntList.FindEntityByClassnameWithin(pEntity, "player", GetLocalOrigin(), 512)) != NULL)
+		//	CBasePlayer *pPlayer = ToBasePlayer(pEntity);
+
+		while ((pEntity = gEntList.FindEntityInSphere(pEntity, GetLocalOrigin(), 512)) != NULL)//512 
+		{
+			if (FClassnameIs(pEntity, "point_keypad"))
+			{
+				edict_t* pFind;
+				pFind = pEntity->edict();
+
+				CBaseEntity* pEnt = CBaseEntity::Instance(pFind);
+				CPointKeypad* pKeypadSettings = (CPointKeypad*)pEnt;
+
+				//DevMsg("code_match - firing FireTarget\n");
+
+				pKeypadSettings->FireTarget();
+
+				return true;
+			}
+		}
+	}
+	else if (stricmp(cmd, "keypad_codedismatch"))
+	{
+		CBaseEntity* pEntity = NULL;
+
+		//	while ((pEntity = gEntList.FindEntityByClassnameWithin(pEntity, "player", GetLocalOrigin(), 512)) != NULL)
+		//	CBasePlayer *pPlayer = ToBasePlayer(pEntity);
+
+		//same as above, but calls a different function
+		while ((pEntity = gEntList.FindEntityInSphere(pEntity, GetLocalOrigin(), 512)) != NULL)//512
+		{
+			if (FClassnameIs(pEntity, "point_keypad"))
+			{
+				edict_t* pFind;
+				pFind = pEntity->edict();
+
+				CBaseEntity* pEnt = CBaseEntity::Instance(pFind);
+				CPointKeypad* pKeypadSettings = (CPointKeypad*)pEnt;
+
+				//DevMsg("code_dismatch - firing WrongCode\n");
+
+				pKeypadSettings->WrongCode();
+
+				return true;
+			}
+		}
+	}
 	return false;
 }
 
@@ -8024,6 +8086,7 @@ void SendProxy_CropFlagsToPlayerFlagBitsLength( const SendProp *pProp, const voi
 		SendPropEHandle	(SENDINFO(m_hZoomOwner) ),
 		SendPropArray	( SendPropEHandle( SENDINFO_ARRAY( m_hViewModel ) ), m_hViewModel ),
 		SendPropString	(SENDINFO(m_szLastPlaceName) ),
+		SendPropBool(SENDINFO(m_bShouldDrawBloodOverlay)), //adding blood overlay
 
 #if defined USES_ECON_ITEMS
 		SendPropUtlVector( SENDINFO_UTLVECTOR( m_hMyWearables ), MAX_WEARABLES_SENT_FROM_SERVER, SendPropEHandle( NULL, 0 ) ),

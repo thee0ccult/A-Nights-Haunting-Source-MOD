@@ -197,6 +197,7 @@ void CHL2MP_Player::GiveAllItems( void )
 	GiveNamedItem("weapon_p228");
 	GiveNamedItem("weapon_glock");
 	GiveNamedItem("weapon_fiveseven");
+	GiveNamedItem("weapon_dualies");
 
 	GiveNamedItem( "weapon_smg1" );
 	GiveNamedItem("weapon_ump45");

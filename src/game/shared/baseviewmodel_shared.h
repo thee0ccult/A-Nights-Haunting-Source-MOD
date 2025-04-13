@@ -178,6 +178,7 @@ private:
 
 #endif
 
+	void		CalcIronsights(Vector& pos, QAngle& ang);
 private:
 	CNetworkVar( int, m_nViewModelIndex );		// Which viewmodel is it?
 	CNetworkHandle( CBaseEntity, m_hOwner );				// Player or AI carrying this weapon

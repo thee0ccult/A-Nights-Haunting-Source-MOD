@@ -182,7 +182,7 @@ void CHudZoom::Paint( void )
 	col[3] = alpha * 64;
 
 	surface()->DrawSetColor( col );
-	
+	/* dr.n0s commented out the zoom mechanics to remove the material like features
 	// draw zoom circles
 	float fX, fY;
 	bool bBehindCamera = false;
@@ -209,7 +209,7 @@ void CHudZoom::Paint( void )
 		xpos = (int)(fX + fGap * dashCount + 0.5f);
 		surface()->DrawFilledRect(xpos, ypos, xpos + 1, ypos + m_flDashHeight);
 		dashCount++;
-	}
+	} 
 
 	// draw the darkened edges, with a rotated texture in the four corners
 	CMatRenderContextPtr pRenderContext( materials );
@@ -268,5 +268,5 @@ void CHudZoom::Paint( void )
 	meshBuilder.End();
 	pMesh->Draw();
 
-	m_bPainted = true;
+	m_bPainted = true; */
 }

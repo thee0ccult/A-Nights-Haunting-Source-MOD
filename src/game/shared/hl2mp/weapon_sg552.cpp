@@ -57,11 +57,18 @@ public:
 	float	GetFireRate(void) { return 0.085f; }	// 13.3hz
 	Activity	GetPrimaryAttackActivity(void);
 
-	virtual const Vector& GetBulletSpread(void)
+	virtual const Vector& GetBulletSpread(void) //iron sights view cone hack
 	{
-		static const Vector cone = VECTOR_CONE_5DEGREES;
-
-		return cone;
+		if (m_bIsIronsighted)
+		{
+			static const Vector cone = VECTOR_CONE_2DEGREES;
+			return cone;
+		}
+		else
+		{
+			static const Vector cone = VECTOR_CONE_5DEGREES;
+			return cone;
+		}
 	}
 
 	const WeaponProficiencyInfo_t *GetProficiencyValues();
