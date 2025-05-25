@@ -336,7 +336,10 @@ bool CWeaponSg552::Reload(void)
 
 		WeaponSound(RELOAD);
 	}
-
+	if (m_bInZoom)
+	{
+		ToggleZoom();
+	}
 	return fRet;
 }
 

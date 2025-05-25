@@ -48,7 +48,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-#define	SPRITE_SCALE	128.0f
+#define	SPRITE_SCALE	0.0f
 
 static const char *s_pWaitForUpgradeContext = "WaitForUpgrade";
 
@@ -939,12 +939,12 @@ void PlayerPickupObject( CBasePlayer *pPlayer, CBaseEntity *pObject )
 class CPhysCannonEffect
 {
 public:
-	CPhysCannonEffect( void ) : m_vecColor( 255, 255, 255 ), m_bVisible( true ), m_nAttachment( -1 ) {};
+	CPhysCannonEffect( void ) : m_vecColor( 255, 255, 255 ), m_bVisible( false ), m_nAttachment( -1 ) {};
 
 	void SetAttachment( int attachment ) { m_nAttachment = attachment; }
 	int	GetAttachment( void ) const { return m_nAttachment; }
 
-	void SetVisible( bool visible = true ) { m_bVisible = visible; }
+	void SetVisible( bool visible = false ) { m_bVisible = visible; }
 	int IsVisible( void ) const { return m_bVisible; }
 
 	void SetColor( const Vector &color ) { m_vecColor = color; }
@@ -1037,13 +1037,13 @@ public:
 		beamInfo.m_flGreen = 255.0;
 		beamInfo.m_flBlue = 255.0;
 		beamInfo.m_nSegments = 8;
-		beamInfo.m_bRenderable = true;
+		beamInfo.m_bRenderable = false;
 		beamInfo.m_nFlags = FBEAM_FOREVER;
 	
 		m_pBeam = beams->CreateBeamEntPoint( beamInfo );
 	}
 
-	void SetVisible( bool state = true )
+	void SetVisible( bool state = false )
 	{
 		if ( m_pBeam == NULL )
 			return;
@@ -1445,7 +1445,7 @@ inline float CWeaponPhysCannon::SpriteScaleFactor()
 bool CWeaponPhysCannon::Deploy( void )
 {
 	CloseElements();
-	DoEffect( EFFECT_READY );
+	//DoEffect( EFFECT_READY );
 
 	bool bReturn = BaseClass::Deploy();
 
@@ -1602,7 +1602,7 @@ void CWeaponPhysCannon::PuntNonVPhysics( CBaseEntity *pEntity, const Vector &for
 	ApplyMultiDamage();
 
 	//Explosion effect
-	DoEffect( EFFECT_LAUNCH, &tr.endpos );
+	//DoEffect( EFFECT_LAUNCH, &tr.endpos );
 #endif
 	
 	PrimaryFireEffect();
@@ -1737,7 +1737,7 @@ void CWeaponPhysCannon::PuntVPhysics( CBaseEntity *pEntity, const Vector &vecFor
 	pOwner->ViewPunch( recoil );
 
 	//Explosion effect
-	DoEffect( EFFECT_LAUNCH, &tr.endpos );
+	//DoEffect( EFFECT_LAUNCH, &tr.endpos );
 
 	PrimaryFireEffect();
 	SendWeaponAnim( ACT_VM_SECONDARYATTACK );
@@ -1937,7 +1937,7 @@ void CWeaponPhysCannon::SecondaryAttack( void )
 
 		DetachObject();
 
-		DoEffect( EFFECT_READY );
+		//DoEffect( EFFECT_READY );
 
 		SendWeaponAnim( ACT_VM_PRIMARYATTACK );
 	}
@@ -1966,7 +1966,7 @@ void CWeaponPhysCannon::SecondaryAttack( void )
 			break;
 		}
 
-		DoEffect( EFFECT_HOLDING );
+		//DoEffect( EFFECT_HOLDING );
 	}
 #endif
 }	
@@ -2052,7 +2052,7 @@ bool CWeaponPhysCannon::AttachObject( CBaseEntity *pObject, const Vector &vPosit
 	// Don't drop again for a slight delay, in case they were pulling objects near them
 	m_flNextSecondaryAttack = gpGlobals->curtime + 0.4f;
 
-	DoEffect( EFFECT_HOLDING );
+	//DoEffect( EFFECT_HOLDING );
 	OpenElements();
 
 	if ( GetMotorSound() )
@@ -2699,7 +2699,7 @@ void CWeaponPhysCannon::ItemPostFrame()
 
 		if ( m_bActive == false )
 		{
-			DoEffect( EFFECT_READY );
+			//DoEffect( EFFECT_READY );
 		}
 	}
 	
@@ -2746,7 +2746,7 @@ void CWeaponPhysCannon::LaunchObject( const Vector &vecDir, float flForce )
 			Vector	center = pObject->WorldSpaceCenter();
 
 			//Do repulse effect
-			DoEffect( EFFECT_LAUNCH, &center );
+			//DoEffect( EFFECT_LAUNCH, &center );
 
 			m_hAttachedObject = NULL;
 			m_bActive = false;
@@ -2829,7 +2829,7 @@ void CWeaponPhysCannon::OpenElements( void )
 
 	m_bOpen = true;
 
-	DoEffect( EFFECT_READY );
+	//DoEffect( EFFECT_READY );
 
 #ifdef CLIENT
 	// Element prediction 
@@ -2863,7 +2863,7 @@ void CWeaponPhysCannon::CloseElements( void )
 		(CSoundEnvelopeController::GetController()).SoundChangePitch( GetMotorSound(), 50, 1.0f );
 	}
 	
-	DoEffect( EFFECT_CLOSED );
+	//DoEffect( EFFECT_CLOSED );
 
 #ifdef CLIENT
 	// Element prediction 

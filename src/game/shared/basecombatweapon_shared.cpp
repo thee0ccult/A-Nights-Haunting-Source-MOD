@@ -1553,10 +1553,10 @@ bool CBaseCombatWeapon::ReloadOrSwitchWeapons( void )
 	m_bFireOnEmpty = false;
 
 	// If we don't have any ammo, switch to the next best weapon
-	if ( !HasAnyAmmo() && m_flNextPrimaryAttack < gpGlobals->curtime && m_flNextSecondaryAttack < gpGlobals->curtime )
+	if (!HasAnyAmmo() && m_flNextPrimaryAttack < gpGlobals->curtime && m_flNextSecondaryAttack < gpGlobals->curtime)
 	{
 		// weapon isn't useable, switch.
-		if ( ( (GetWeaponFlags() & ITEM_FLAG_NOAUTOSWITCHEMPTY) == false ) && ( g_pGameRules->SwitchToNextBestWeapon( pOwner, this ) ) )
+		if (((GetWeaponFlags() & ITEM_FLAG_NOAUTOSWITCHEMPTY) == false) && (g_pGameRules->SwitchToNextBestWeapon(pOwner, this)))
 		{
 			m_flNextPrimaryAttack = gpGlobals->curtime + 0.3;
 			return true;

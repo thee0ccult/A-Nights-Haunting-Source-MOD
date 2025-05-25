@@ -62,6 +62,7 @@ END_DATADESC()
 
 const char *g_ppszRandomCitizenModels[] = 
 {
+	"models2/humans/drn0/drn0.mdl",
 	"models2/humans/gordon/gordon.mdl",
 	"models2/humans/group03/male_01.mdl",
 	"models2/humans/group03/male_02.mdl",

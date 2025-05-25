@@ -445,6 +445,10 @@ bool CWeaponScout::Reload( void )
 		WeaponSound( RELOAD );
 		m_flAccuracyPenalty = 0.0f;
 	}
+	if (m_bInZoom)
+	{
+		ToggleZoom();
+	}
 	return fRet;
 }
 

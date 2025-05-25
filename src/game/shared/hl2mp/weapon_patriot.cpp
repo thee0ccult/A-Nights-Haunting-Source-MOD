@@ -172,7 +172,6 @@ void CWeaponPatriot::PrimaryAttack( void )
 			WeaponSound( EMPTY );
 			m_flNextPrimaryAttack = 0.15;
 		}
-
 		return;
 	}
 

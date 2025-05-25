@@ -449,7 +449,7 @@ void CHL2MPClientScoreBoardDialog::AddHeader()
 	m_pPlayerList->SetSectionAlwaysVisible(0);
 	HFont hFallbackFont = scheme()->GetIScheme( GetScheme() )->GetFont( "DefaultVerySmallFallBack", false );
 	m_pPlayerList->AddColumnToSection(0, "name", "", 0, scheme()->GetProportionalScaledValueEx( GetScheme(), CSTRIKE_NAME_WIDTH ), hFallbackFont );
-	m_pPlayerList->AddColumnToSection(0, "class", "", 0, scheme()->GetProportionalScaledValueEx( GetScheme(), CSTRIKE_CLASS_WIDTH ) );
+	m_pPlayerList->AddColumnToSection(0, "death", "Player State", 0, scheme()->GetProportionalScaledValueEx(GetScheme(), CSTRIKE_CLASS_WIDTH));
 	m_pPlayerList->AddColumnToSection(0, "frags", "#PlayerScore", 0 | SectionedListPanel::COLUMN_RIGHT, scheme()->GetProportionalScaledValueEx( GetScheme(), CSTRIKE_SCORE_WIDTH ) );
 	m_pPlayerList->AddColumnToSection(0, "deaths", "#PlayerDeath", 0 | SectionedListPanel::COLUMN_RIGHT, scheme()->GetProportionalScaledValueEx( GetScheme(), CSTRIKE_DEATH_WIDTH ) );
 	m_pPlayerList->AddColumnToSection(0, "ping", "#PlayerPing", 0 | SectionedListPanel::COLUMN_RIGHT, scheme()->GetProportionalScaledValueEx( GetScheme(), CSTRIKE_PING_WIDTH ) );
@@ -471,7 +471,7 @@ void CHL2MPClientScoreBoardDialog::AddSection(int teamType, int teamNumber)
 
 		// setup the columns
 		m_pPlayerList->AddColumnToSection(sectionID, "name", "", 0, scheme()->GetProportionalScaledValueEx( GetScheme(), CSTRIKE_NAME_WIDTH ), hFallbackFont );
-		m_pPlayerList->AddColumnToSection(sectionID, "class", "" , 0, scheme()->GetProportionalScaledValueEx( GetScheme(), CSTRIKE_CLASS_WIDTH ) );
+		m_pPlayerList->AddColumnToSection(sectionID, "death", "", 0, scheme()->GetProportionalScaledValueEx(GetScheme(), CSTRIKE_CLASS_WIDTH));
 		m_pPlayerList->AddColumnToSection(sectionID, "frags", "", SectionedListPanel::COLUMN_RIGHT, scheme()->GetProportionalScaledValueEx( GetScheme(), CSTRIKE_SCORE_WIDTH ) );
 		m_pPlayerList->AddColumnToSection(sectionID, "deaths", "", SectionedListPanel::COLUMN_RIGHT, scheme()->GetProportionalScaledValueEx( GetScheme(), CSTRIKE_DEATH_WIDTH ) );
 		m_pPlayerList->AddColumnToSection(sectionID, "ping", "", SectionedListPanel::COLUMN_RIGHT, scheme()->GetProportionalScaledValueEx( GetScheme(), CSTRIKE_PING_WIDTH ) );
@@ -489,7 +489,7 @@ void CHL2MPClientScoreBoardDialog::AddSection(int teamType, int teamNumber)
 	{
 		m_pPlayerList->AddSection(sectionID, "");
 		m_pPlayerList->AddColumnToSection(sectionID, "name", "#Spectators", 0, scheme()->GetProportionalScaledValueEx( GetScheme(), CSTRIKE_NAME_WIDTH ), hFallbackFont );
-		m_pPlayerList->AddColumnToSection(sectionID, "class", "" , 0, scheme()->GetProportionalScaledValueEx( GetScheme(), 100 ) );
+		m_pPlayerList->AddColumnToSection(sectionID, "death", "" , 0, scheme()->GetProportionalScaledValueEx( GetScheme(), 100 ) );
 	}
 }
 
@@ -519,7 +519,7 @@ bool CHL2MPClientScoreBoardDialog::GetPlayerScoreInfo(int playerIndex, KeyValues
 	kv->SetString("name", g_PR->GetPlayerName(playerIndex) );
 	kv->SetInt("deaths", g_PR->GetDeaths( playerIndex ));
 	kv->SetInt("frags", g_PR->GetPlayerScore( playerIndex ));
-	kv->SetString("class", "");
+	kv->SetString("death", "");
 	
 	if (g_PR->GetPing( playerIndex ) < 1)
 	{
@@ -536,7 +536,21 @@ bool CHL2MPClientScoreBoardDialog::GetPlayerScoreInfo(int playerIndex, KeyValues
 	{
 		kv->SetInt("ping", g_PR->GetPing( playerIndex ));
 	}
-	
+	if (g_PR->GetTeam(playerIndex) == TEAM_SPECTATOR)
+	{
+		kv->SetString("death", "SPEC");
+	}
+	else
+	{
+		if (g_PR->IsAlive(playerIndex))
+		{
+			kv->SetString("death", "ALIVE");
+		}
+		else
+		{
+			kv->SetString("death", "DEAD");
+		}
+	}
 	return true;
 }
 

@@ -328,6 +328,9 @@ BEGIN_DATADESC( CBasePlayer )
 	DEFINE_FIELD( m_iBonusChallenge, FIELD_INTEGER ),
 	DEFINE_FIELD( m_lastDamageAmount, FIELD_INTEGER ),
 	DEFINE_FIELD( m_tbdPrev, FIELD_TIME ),
+	//health regen adding 2 more defines
+	DEFINE_FIELD(m_flLastDamageTime, FIELD_TIME),
+	DEFINE_FIELD(m_isPlayerNearDying, FIELD_BOOLEAN),
 	DEFINE_FIELD( m_flStepSoundTime, FIELD_FLOAT ),
 	DEFINE_ARRAY( m_szNetname, FIELD_CHARACTER, MAX_PLAYER_NAME_LENGTH ),
 
@@ -616,7 +619,9 @@ CBasePlayer::CBasePlayer( )
 	m_fDelay = 0.0f;
 	m_fReplayEnd = -1;
 	m_iReplayEntity = 0;
-
+	//health regen adding 2 more lines
+	m_flNextLowHealthSoundTime = 0.0f;
+	m_flStartReliefSoundTime = 0.0f;
 	m_autoKickDisabled = false;
 
 	m_nNumCrouches = 0;
@@ -640,6 +645,9 @@ CBasePlayer::CBasePlayer( )
 	m_flMovementTimeForUserCmdProcessingRemaining = 0.0f;
 
 	m_flLastObjectiveTime = -1.f;
+	PrecacheScriptSound("Player.Breathhurt");
+	PrecacheScriptSound("Player.Breathbetter");
+	PrecacheScriptSound("Flesh.Headshot");
 }
 
 CBasePlayer::~CBasePlayer( )
@@ -855,6 +863,14 @@ void CBasePlayer::DeathSound( const CTakeDamageInfo &info )
 
 int CBasePlayer::TakeHealth( float flHealth, int bitsDamageType )
 {
+	if (m_bFastRegenActive)//dr.n0 adding the health regen - blood overlay cleansing takes on here so here is changed to a if else to check the regen state
+	{
+		m_bShouldDrawBloodOverlay = true;
+	}
+	else
+	{
+		m_bShouldDrawBloodOverlay = false;
+	}// if health is regening then we should be covered in blood. cleansing take on 100 percent health touching a medkit
 	// clear out any damage types we healed.
 	// UNDONE: generic health should not heal any
 	// UNDONE: time-based damage
@@ -863,7 +879,7 @@ int CBasePlayer::TakeHealth( float flHealth, int bitsDamageType )
 		int bitsDmgTimeBased = g_pGameRules->Damage_GetTimeBased();
 		m_bitsDamageType &= ~( bitsDamageType & ~bitsDmgTimeBased );
 	}
-	m_bShouldDrawBloodOverlay = false; //add bloodover health kit cleanser
+	//m_bShouldDrawBloodOverlay = false; //add bloodover health kit cleanser *health regen conflictiion therefore removed*
 	// I disabled reporting history into the dbghist because it was super spammy.
 	// But, if you need to reenable it, the code is below in the "else" clause.
 #if 1 // #ifdef DISABLE_DEBUG_HISTORY
@@ -1410,9 +1426,103 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	{
 		OnDamagedByExplosion( info );
 	}
+	//health regen add
+	if (GetHealth() < 100) {
+		m_flLastDamageTime = gpGlobals->curtime;
+	}
 
+	if (IsAlive() && GetHealth() < 100 /* && !m_bFastRegenActive*/) {
+
+		m_bFastRegenActive = true;
+		// HUGAMOD: Start regeneration after 5 seconds
+		// but it will reset each time you take damage
+		m_flFastRegenStartTime = gpGlobals->curtime + 8.0f;
+		m_flNextFastRegenTime = m_flFastRegenStartTime;
+	}
+	float flDamage = info.GetDamage();
+	if (GetHealth() < 66) {
+		color32 red = { 128, 0, 0, 128 };
+		UTIL_ScreenFade(this, red, 2.15f, 1.8f, FFADE_IN);
+
+		// HUGAMOD: Commented out ugly PunchAngle
+		//ViewPunch(QAngle(random->RandomInt(-2, 2), random->RandomInt(-2, 2), random->RandomInt(-2, 2)));
+		if (!m_isPlayerNearDying)
+		{
+			// HUGAMOD: Checks if the player is in a vehicle so that
+			// the player won't get punchangle, it will bug the view
+			// if you remove this check (i already bug-tested it :>)
+			if (!this->IsInAVehicle()) {
+				// HUGAMOD: Ported CSS Headshot PunchAngle
+				flDamage *= 4;
+				QAngle punchAngle = GetPunchAngle();
+				punchAngle.x = flDamage * -0.5;
+
+				if (punchAngle.x < -12)
+					punchAngle.x = -12;
+
+				punchAngle.z = flDamage * random->RandomFloat(-1, 1);
+
+				if (punchAngle.z < -9)
+					punchAngle.z = -9;
+
+				else if (punchAngle.z > 9)
+					punchAngle.z = 9;
+
+				SetPunchAngle(punchAngle);
+			}
+
+			EmitSound("Flesh.Headshot");
+
+			m_isPlayerNearDying = true;
+		}
+
+		if (!m_bBuzzingSoundActive)
+		{
+			int effect = random->RandomInt(32, 34);
+			CSingleUserRecipientFilter user(this);
+			enginesound->SetPlayerDSP(user, effect, false);
+			m_flBuzzingSoundEndTime = gpGlobals->curtime + 5.0f;
+			m_bBuzzingSoundActive = true;
+		}
+	} //hregen end
 	return fTookDamage;
 }
+//health regen addition
+void CBasePlayer::HandleFastRegen()
+{
+
+	if (gpGlobals->curtime - m_flLastDamageTime < 8.0f)
+	{
+		// Not enough time has passed, do not start regeneration
+		return;
+	}
+	if (m_bFastRegenActive && gpGlobals->curtime >= m_flFastRegenStartTime)
+	{
+		if (gpGlobals->curtime >= m_flNextFastRegenTime)
+		{
+			// Add 5 health each time
+			TakeHealth(1, DMG_GENERIC);
+			// Set the next regeneration time for 0.1 seconds
+			m_flNextFastRegenTime = gpGlobals->curtime + 2.6f;
+			m_isPlayerNearDying = false;
+			// Stop the regeneration if the health reaches 100
+			if (GetHealth() >= 100)
+			{
+				m_bFastRegenActive = false;
+			}
+
+			if (m_bBuzzingSoundActive && gpGlobals->curtime >= m_flBuzzingSoundEndTime)
+			{
+				// HUGAMOD: Delays the relief breathing sound 
+				// for 0.45 - 0.5 seconds because it will collide with
+				// the hurt breathing sound
+				m_flStartReliefSoundTime = gpGlobals->curtime + RandomFloat(0.45, 0.5);
+				m_bBuzzingSoundActive = false;
+			}
+		}
+	}
+
+} //health regen add end
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -4638,7 +4748,35 @@ void CBasePlayer::PostThink()
 	SimulatePlayerSimulatedEntities();
 #endif
 
-}
+	// HUGAMOD: Dead player will ignore this //healther regen add
+	if (IsAlive()) {
+		if (GetHealth() < 25)
+		{
+			if (gpGlobals->curtime >= m_flNextLowHealthSoundTime)
+			{
+				// Play hurt breath sound
+				EmitSound("Player.Breathhurt");
+
+				// Set the next hurt breath sound time
+				m_flNextLowHealthSoundTime = gpGlobals->curtime + 1.0f; // Interval 1 detik
+			}
+		}
+		else
+		{
+			if (m_flStartReliefSoundTime > 0.0f && gpGlobals->curtime >= m_flStartReliefSoundTime)
+			{
+				EmitSound("Player.Breathbetter");
+
+				// Reset relief breath time to prevent looping
+				m_flStartReliefSoundTime = 0.0f;
+			}
+			StopSound("Player.Breathhurt"); // Stop breath hurt sound
+			// Reset breath hurt time to prevent looping
+			m_flNextLowHealthSoundTime = 0.0f;
+		}
+	}
+	HandleFastRegen();
+} //end
 
 // handles touching physics objects
 void CBasePlayer::Touch( CBaseEntity *pOther )
