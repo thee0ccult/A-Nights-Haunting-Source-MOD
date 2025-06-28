@@ -45,6 +45,7 @@ void RegisterUserMessages( void )
 	usermessages->Register( "LogoTimeMsg", 4 );
 	usermessages->Register( "AchievementEvent", -1 );
 	usermessages->Register( "UpdateJalopyRadar", -1 );
+	usermessages->Register("SoundscapeMaker_Recieve", -1); //drn0 adding sseditor
 	usermessages->Register("ShowScope", 1); // show the sniper scope
 	usermessages->Register("KeypadHandler", -1); //Keypad
 	usermessages->Register("TaskList", -1); //show the tasklist

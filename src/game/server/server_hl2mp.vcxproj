@@ -271,6 +271,7 @@ exit 1
     <ClInclude Include="..\shared\hl2mp\weapon_bat.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_blowtorch.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_cicle.h" />
+    <ClInclude Include="..\shared\hl2mp\weapon_cigarette.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_cleaver.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_hammer.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_hockeystick.h" />
@@ -870,6 +871,7 @@ exit 1
     <ClCompile Include="..\shared\hl2mp\weapon_bat.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_blowtorch.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_cicle.cpp" />
+    <ClCompile Include="..\shared\hl2mp\weapon_cigarette.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_dualies.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_fiveseven.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_cleaver.cpp" />

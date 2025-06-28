@@ -261,8 +261,8 @@ public:
 	// Merge in another KeyValues, keeping "our" settings
 	void RecursiveMergeKeyValues( KeyValues *baseKV );
 
-private:
-	KeyValues( KeyValues& );	// prevent copy constructor being used
+public:
+	KeyValues( KeyValues& );	// prevent copy constructor being used drn0 changed private: to public for sseditor
 
 	// prevent delete being called except through deleteThis()
 	~KeyValues();

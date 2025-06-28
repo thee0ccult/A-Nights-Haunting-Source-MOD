@@ -41,7 +41,7 @@ void MP3Player_Destroy();
 vgui::IInputInternal *g_InputInternal = NULL;
 
 #include <vgui_controls/Controls.h>
-
+#include "vgui_soundscape_maker.h" //drn0 add sseditor
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -197,6 +197,7 @@ void VGui_CreateGlobalPanels( void )
 {
 	VPANEL gameToolParent = enginevgui->GetPanel( PANEL_CLIENTDLL_TOOLS );
 	VPANEL toolParent = enginevgui->GetPanel( PANEL_TOOLS );
+	g_SoundscapeMaker->Create(toolParent);// drn0 add sseditor
 #if defined( TRACK_BLOCKING_IO )
 	VPANEL gameDLLPanel = enginevgui->GetPanel( PANEL_GAMEDLL );
 #endif
@@ -245,7 +246,7 @@ void VGui_Shutdown()
 	{
 		g_pClientMode->VGui_Shutdown();
 	}
-
+	g_SoundscapeMaker->Destroy(); //drn0 add sseditor
 	// Make sure anything "marked for deletion"
 	//  actually gets deleted before this dll goes away
 	vgui::ivgui()->RunFrame();

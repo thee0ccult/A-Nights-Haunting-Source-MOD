@@ -12,6 +12,7 @@
   weapon_bat.cpp
   weapon_blowtorch.cpp
   weapon_cicle.cpp
+  weapon_cigarette.cpp
   weapon_dualies.cpp
   weapon_fiveseven.cpp
   weapon_cleaver.cpp
@@ -337,6 +338,7 @@
   vgui_netgraphpanel.cpp
   vgui_schemevisualizer.cpp
   vgui_slideshow_display_screen.cpp
+  vgui_soundscape_maker.cpp
   vgui_video.cpp
   vgui_video_player.cpp
   view.cpp

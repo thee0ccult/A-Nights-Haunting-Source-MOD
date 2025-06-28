@@ -12,6 +12,7 @@
   weapon_bat.cpp
   weapon_blowtorch.cpp
   weapon_cicle.cpp
+  weapon_cigarette.cpp
   weapon_dualies.cpp
   weapon_fiveseven.cpp
   weapon_cleaver.cpp

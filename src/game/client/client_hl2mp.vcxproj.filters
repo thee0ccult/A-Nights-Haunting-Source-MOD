@@ -1994,6 +1994,12 @@
     <ClInclude Include="hl2mp\ui\hud_tasklist.h">
       <Filter>Source Files\HL2MP\UI</Filter>
     </ClInclude>
+    <ClInclude Include="..\shared\hl2mp\weapon_cigarette.h">
+      <Filter>Source Files\HL2MP\Weapons</Filter>
+    </ClInclude>
+    <ClInclude Include="vgui_soundscape_maker.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="mp3player.cpp">
@@ -3663,6 +3669,12 @@
     </ClCompile>
     <ClCompile Include="..\shared\hl2mp\weapon_dualies.cpp">
       <Filter>Source Files\HL2MP\Weapons</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\hl2mp\weapon_cigarette.cpp">
+      <Filter>Source Files\HL2MP\Weapons</Filter>
+    </ClCompile>
+    <ClCompile Include="vgui_soundscape_maker.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

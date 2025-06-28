@@ -57,6 +57,7 @@ STUB_WEAPON_CLASS(weapon_pitchfork, WeaponPitchfork, C_BaseHLBludgeonWeapon);
 STUB_WEAPON_CLASS(weapon_axe, WeaponAxe, C_BaseHLBludgeonWeapon);
 STUB_WEAPON_CLASS(weapon_bat, WeaponBat, C_BaseHLBludgeonWeapon);
 STUB_WEAPON_CLASS(weapon_cleaver, WeaponCleaver, C_BaseHLBludgeonWeapon);
+STUB_WEAPON_CLASS(weapon_cigarette, WeaponCigarette, C_BaseHLBludgeonWeapon);
 STUB_WEAPON_CLASS(weapon_hockeystick, WeaponHockeystick, C_BaseHLBludgeonWeapon);
 STUB_WEAPON_CLASS(weapon_sledgehammer, WeaponSledgehammer, C_BaseHLBludgeonWeapon);
 STUB_WEAPON_CLASS(weapon_hammer, WeaponHammer, C_BaseHLBludgeonWeapon);

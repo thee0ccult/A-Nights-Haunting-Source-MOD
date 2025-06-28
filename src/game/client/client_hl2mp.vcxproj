@@ -392,6 +392,7 @@ exit 1
     <ClInclude Include="..\shared\hl2mp\weapon_bat.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_blowtorch.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_cicle.h" />
+    <ClInclude Include="..\shared\hl2mp\weapon_cigarette.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_cleaver.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_hammer.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_hockeystick.h" />
@@ -605,6 +606,7 @@ exit 1
     <ClInclude Include="vgui_int.h" />
     <ClInclude Include="vgui_keypad.h" />
     <ClInclude Include="vgui_schemevisualizer.h" />
+    <ClInclude Include="vgui_soundscape_maker.h" />
     <ClInclude Include="vgui_video.h" />
     <ClInclude Include="vgui_video_player.h" />
     <ClInclude Include="vguicenterprint.h" />
@@ -910,6 +912,7 @@ exit 1
     <ClCompile Include="..\shared\hl2mp\weapon_bat.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_blowtorch.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_cicle.cpp" />
+    <ClCompile Include="..\shared\hl2mp\weapon_cigarette.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_dualies.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_fiveseven.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_cleaver.cpp" />
@@ -1363,6 +1366,7 @@ exit 1
     <ClCompile Include="vgui_netgraphpanel.cpp" />
     <ClCompile Include="vgui_schemevisualizer.cpp" />
     <ClCompile Include="vgui_slideshow_display_screen.cpp" />
+    <ClCompile Include="vgui_soundscape_maker.cpp" />
     <ClCompile Include="vgui_video.cpp" />
     <ClCompile Include="vgui_video_player.cpp" />
     <ClCompile Include="view.cpp" />

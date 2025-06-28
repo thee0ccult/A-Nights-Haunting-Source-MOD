@@ -1871,6 +1871,9 @@
     <ClInclude Include="..\shared\convar_firstperson.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\shared\hl2mp\weapon_cigarette.h">
+      <Filter>Source Files\HL2MP\Weapons</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gamedll_replay.cpp">
@@ -3698,6 +3701,9 @@
       <Filter>Source Files\HL2 DLL</Filter>
     </ClCompile>
     <ClCompile Include="..\shared\hl2mp\weapon_dualies.cpp">
+      <Filter>Source Files\HL2MP\Weapons</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\hl2mp\weapon_cigarette.cpp">
       <Filter>Source Files\HL2MP\Weapons</Filter>
     </ClCompile>
   </ItemGroup>

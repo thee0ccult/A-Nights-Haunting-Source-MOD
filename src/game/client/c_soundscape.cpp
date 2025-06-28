@@ -15,7 +15,15 @@
 #include "view.h"
 #include "engine/ivdebugoverlay.h"
 #include "tier0/icommandline.h"
+#include "c_soundscape.h"
 
+extern bool g_IsPlayingSoundscape;
+extern bool g_bSSMHack;
+
+//debug stuff
+void SoundscapePrint(Color color, const char* msg, ...);
+void SoundscapeAddLine(Color color, float speed, float width, bool accending);
+int SoundscapeGetLineNum();
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -24,222 +32,13 @@
 #define MAX_SOUNDSCAPE_RECURSION	8
 
 const float DEFAULT_SOUND_RADIUS = 36.0f;
-// Keep an array of all looping sounds so they can be faded in/out
-// OPTIMIZE: Get a handle/pointer to the engine's sound channel instead 
-//			of searching each frame!
-struct loopingsound_t
-{
-	Vector		position;		// position (if !isAmbient)
-	const char *pWaveName;		// name of the wave file
-	float		volumeTarget;	// target volume level (fading towards this)
-	float		volumeCurrent;	// current volume level
-	soundlevel_t soundlevel;	// sound level (if !isAmbient)
-	int			pitch;			// pitch shift
-	int			id;				// Used to fade out sounds that don't belong to the most current setting
-	bool		isAmbient;		// Ambient sounds have no spatialization - they play from everywhere
-};
+
 
 ConVar soundscape_fadetime( "soundscape_fadetime", "3.0", FCVAR_CHEAT, "Time to crossfade sound effects between soundscapes" );
 
 #include "interval.h"
 
-struct randomsound_t
-{
-	Vector		position;
-	float		nextPlayTime;	// time to play a sound from the set
-	interval_t	time;
-	interval_t	volume;
-	interval_t	pitch;
-	interval_t	soundlevel;
-	float		masterVolume;
-	int			waveCount;
-	bool		isAmbient;
-	bool		isRandom;
-	KeyValues	*pWaves;
 
-	void Init()
-	{
-		memset( this, 0, sizeof(*this) );
-	}
-};
-
-struct subsoundscapeparams_t
-{
-	int		recurseLevel;		// test for infinite loops in the script / circular refs
-	float	masterVolume;
-	int		startingPosition;
-	int		positionOverride;	// forces all sounds to this position
-	int		ambientPositionOverride;	// forces all ambient sounds to this position
-	bool	allowDSP;
-	bool	wroteSoundMixer;
-	bool	wroteDSPVolume;
-};
-
-class C_SoundscapeSystem : public CBaseGameSystemPerFrame
-{
-public:
-	virtual char const *Name() { return "C_SoundScapeSystem"; }
-
-	C_SoundscapeSystem()
-	{
-		m_nRestoreFrame = -1;
-	}
-
-	~C_SoundscapeSystem() {}
-
-	void OnStopAllSounds()
-	{
-		m_params.ent.Set( NULL );
-		m_params.soundscapeIndex = -1;
-		m_loopingSounds.Purge();
-		m_randomSounds.Purge();
-	}
-
-	// IClientSystem hooks, not needed
-	virtual void LevelInitPreEntity()
-	{
-		Shutdown();
-		Init();
-
-		TouchSoundFiles();
-	}
-
-	virtual void LevelInitPostEntity() 
-	{
-		if ( !m_pSoundMixerVar )
-		{
-			m_pSoundMixerVar = (ConVar *)cvar->FindVar( "snd_soundmixer" );
-		}
-		if ( !m_pDSPVolumeVar )
-		{
-			m_pDSPVolumeVar = (ConVar *)cvar->FindVar( "dsp_volume" );
-		}
-	}
-
-	// The level is shutdown in two parts
-	virtual void LevelShutdownPreEntity() {}
-	// Entities are deleted / released here...
-	virtual void LevelShutdownPostEntity()
-	{
-		OnStopAllSounds();
-	}
-
-	virtual void OnSave() {}
-	virtual void OnRestore()
-	{
-		m_nRestoreFrame = gpGlobals->framecount;
-	}
-	virtual void SafeRemoveIfDesired() {}
-
-	// Called before rendering
-	virtual void PreRender() { }
-
-	// Called after rendering
-	virtual void PostRender() { }
-
-	// IClientSystem hooks used
-	virtual bool Init();
-	virtual void Shutdown();
-	// Gets called each frame
-	virtual void Update( float frametime );
-
-	void PrintDebugInfo()
-	{
-		Msg( "\n------- CLIENT SOUNDSCAPES -------\n" );
-		for ( int i=0; i < m_soundscapes.Count(); i++ )
-		{
-			Msg( "- %d: %s\n", i, m_soundscapes[i]->GetName() );
-		}
-		if ( m_forcedSoundscapeIndex >= 0 )
-		{
-			Msg( "- PLAYING DEBUG SOUNDSCAPE: %d [%s]\n", m_forcedSoundscapeIndex, SoundscapeNameByIndex(m_forcedSoundscapeIndex) );
-		}
-		Msg( "- CURRENT SOUNDSCAPE: %d [%s]\n", m_params.soundscapeIndex.Get(), SoundscapeNameByIndex(m_params.soundscapeIndex) );
-		Msg( "----------------------------------\n\n" );
-	}
-
-	
-	// local functions
-	void UpdateAudioParams( audioparams_t &audio );
-	void GetAudioParams( audioparams_t &out ) const { out = m_params; }
-	int GetCurrentSoundscape() 
-	{ 
-		if ( m_forcedSoundscapeIndex >= 0 )
-			return m_forcedSoundscapeIndex;
-		return m_params.soundscapeIndex; 
-	}
-	void DevReportSoundscapeName( int index );
-	void UpdateLoopingSounds( float frametime );
-	int AddLoopingAmbient( const char *pSoundName, float volume, int pitch );
-	void UpdateLoopingSound( loopingsound_t &loopSound );
-	void StopLoopingSound( loopingsound_t &loopSound );
-	int AddLoopingSound( const char *pSoundName, bool isAmbient, float volume, 
-		soundlevel_t soundLevel, int pitch, const Vector &position );
-	int AddRandomSound( const randomsound_t &sound );
-	void PlayRandomSound( randomsound_t &sound );
-	void UpdateRandomSounds( float gameClock );
-	Vector GenerateRandomSoundPosition();
-
-	void ForceSoundscape( const char *pSoundscapeName, float radius );
-
-	int FindSoundscapeByName( const char *pSoundscapeName );
-	const char *SoundscapeNameByIndex( int index );
-	KeyValues *SoundscapeByIndex( int index );
-	
-	// main-level soundscape processing, called on new soundscape
-	void StartNewSoundscape( KeyValues *pSoundscape );
-	void StartSubSoundscape( KeyValues *pSoundscape, subsoundscapeparams_t &params );
-
-	// root level soundscape keys
-	// add a process for each new command here
-	// "dsp"
-	void ProcessDSP( KeyValues *pDSP );
-	// "dsp_player"
-	void ProcessDSPPlayer( KeyValues *pDSPPlayer );
-	// "playlooping"
-	void ProcessPlayLooping( KeyValues *pPlayLooping, const subsoundscapeparams_t &params );	
-	// "playrandom"
-	void ProcessPlayRandom( KeyValues *pPlayRandom, const subsoundscapeparams_t &params );
-	// "playsoundscape"
-	void ProcessPlaySoundscape( KeyValues *pPlaySoundscape, subsoundscapeparams_t &params );
-	// "soundmixer"
-	void ProcessSoundMixer( KeyValues *pSoundMixer, subsoundscapeparams_t &params );
-	// "dsp_volume"
-	void ProcessDSPVolume( KeyValues *pKey, subsoundscapeparams_t &params );
-
-
-private:
-
-	bool	IsBeingRestored() const
-	{
-		return gpGlobals->framecount == m_nRestoreFrame ? true : false;
-	}
-
-	void	AddSoundScapeFile( const char *filename );
-
-	void		TouchPlayLooping( KeyValues *pAmbient );
-	void		TouchPlayRandom( KeyValues *pPlayRandom );
-	void		TouchWaveFiles( KeyValues *pSoundScape );
-	void		TouchSoundFile( char const *wavefile );
-
-	void		TouchSoundFiles();
-	
-	int							m_nRestoreFrame;
-
-	CUtlVector< KeyValues * >	m_SoundscapeScripts;	// The whole script file in memory
-	CUtlVector<KeyValues *>		m_soundscapes;			// Lookup by index of each root section
-	audioparams_t				m_params;				// current player audio params
-	CUtlVector<loopingsound_t>	m_loopingSounds;		// list of currently playing sounds
-	CUtlVector<randomsound_t>	m_randomSounds;			// list of random sound commands
-	float						m_nextRandomTime;		// next time to play a random sound
-	int							m_loopingSoundId;		// marks when the sound was issued
-	int							m_forcedSoundscapeIndex;// >= 0 if this a "forced" soundscape? i.e. debug mode?
-	float						m_forcedSoundscapeRadius;// distance to spatialized sounds
-
-	static ConVar *m_pDSPVolumeVar;
-	static ConVar *m_pSoundMixerVar;
-
-};
 
 
 // singleton system
@@ -262,6 +61,8 @@ void Soundscape_OnStopAllSounds()
 // player got a network update
 void Soundscape_Update( audioparams_t &audio )
 {
+	if (g_IsPlayingSoundscape)
+		return;
 	g_SoundscapeSystem.UpdateAudioParams( audio );
 }
 
@@ -580,6 +381,8 @@ void C_SoundscapeSystem::UpdateAudioParams( audioparams_t &audio )
 // Called when a soundscape is activated (leading edge of becoming the active soundscape)
 void C_SoundscapeSystem::StartNewSoundscape( KeyValues *pSoundscape )
 {
+	if (g_IsPlayingSoundscape && !g_bSSMHack)
+		return;
 	int i;
 
 	// Reset the system
@@ -1083,6 +886,8 @@ void C_SoundscapeSystem::ProcessPlaySoundscape( KeyValues *pPlaySoundscape, subs
 		if ( pSoundscapeKeys )
 		{
 			StartSubSoundscape( pSoundscapeKeys, subParams );
+			if (g_IsPlayingSoundscape)
+				SoundscapePrint(Color(100, 255, 0, 255), "Playing Sub Soundscape: \"%s\"\n\n", pSoundscapeName);
 		}
 		else
 		{
@@ -1150,7 +955,38 @@ int C_SoundscapeSystem::AddLoopingSound( const char *pSoundName, bool isAmbient,
 		}
 		soundSlot--;
 	}
+	if (g_IsPlayingSoundscape)
+	{
+		//get index
+		int index = Clamp<int>(SoundscapeGetLineNum(), 0, 6);
 
+		//color for looping sounds
+		static Color LoopingSoundColors[] = {
+			Color(255, 100, 0, 255),
+			Color(255, 255, 0, 255),
+			Color(255, 0, 100, 255),
+			Color(0, 255, 0, 255),
+			Color(0, 255, 255, 255),
+			Color(255, 0, 0, 255),
+			Color(0, 100, 255, 255),
+		};
+
+		SoundscapePrint(LoopingSoundColors[index], "Fading looping sound \"%s\" in. Volume = %f, Pitch = %d\nPosition = {%.2f %.2f %.2f}\n\n", pSoundName, volume, pitch, position.x, position.y, position.z);
+
+		//sound widths
+		static float LoopingSoundsIn[] = {
+			0.4f,
+			0.5f,
+			0.6f,
+			0.7f,
+			0.8f,
+			0.9f,
+			1.0f,
+		};
+
+		//add to graph
+		SoundscapeAddLine(LoopingSoundColors[index], 3 / soundscape_fadetime.GetFloat(), LoopingSoundsIn[index], true);
+	}
 	if ( soundSlot < 0 )
 	{
 		// can't find the sound in the list, make a new one
@@ -1238,6 +1074,8 @@ int C_SoundscapeSystem::AddRandomSound( const randomsound_t &sound )
 {
 	int index = m_randomSounds.AddToTail( sound );
 	m_randomSounds[index].nextPlayTime = gpGlobals->curtime + 0.5 * RandomInterval( sound.time );
+	if (g_IsPlayingSoundscape)
+		SoundscapePrint(Color(100, 255, 255, 255), "Adding random sounds to soundscape system.\nNumber of sounds = \"%d\" For index \"%d\"\n\n", sound.waveCount, index);
 	
 	return index;
 }
@@ -1261,7 +1099,16 @@ void C_SoundscapeSystem::PlayRandomSound( randomsound_t &sound )
 	
 	if ( !pWaveName )
 		return;
+	int pitch = (int)RandomInterval(sound.pitch);
+	float volume = sound.masterVolume * RandomInterval(sound.volume);
 
+	if (sound.isRandom)
+	{
+		sound.position = GenerateRandomSoundPosition();
+	}
+
+	if (g_IsPlayingSoundscape)
+		SoundscapePrint(Color(100, 255, 255, 255), "Playing Random sound \"%s\", Volume = %f, Pitch = %d\nPosition = {%.2f, %.2f, %.2f}\n", pWaveName, volume, pitch, sound.position.x, sound.position.y, sound.position.z);
 	if ( sound.isAmbient )
 	{
 		enginesound->EmitAmbientSound( pWaveName, sound.masterVolume * RandomInterval( sound.volume ), (int)RandomInterval( sound.pitch ) );
@@ -1273,13 +1120,9 @@ void C_SoundscapeSystem::PlayRandomSound( randomsound_t &sound )
 		EmitSound_t ep;
 		ep.m_nChannel = CHAN_STATIC;
 		ep.m_pSoundName =  pWaveName;
-		ep.m_flVolume = sound.masterVolume * RandomInterval( sound.volume );
-		ep.m_SoundLevel = (soundlevel_t)(int)RandomInterval( sound.soundlevel );
-		ep.m_nPitch = (int)RandomInterval( sound.pitch );
-		if ( sound.isRandom )
-		{
-			sound.position = GenerateRandomSoundPosition();
-		}
+		ep.m_flVolume = volume;
+		ep.m_SoundLevel = (soundlevel_t)(int)RandomInterval(sound.soundlevel);
+		ep.m_nPitch = pitch;
 		ep.m_pOrigin = &sound.position;
 
 		C_BaseEntity::EmitSound( filter, SOUND_FROM_WORLD, ep );
@@ -1306,6 +1149,8 @@ void C_SoundscapeSystem::UpdateRandomSounds( float gameTime )
 			// now schedule the next occurrance
 			// UNDONE: add support for "play once" sounds? FastRemove() here.
 			m_randomSounds[i].nextPlayTime = gameTime + RandomInterval( m_randomSounds[i].time );
+			if (g_IsPlayingSoundscape)
+				SoundscapePrint(Color(100, 255, 255, 255), "Playing next random sound for RandomSound index \"%d\" In \"%f\" Seconds\n\n", i, m_randomSounds[i].nextPlayTime - gameTime);
 		}
 
 		// update next time to check the queue

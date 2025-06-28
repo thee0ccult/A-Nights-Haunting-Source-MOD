@@ -186,6 +186,7 @@ void CHL2MP_Player::GiveAllItems( void )
 	GiveNamedItem("weapon_axe");
 	GiveNamedItem("weapon_bat");
 	GiveNamedItem("weapon_cleaver");
+	GiveNamedItem("weapon_cigarette");
 	GiveNamedItem("weapon_hockeystick");
 	GiveNamedItem("weapon_sledgehammer");
 	GiveNamedItem("weapon_hammer");
