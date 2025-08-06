@@ -251,6 +251,7 @@ Class_T	CNPC_Manhack::Classify(void)
 void CNPC_Manhack::Event_Dying(void)
 {
 	DestroySmokeTrail();
+	StopSound("NPC_Crow.Flap");
 	SetHullSizeNormal();
 	BaseClass::Event_Dying();
 }
@@ -329,14 +330,14 @@ void CNPC_Manhack::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDi
 
 	if ( info.GetDamageType() & DMG_BULLET)
 	{
-		g_pEffects->Ricochet(ptr->endpos,ptr->plane.normal);
+		//g_pEffects->Ricochet(ptr->endpos,ptr->plane.normal);
 	}
 
 	if ( info.GetDamageType() & DMG_CLUB )
 	{
 		// Clubbed!
 //		UTIL_Smoke(GetAbsOrigin(), random->RandomInt(10, 15), 10);
-		g_pEffects->Sparks( ptr->endpos, 1, 1, &ptr->plane.normal );
+		//g_pEffects->Sparks( ptr->endpos, 1, 1, &ptr->plane.normal );
 	}
 
 	BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
@@ -347,9 +348,9 @@ void CNPC_Manhack::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDi
 //-----------------------------------------------------------------------------
 void CNPC_Manhack::DeathSound( const CTakeDamageInfo &info )
 {
-	StopSound("NPC_Manhack.Stunned");
-	CPASAttenuationFilter filter2( this, "NPC_Manhack.Die" );
-	EmitSound( filter2, entindex(), "NPC_Manhack.Die" );
+	StopSound("NPC_Crow.Squawk");
+	CPASAttenuationFilter filter2( this, "NPC_Crow.Die" );
+	EmitSound( filter2, entindex(), "NPC_Crow.Die" );
 }
 
 //-----------------------------------------------------------------------------
@@ -378,7 +379,7 @@ void CNPC_Manhack::Event_Killed( const CTakeDamageInfo &info )
 		sparkPos.x += random->RandomFloat(-12,12);
 		sparkPos.y += random->RandomFloat(-12,12);
 		sparkPos.z += random->RandomFloat(-12,12);
-		g_pEffects->Sparks( sparkPos, 2 );
+		//g_pEffects->Sparks( sparkPos, 2 );
 	}
 
 	// Light
@@ -395,7 +396,7 @@ void CNPC_Manhack::Event_Killed( const CTakeDamageInfo &info )
 	// Always gib when clubbed or blasted or crushed, or just randomly
 	if ( ( info.GetDamageType() & (DMG_CLUB|DMG_CRUSH|DMG_BLAST) ) || ( random->RandomInt( 0, 1 ) ) )
 	{
-		m_bGib = true;
+		m_bGib = false;
 	}
 	else
 	{
@@ -405,7 +406,7 @@ void CNPC_Manhack::Event_Killed( const CTakeDamageInfo &info )
 		// Long fadeout on the sprites!!
 		KillSprites( 0.0f );
 	}
-
+	StopSound("NPC_Crow.Flap");
 	BaseClass::Event_Killed( info );
 }
 
@@ -764,7 +765,7 @@ int	CNPC_Manhack::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 		m_vForceVelocity = vecBestDir * info.GetDamage() * 0.5f;
 		m_flBladeSpeed = 10.0;
 
-		EmitSound( "NPC_Manhack.Bat" );	
+		EmitSound( "NPC_Crow.Squawk" );	
 
 		// tdInfo.SetDamage( 1.0 );
 
@@ -798,7 +799,7 @@ int	CNPC_Manhack::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 
 			if ( m_iHealth <= ( m_iMaxHealth / 2 ) )
 			{
-				CreateSmokeTrail();
+				//CreateSmokeTrail();
 			}
 		}
 		else
@@ -880,7 +881,7 @@ void CNPC_Manhack::OnStateChange( NPC_STATE OldState, NPC_STATE NewState )
 	if( NewState != NPC_STATE_IDLE && (m_spawnflags & SF_NPC_GAG) && (m_nEnginePitch1 < 0) )
 	{
 		m_spawnflags &= ~SF_NPC_GAG;
-		SoundInit();
+		//SoundInit();
 	}
 }
 
@@ -1531,16 +1532,16 @@ void CNPC_Manhack::Slice( CBaseEntity *pHitEntity, float flInterval, trace_t &tr
 		
 		data.m_vNormal = ( tr.plane.normal + velocity ) * 0.5;;
 
-		DispatchEffect( "ManhackSparks", data );
+		//DispatchEffect( "ManhackSparks", data );
 
-		EmitSound( "NPC_Manhack.Grind" );
+		EmitSound( "NPC_Crow.Flap" );
 
 		//TODO: What we really want to do is get a material reference and emit the proper sprayage! - jdw
 	}
 	else
 	{
 		SpawnBlood(tr.endpos, g_vecAttackDir, pHitEntity->BloodColor(), 6 );
-		EmitSound( "NPC_Manhack.Slice" );
+		EmitSound( "NPC_Crow.Flap" );
 	}
 
 	// Pop back a little bit after hitting the player
@@ -1612,7 +1613,7 @@ void CNPC_Manhack::Bump( CBaseEntity *pHitEntity, float flInterval, trace_t &tr 
 			
 			data.m_vNormal = ( tr.plane.normal + velocity ) * 0.5;;
 
-			DispatchEffect( "ManhackSparks", data );
+			//DispatchEffect( "ManhackSparks", data );
 
 			CBroadcastRecipientFilter filter;
 
@@ -1632,7 +1633,7 @@ void CNPC_Manhack::Bump( CBaseEntity *pHitEntity, float flInterval, trace_t &tr 
 			
 			if (!(m_spawnflags	& SF_NPC_GAG))
 			{
-				EmitSound( "NPC_Manhack.Grind" );
+				EmitSound( "NPC_Crow.Flap" );
 			}
 
 			// For decals and sparks we must trace a line in the direction of the surface norm
@@ -1850,7 +1851,7 @@ void CNPC_Manhack::PlayFlySound(void)
 	{
 		m_flNextEngineSoundTime	= gpGlobals->curtime + random->RandomFloat( 3.0, 10.0 );
 
-		EmitSound( "NPC_Manhack.EngineNoise" );
+		EmitSound( "NPC_Crow.Flap" );
 	}
 }
 
@@ -2026,7 +2027,7 @@ void CNPC_Manhack::MoveExecute_Alive(float flInterval)
 
 	if( m_lifeState != LIFE_DEAD )
 	{
-		PlayFlySound();
+		//PlayFlySound();
 		// SpinBlades( flInterval );
 		// WalkMove( GetCurrentVelocity() * flInterval, MASK_NPCSOLID );
 	}
@@ -2113,7 +2114,7 @@ void CNPC_Manhack::MoveExecute_Dead(float flInterval)
 	if (gpGlobals->curtime > m_fSmokeTime && GetWaterLevel() == 0)
 	{
 //		UTIL_Smoke(GetAbsOrigin(), random->RandomInt(10, 15), 10);
-		m_fSmokeTime = gpGlobals->curtime + random->RandomFloat( 0.1, 0.3);
+		//m_fSmokeTime = gpGlobals->curtime + random->RandomFloat( 0.1, 0.3);
 	}
 
 	// Periodically emit sparks.
@@ -2157,7 +2158,7 @@ void CNPC_Manhack::MoveExecute_Dead(float flInterval)
 	angles.z += -20+(random->RandomInt(0,40));
 
 	CheckCollisions(flInterval);
-	PlayFlySound();
+	//PlayFlySound();
 
 	// SetLocalAngles( angles );
 
@@ -2173,24 +2174,34 @@ void CNPC_Manhack::Precache(void)
 	//
 	// Model.
 	//
-	PrecacheModel("models/manhack.mdl");
-	PrecacheModel( MANHACK_GLOW_SPRITE );
-	PropBreakablePrecacheAll( MAKE_STRING("models/manhack.mdl") );
+	PrecacheModel("models/crow.mdl");
+	//PrecacheModel( MANHACK_GLOW_SPRITE );
+	PropBreakablePrecacheAll( MAKE_STRING("models/crow.mdl") );
 	
-	PrecacheScriptSound( "NPC_Manhack.Die" );
-	PrecacheScriptSound( "NPC_Manhack.Bat" );
-	PrecacheScriptSound( "NPC_Manhack.Grind" );
-	PrecacheScriptSound( "NPC_Manhack.Slice" );
-	PrecacheScriptSound( "NPC_Manhack.EngineNoise" );
-	PrecacheScriptSound( "NPC_Manhack.Unpack" );
-	PrecacheScriptSound( "NPC_Manhack.ChargeAnnounce" );
-	PrecacheScriptSound( "NPC_Manhack.ChargeEnd" );
-	PrecacheScriptSound( "NPC_Manhack.Stunned" );
+	//PrecacheScriptSound( "NPC_Manhack.Die" );
+	//PrecacheScriptSound( "NPC_Manhack.Bat" );
+	//PrecacheScriptSound( "NPC_Manhack.Grind" );
+	//PrecacheScriptSound( "NPC_Manhack.Slice" );
+	//PrecacheScriptSound( "NPC_Manhack.EngineNoise" );
+	//PrecacheScriptSound( "NPC_Manhack.Unpack" );
+	//PrecacheScriptSound( "NPC_Manhack.ChargeAnnounce" );
+	//PrecacheScriptSound( "NPC_Manhack.ChargeEnd" );
+	//PrecacheScriptSound( "NPC_Manhack.Stunned" );
+
+	//Crow
+	PrecacheScriptSound("NPC_Crow.Hop");
+	PrecacheScriptSound("NPC_Crow.Squawk");
+	PrecacheScriptSound("NPC_Crow.Gib");
+	PrecacheScriptSound("NPC_Crow.Idle");
+	PrecacheScriptSound("NPC_Crow.Alert");
+	PrecacheScriptSound("NPC_Crow.Die");
+	PrecacheScriptSound("NPC_Crow.Pain");
+	PrecacheScriptSound("NPC_Crow.Flap");
 
 	// Sounds used on Client:
-	PrecacheScriptSound( "NPC_Manhack.EngineSound1" );
-	PrecacheScriptSound( "NPC_Manhack.EngineSound2"  );
-	PrecacheScriptSound( "NPC_Manhack.BladeSound" );
+	//PrecacheScriptSound( "NPC_Manhack.EngineSound1" );
+	//PrecacheScriptSound( "NPC_Manhack.EngineSound2"  );
+	//PrecacheScriptSound( "NPC_Manhack.BladeSound" );
 
 	BaseClass::Precache();
 }
@@ -2369,7 +2380,7 @@ void CNPC_Manhack::Spawn(void)
 	AddSpawnFlags( SF_NPC_FADE_CORPSE );
 #endif // _XBOX
 
-	SetModel( "models/manhack.mdl" );
+	SetModel( "models/crow.mdl" );
 	SetHullType(HULL_TINY_CENTERED); 
 	SetHullSizeNormal();
 
@@ -2463,48 +2474,48 @@ void CNPC_Manhack::Spawn(void)
 void CNPC_Manhack::StartEye( void )
 {
 	//Create our Eye sprite
-	if ( m_pEyeGlow == NULL )
-	{
-		m_pEyeGlow = CSprite::SpriteCreate( MANHACK_GLOW_SPRITE, GetLocalOrigin(), false );
-		m_pEyeGlow->SetAttachment( this, LookupAttachment( "Eye" ) );
+	//if ( m_pEyeGlow == NULL )
+	//{
+		//m_pEyeGlow = CSprite::SpriteCreate( MANHACK_GLOW_SPRITE, GetLocalOrigin(), false );
+		//m_pEyeGlow->SetAttachment( this, LookupAttachment( "Eye" ) );
 		
-		if( m_bHackedByAlyx )
-		{
-			m_pEyeGlow->SetTransparency( kRenderTransAdd, 0, 255, 0, 128, kRenderFxNoDissipation );
-			m_pEyeGlow->SetColor( 0, 255, 0 );
-		}
-		else
-		{
-			m_pEyeGlow->SetTransparency( kRenderTransAdd, 255, 0, 0, 128, kRenderFxNoDissipation );
-			m_pEyeGlow->SetColor( 255, 0, 0 );
-		}
+		//if( m_bHackedByAlyx )
+		//{
+		//	m_pEyeGlow->SetTransparency( kRenderTransAdd, 0, 255, 0, 128, kRenderFxNoDissipation );
+		//	m_pEyeGlow->SetColor( 0, 255, 0 );
+		//}
+		//else
+		//{
+		//	m_pEyeGlow->SetTransparency( kRenderTransAdd, 255, 0, 0, 128, kRenderFxNoDissipation );
+		//	m_pEyeGlow->SetColor( 255, 0, 0 );
+		//}
 
-		m_pEyeGlow->SetBrightness( 164, 0.1f );
-		m_pEyeGlow->SetScale( 0.25f, 0.1f );
-		m_pEyeGlow->SetAsTemporary();
-	}
+		//m_pEyeGlow->SetBrightness( 164, 0.1f );
+		//m_pEyeGlow->SetScale( 0.25f, 0.1f );
+		//m_pEyeGlow->SetAsTemporary();
+	//}
 
 	//Create our light sprite
-	if ( m_pLightGlow == NULL )
-	{
-		m_pLightGlow = CSprite::SpriteCreate( MANHACK_GLOW_SPRITE, GetLocalOrigin(), false );
-		m_pLightGlow->SetAttachment( this, LookupAttachment( "Light" ) );
+	//if ( m_pLightGlow == NULL )
+	//{
+		//m_pLightGlow = CSprite::SpriteCreate( MANHACK_GLOW_SPRITE, GetLocalOrigin(), false );
+		//m_pLightGlow->SetAttachment( this, LookupAttachment( "Light" ) );
 
-		if( m_bHackedByAlyx )
-		{
-			m_pLightGlow->SetTransparency( kRenderTransAdd, 0, 255, 0, 128, kRenderFxNoDissipation );
-			m_pLightGlow->SetColor( 0, 255, 0 );
-		}
-		else
-		{
-			m_pLightGlow->SetTransparency( kRenderTransAdd, 255, 0, 0, 128, kRenderFxNoDissipation );
-			m_pLightGlow->SetColor( 255, 0, 0 );
-		}
+		//if( m_bHackedByAlyx )
+		//{
+		//	m_pLightGlow->SetTransparency( kRenderTransAdd, 0, 255, 0, 128, kRenderFxNoDissipation );
+		//	m_pLightGlow->SetColor( 0, 255, 0 );
+		//}
+		//else
+		//{
+			//m_pLightGlow->SetTransparency( kRenderTransAdd, 255, 0, 0, 128, kRenderFxNoDissipation );
+			//m_pLightGlow->SetColor( 255, 0, 0 );
+		//}
 
-		m_pLightGlow->SetBrightness( 164, 0.1f );
-		m_pLightGlow->SetScale( 0.25f, 0.1f );
-		m_pLightGlow->SetAsTemporary();
-	}
+		//m_pLightGlow->SetBrightness( 164, 0.1f );
+		//m_pLightGlow->SetScale( 0.25f, 0.1f );
+		//m_pLightGlow->SetAsTemporary();
+	//}
 }
 
 //-----------------------------------------------------------------------------
@@ -2515,7 +2526,7 @@ void CNPC_Manhack::Activate()
 
 	if ( IsAlive() )
 	{
-		StartEye();
+		//StartEye();
 	}
 }
 
@@ -2542,8 +2553,8 @@ void CNPC_Manhack::BladesInit()
 	}
 	else
 	{
-		bool engineSound = (m_spawnflags & SF_NPC_GAG) ? false : true;
-		StartEngine( engineSound );
+		//bool engineSound = (m_spawnflags & SF_NPC_GAG) ? false : true;
+		//StartEngine( engineSound );
 		SetActivity( ACT_FLY );
 	}
 }
@@ -2556,7 +2567,7 @@ void CNPC_Manhack::StartEngine( bool fStartSound )
 {
 	if( fStartSound )
 	{
-		SoundInit();
+		//SoundInit();
 	}
 
 	// Make the blade appear.
@@ -2614,7 +2625,7 @@ void CNPC_Manhack::StartTask( const Task_t *pTask )
 	case TASK_MANHACK_UNPACK:
 		{
 			// Just play a sound for now.
-			EmitSound( "NPC_Manhack.Unpack" );
+			EmitSound( "NPC_Crow.Flap" );
 
 			TaskComplete();
 		}
@@ -3137,11 +3148,11 @@ void CNPC_Manhack::ShowHostile( bool hostile /*= true*/)
 
 	if ( hostile )
 	{
-		EmitSound( "NPC_Manhack.ChargeAnnounce" );
+		EmitSound( "NPC_Crow.Alert" );
 	}
 	else
 	{
-		EmitSound( "NPC_Manhack.ChargeEnd" );
+		EmitSound( "NPC_Crow.Alert" );
 	}
 }
 
@@ -3213,7 +3224,7 @@ void CNPC_Manhack::SetEyeState( int state )
 				m_pLightGlow->m_nRenderFX = kRenderFxStrobeFast;
 			}
 
-			EmitSound("NPC_Manhack.Stunned");
+			EmitSound("NPC_Crow.Squawk");
 
 			break;
 		}

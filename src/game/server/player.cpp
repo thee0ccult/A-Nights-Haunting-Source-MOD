@@ -4905,7 +4905,7 @@ void CBasePlayer::PostThink()
 			if (gpGlobals->curtime >= m_flNextLowHealthSoundTime)
 			{
 				// Play hurt breath sound
-				EmitSound("Player.Breathhurt");
+				//EmitSound("Player.Breathhurt");
 
 				// Set the next hurt breath sound time
 				m_flNextLowHealthSoundTime = gpGlobals->curtime + 1.0f; // Interval 1 detik
@@ -4915,12 +4915,12 @@ void CBasePlayer::PostThink()
 		{
 			if (m_flStartReliefSoundTime > 0.0f && gpGlobals->curtime >= m_flStartReliefSoundTime)
 			{
-				EmitSound("Player.Breathbetter");
+				//EmitSound("Player.Breathbetter");
 
 				// Reset relief breath time to prevent looping
 				m_flStartReliefSoundTime = 0.0f;
 			}
-			StopSound("Player.Breathhurt"); // Stop breath hurt sound
+			//StopSound("Player.Breathhurt"); // Stop breath hurt sound
 			// Reset breath hurt time to prevent looping
 			m_flNextLowHealthSoundTime = 0.0f;
 		}

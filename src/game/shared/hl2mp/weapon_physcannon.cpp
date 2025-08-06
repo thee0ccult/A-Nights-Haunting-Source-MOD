@@ -1549,7 +1549,7 @@ bool CWeaponPhysCannon::Holster( CBaseCombatWeapon *pSwitchingTo )
 //-----------------------------------------------------------------------------
 void CWeaponPhysCannon::DryFire( void )
 {
-	SendWeaponAnim( ACT_VM_PRIMARYATTACK );
+	SendWeaponAnim( ACT_VM_HITCENTER ); //ACT_VM_PRIMARYATTACK switched drn0
 
 	WeaponSound( EMPTY );
 }
@@ -1566,10 +1566,10 @@ void CWeaponPhysCannon::PrimaryFireEffect( void )
 
 	pOwner->ViewPunch( QAngle(-6, SharedRandomInt( "physcannonfire", -2,2) ,0) );
 	
-#ifndef CLIENT_DLL
-	color32 white = { 245, 245, 255, 32 };
-	UTIL_ScreenFade( pOwner, white, 0.1f, 0.0f, FFADE_IN );
-#endif
+//#ifndef CLIENT_DLL
+	//color32 white = { 245, 245, 255, 32 };
+	//UTIL_ScreenFade( pOwner, white, 0.1f, 0.0f, FFADE_IN );
+//#endif hacked out to remove blink from throw drn0
 
 	WeaponSound( SINGLE );
 }
@@ -1589,7 +1589,7 @@ void CWeaponPhysCannon::PuntNonVPhysics( CBaseEntity *pEntity, const Vector &for
 	
 	info.SetAttacker( GetOwner() );
 	info.SetInflictor( this );
-	info.SetDamage( 1.0f );
+	info.SetDamage( 5.0f );
 	info.SetDamageType( DMG_CRUSH | DMG_PHYSGUN );
 	info.SetDamageForce( forward );	// Scale?
 	info.SetDamagePosition( tr.endpos );
@@ -1606,7 +1606,7 @@ void CWeaponPhysCannon::PuntNonVPhysics( CBaseEntity *pEntity, const Vector &for
 #endif
 	
 	PrimaryFireEffect();
-	SendWeaponAnim( ACT_VM_SECONDARYATTACK );
+	SendWeaponAnim( ACT_VM_HITCENTER ); //ACT_VM_SECONDARYATTACK drn0
 
 	m_nChangeState = ELEMENT_STATE_CLOSED;
 	m_flElementDebounce = gpGlobals->curtime + 0.5f;
@@ -1740,7 +1740,7 @@ void CWeaponPhysCannon::PuntVPhysics( CBaseEntity *pEntity, const Vector &vecFor
 	//DoEffect( EFFECT_LAUNCH, &tr.endpos );
 
 	PrimaryFireEffect();
-	SendWeaponAnim( ACT_VM_SECONDARYATTACK );
+	SendWeaponAnim( ACT_VM_HITCENTER ); //ACT SECONDARY ATTK drn0
 
 	m_nChangeState = ELEMENT_STATE_CLOSED;
 	m_flElementDebounce = gpGlobals->curtime + 0.5f;
@@ -1836,7 +1836,7 @@ void CWeaponPhysCannon::PrimaryAttack( void )
 		LaunchObject( forward, physcannon_maxforce.GetFloat() );
 
 		PrimaryFireEffect();
-		SendWeaponAnim( ACT_VM_SECONDARYATTACK );
+		SendWeaponAnim( ACT_VM_HITCENTER ); // ACT_VM_SECONDARYATTACK drn0
 		return;
 	}
 
@@ -1939,7 +1939,7 @@ void CWeaponPhysCannon::SecondaryAttack( void )
 
 		//DoEffect( EFFECT_READY );
 
-		SendWeaponAnim( ACT_VM_PRIMARYATTACK );
+		SendWeaponAnim( ACT_VM_HITCENTER ); //act primary drn0
 	}
 	else
 	{
@@ -1949,7 +1949,7 @@ void CWeaponPhysCannon::SecondaryAttack( void )
 		{
 		case OBJECT_FOUND:
 			WeaponSound( SPECIAL1 );
-			SendWeaponAnim( ACT_VM_PRIMARYATTACK );
+			SendWeaponAnim( ACT_VM_IDLE ); //act primary drn0
 			m_flNextSecondaryAttack = gpGlobals->curtime + 0.5f;
 
 			// We found an object. Debounce the button

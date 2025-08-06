@@ -38,7 +38,7 @@
 extern ConVar metropolice_move_and_melee;
 
 #define	STUNSTICK_RANGE				75.0f
-#define	STUNSTICK_REFIRE			0.8f
+#define	STUNSTICK_REFIRE			1.8f
 #define	STUNSTICK_BEAM_MATERIAL		"sprites/lgtning.vmt"
 #define STUNSTICK_GLOW_MATERIAL		"sprites/light_glow02_add"
 #define STUNSTICK_GLOW_MATERIAL2	"effects/blueflare1"

@@ -39,9 +39,9 @@
 #define FASTZOMBIE_MAX_PITCH			130
 #define FASTZOMBIE_SOUND_UPDATE_FREQ	0.5
 
-#define FASTZOMBIE_MAXLEAP_Z		128
+#define FASTZOMBIE_MAXLEAP_Z		0 //drn0 zeroed out pounce
 
-#define FASTZOMBIE_EXCITE_DIST 480.0
+#define FASTZOMBIE_EXCITE_DIST 0.0 //drn0 zeroed out pounce
 
 #define FASTZOMBIE_BASE_FREQ 1.5
 
@@ -546,7 +546,7 @@ void CFastZombie::PrescheduleThink(void)
 			// Zombie is close! Recalculate pitch.
 			int iPitch;
 
-			m_flDistFactor = MIN(1.0, 1 - flDistNoBBox / FASTZOMBIE_EXCITE_DIST);
+			//m_flDistFactor = MIN(1.0, 1 - flDistNoBBox / FASTZOMBIE_EXCITE_DIST); dr.n0 removed pouncing
 			iPitch = FASTZOMBIE_MIN_PITCH + ((FASTZOMBIE_MAX_PITCH - FASTZOMBIE_MIN_PITCH) * m_flDistFactor);
 			ENVELOPE_CONTROLLER.SoundChangePitch(m_pMoanSound, iPitch, FASTZOMBIE_SOUND_UPDATE_FREQ);
 		}
@@ -944,8 +944,8 @@ void CFastZombie::AlertSound(void)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-#define FASTZOMBIE_MINLEAP			200
-#define FASTZOMBIE_MAXLEAP			300
+#define FASTZOMBIE_MINLEAP			0 //drn0 zeroed out pounce
+#define FASTZOMBIE_MAXLEAP			0//drn0 zeroed out pounce
 float CFastZombie::InnateRange1MaxRange(void)
 {
 	return FASTZOMBIE_MAXLEAP;
@@ -1567,9 +1567,9 @@ void CFastZombie::BecomeTorso(const Vector& vecTorsoForce, const Vector& vecLegs
 //-----------------------------------------------------------------------------
 bool CFastZombie::IsJumpLegal(const Vector& startPos, const Vector& apex, const Vector& endPos) const
 {
-	const float MAX_JUMP_RISE = 220.0f;
-	const float MAX_JUMP_DISTANCE = 512.0f;
-	const float MAX_JUMP_DROP = 384.0f;
+	const float MAX_JUMP_RISE = 0.0f;
+	const float MAX_JUMP_DISTANCE = 0.0f;
+	const float MAX_JUMP_DROP = 0.0f;
 
 	if (BaseClass::IsJumpLegal(startPos, apex, endPos, MAX_JUMP_RISE, MAX_JUMP_DROP, MAX_JUMP_DISTANCE))
 	{
