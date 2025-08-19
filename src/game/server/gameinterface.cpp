@@ -85,6 +85,8 @@
 #include "particle_parse.h"
 #ifndef NO_STEAM
 #include "steam/steam_gameserver.h"
+#include "steam_api.h"
+ISteamGameServer* g_pSteamGameServer = NULL; // Optional global pointer drn0 steamapi AI suggestion
 #endif
 #include "tier3/tier3.h"
 #include "serverbenchmark_base.h"
@@ -742,6 +744,30 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	// init the gamestatsupload connection
 	gamestatsuploader->InitConnection();
 #endif
+
+	// DRN0: Basic server-side Steam API initialization
+#ifndef NO_STEAM
+	if (SteamAPI_Init())
+	{
+		Msg("Server: SteamAPI initialized successfully!\n");
+		// At this point, you can access general Steamworks interfaces like ISteamGameServer()
+		// if needed for authentication, even without explicitly calling InitGameServer.
+		// For example, to verify server SteamID:
+		// ISteamGameServer *pSteamGameServer = SteamGameServer();
+		// if ( pSteamGameServer )
+		// {
+		//     CSteamID serverSteamID = pSteamGameServer->GetSteamID();
+		//     Msg( "Server SteamID: %s\n", serverSteamID.Render() );
+		// }
+	}
+	else
+	{
+		Warning("Server: SteamAPI_Init() failed! Is SteamCMD running and the SteamAppID correctly set?\n");
+		// If Steamworks is crucial for your server (e.g., for player authentication),
+		// you might want to return false here to prevent the server from fully starting.
+		// return false; 
+	}
+#endif // NO_STEAM
 
 	return true;
 }

@@ -60,6 +60,9 @@
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</GenerateManifest>
     <PostBuildEventUseInBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</PostBuildEventUseInBuild>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LibraryPath>C:\Users\l0psi\Desktop\ANH_TOTAL_PACKFILE\steamworks_sdk_161\redistributable_bin;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <PreBuildEvent>
       <Command>if EXIST ..\..\..\game\mod_hl2mp\bin\.\$(TargetFileName) for /f "delims=" %%A in ('attrib "..\..\..\game\mod_hl2mp\bin\.\$(TargetFileName)"') do set valveTmpIsReadOnly="%%A"

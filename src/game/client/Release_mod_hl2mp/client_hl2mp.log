@@ -153,8 +153,8 @@
   cdll_client_int.cpp
   cdll_util.cpp
   cl_mat_stub.cpp
-  client_factorylist.cpp
   classmap.cpp
+  client_factorylist.cpp
   client_thinklist.cpp
   client_virtualreality.cpp
   clienteffectprecachesystem.cpp

@@ -63,9 +63,9 @@
 //
 //----------------------------------------------------------------------------------------------------------------------------------------------------------//
 
-// S_API void SteamAPI_Init(); (see below)
-S_API void S_CALLTYPE SteamAPI_Shutdown();
-
+S_API bool SteamAPI_Init();
+S_API bool S_CALLTYPE SteamAPI_Shutdown();
+S_API ISteamUserStats* S_CALLTYPE SteamUserStats();
 // checks if a local Steam client is running 
 S_API bool S_CALLTYPE SteamAPI_IsSteamRunning();
 

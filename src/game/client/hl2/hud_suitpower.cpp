@@ -193,7 +193,7 @@ void CHudSuitPower::Paint()
 	}
 	else
 	{
-		surface()->DrawPrintText(L"AUX POWER", wcslen(L"AUX POWER"));
+		surface()->DrawPrintText(L"STAMINA", wcslen(L"STAMINA"));
 	}
 
 	if ( m_iActiveSuitDevices )

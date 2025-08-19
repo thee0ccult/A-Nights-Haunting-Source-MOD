@@ -853,12 +853,40 @@ extern IGameSystem *ViewportClientSystem();
 //-----------------------------------------------------------------------------
 ISourceVirtualReality *g_pSourceVR = NULL;
 
+/*//drn0 steam api initialization function
+void InitSteamAPI()
+{
+	ConVarRef developer("developer");
+	if (developer.GetInt() < 1)
+	{
+		developer.SetValue(1);
+		Msg("Developer console enabled to level 1 for Steam API debugging.\n");
+	}
+
+	if (!SteamAPI_IsSteamRunning())
+	{
+		Warning("Steam is not running! Please launch Steam and log in.\n");
+		return; // Exit early if Steam isn't running
+	}
+
+	if (SteamAPI_Init())
+	{
+		Msg("Steam API initialized successfully!\n");
+	}
+	else
+	{
+		Warning("SteamAPI_Init() failed. This could be due to a missing/invalid App ID, or other Steamworks issues.\n");
+		// You might need to rely on Steam's own logs for further details here
+	}
+} */
+
 // Purpose: Called when the DLL is first loaded.
 // Input  : engineFactory - 
 // Output : int
 //-----------------------------------------------------------------------------
 int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physicsFactory, CGlobalVarsBase *pGlobals )
 {
+
 	InitCRTMemDebug();
 	MathLib_Init( 2.2f, 2.2f, 0.0f, 2.0f );
 
@@ -1090,6 +1118,7 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 #endif
 
 	return true;
+
 }
 
 bool CHLClient::ReplayInit( CreateInterfaceFn fnReplayFactory )
@@ -1240,6 +1269,7 @@ void CHLClient::Shutdown( void )
 	// NVNT Disconnect haptics system
 	DisconnectHaptics();
 #endif
+
 }
 
 
