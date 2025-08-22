@@ -161,6 +161,10 @@ extern vgui::IInputInternal *g_InputInternal;
 // HPE_END
 //=============================================================================
 
+#include "achievementmgr.h"
+
+// Global achievement manager instance (client-side)
+CAchievementMgr g_AchievementMgr;
 
 #ifdef PORTAL
 #include "PortalRender.h"
@@ -1116,6 +1120,10 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 #ifndef _X360
 	HookHapticMessages(); // Always hook the messages
 #endif
+
+	// Initialize achievements (must happen after SteamAPI is active)
+	g_AchievementMgr.Init();
+	g_AchievementMgr.PostInit();
 
 	return true;
 
@@ -2278,6 +2286,11 @@ void OnRenderEnd()
 void CHLClient::FrameStageNotify( ClientFrameStage_t curStage )
 {
 	g_CurFrameStage = curStage;
+
+	// --- Pump Steam callbacks + achievement manager every frame ---
+	SteamAPI_RunCallbacks();
+	g_AchievementMgr.Update(gpGlobals->frametime);
+	// --------------------------------------------------------------
 
 	switch( curStage )
 	{

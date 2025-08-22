@@ -161,6 +161,16 @@ private:
     //=============================================================================
 
     CUtlVector<int> m_AchievementsAwarded;
+	// --- Guards and helpers to prevent duplicate achievement registration ---
+	bool m_bInitCalled;          // true once Init() runs
+	bool m_bPostInitCalled;      // true once PostInit() runs
+	bool m_bRequestedCurrentStats; // true once we've requested Steam stats
+
+	bool ContainsAchievementByName(const char* pszName) const;
+	int m_nStoreStatsCalls;   // debug counter: how many times we called StoreStats() this session
+	int m_nStoreStatsCallsMap;       // counter per map
+	int m_nStoreStatsCallsSession;   // counter per session
+	bool m_bWarnedStoreFail;   // track if we've already warned about k_EResultFail
 };
 
 // helper functions

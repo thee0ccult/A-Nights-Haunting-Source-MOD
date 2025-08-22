@@ -1,6 +1,6 @@
 #include "cbase.h"
 
-#if GAME_DLL
+#ifdef CLIENT_DLL
 
 #include "achievementmgr.h"
 #include "baseachievement.h"
