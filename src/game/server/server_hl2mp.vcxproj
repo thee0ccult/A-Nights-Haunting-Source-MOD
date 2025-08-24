@@ -359,6 +359,7 @@ exit 1
     <ClInclude Include="..\..\public\ihltv.h" />
     <ClInclude Include="..\..\public\ihltvdirector.h" />
     <ClInclude Include="..\..\public\vstdlib\IKeyValuesSystem.h" />
+    <ClInclude Include="hl2\logic_achievement.h" />
     <ClInclude Include="ilagcompensationmanager.h" />
     <ClInclude Include="..\..\public\vgui\ILocalize.h" />
     <ClInclude Include="..\..\public\materialsystem\imaterial.h" />

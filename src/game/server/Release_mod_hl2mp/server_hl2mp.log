@@ -203,8 +203,8 @@
   game.cpp
   game_ui.cpp
   gameinterface.cpp
-  gamerules.cpp
   gamemovement.cpp
+  gamerules.cpp
   gamerules_register.cpp
   GameStats.cpp
   gamestringpool.cpp

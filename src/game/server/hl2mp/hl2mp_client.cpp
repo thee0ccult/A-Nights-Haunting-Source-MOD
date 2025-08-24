@@ -77,18 +77,25 @@ void FinishClientPutInServer( CHL2MP_Player *pPlayer )
 	data->deleteThis();
 }
 
-/*
-===========
-ClientPutInServer
 
-called each time a player is spawned into the game
-============
-*/
-void ClientPutInServer( edict_t *pEdict, const char *playername )
+//===========
+//ClientPutInServer
+//called each time a player is spawned into the game
+//============
+void ClientPutInServer(edict_t* pEdict, const char* playername)
 {
-	// Allocate a CBaseTFPlayer for pev, and call spawn
-	CHL2MP_Player *pPlayer = CHL2MP_Player::CreatePlayer( "player", pEdict );
-	pPlayer->SetPlayerName( playername );
+	// Allocate a CHL2MP_Player for pev and call spawn
+	CHL2MP_Player* pPlayer = CHL2MP_Player::CreatePlayer("player", pEdict);
+	pPlayer->SetPlayerName(playername);
+
+	// TEST: force unlock on join to verify server  client Steam path
+//#ifdef _DEBUG
+	//extern void ServerAwardAchievement(CBasePlayer * pPlayer, const char* pchAchievementName);
+	//if (pPlayer)
+	//{
+	//	ServerAwardAchievement(pPlayer, "MOD_IAM_DEVELOPER");
+	//}
+//#endif
 }
 
 

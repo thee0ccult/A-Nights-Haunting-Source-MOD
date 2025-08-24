@@ -71,6 +71,8 @@ public:
 	void EnsureGlobalStateLoaded();
 	void AwardAchievement( int iAchievementID );
 	void UpdateAchievement( int iAchievementID, int nData );
+	// add this line right below the two above:
+	void AwardAchievementByName(const char* pchName);
 	void PreRestoreSavedGame();
 	void PostRestoreSavedGame();
 	void ResetAchievements();
@@ -187,7 +189,17 @@ class IMatchmaking;
 extern ConVar	cc_achievement_debug;
 extern IMatchmaking *matchmaking;
 
+#ifdef GAME_DLL
+// Server uses this numeric ID when calling engine->UserMessageBegin(&filter, USERMSG_AchievementUnlock)
+extern int USERMSG_AchievementUnlock;
+#endif
+
 #ifdef CLIENT_DLL
 void MsgFunc_AchievementEvent( bf_read &msg );
+void MsgFunc_AchievementUnlock(bf_read& msg);   // <-- add this line
+#endif // CLIENT_DLL
+
+#ifdef CLIENT_DLL
+void MsgFunc_AchievementUnlock(bf_read& msg);
 #endif // CLIENT_DLL
 #endif // ACHIEVEMENTMGR_H

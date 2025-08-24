@@ -1,127 +1,111 @@
 //========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: Fires an output when the map spawns (or respawns if not set to 
-//			only fire once). It can be set to check a global state before firing.
+//  logicauto.cpp
+//  Implements logic_auto entity, extended to trigger logic_achievement
 //
-// $NoKeywords: $
-//=============================================================================//
+//=============================================================================
 
 #include "cbase.h"
-#include "entityinput.h"
 #include "entityoutput.h"
-#include "eventqueue.h"
-#include "mathlib/mathlib.h"
-#include "globalstate.h"
+#include "entitylist.h"
+#include "logic_achievement.h"  // new include so we can talk to CLogicAchievement
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-const int SF_AUTO_FIREONCE		= 0x01;
-const int SF_AUTO_FIREONRELOAD	= 0x02;
-
-
-class CLogicAuto : public CBaseEntity
+//-----------------------------------------------------------------------------
+// Purpose: Called when a map spawns; automatically fires outputs/events
+//-----------------------------------------------------------------------------
+class CLogicAuto : public CLogicalEntity
 {
 public:
-	DECLARE_CLASS( CLogicAuto, CBaseEntity );
+    DECLARE_CLASS(CLogicAuto, CLogicalEntity);
+    DECLARE_DATADESC();
 
-	void Activate(void);
-	void Think(void);
+    void Spawn(void);
+    void Think(void);
 
-	int ObjectCaps(void) { return BaseClass::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+    void InputKill(inputdata_t& inputdata);
 
-	DECLARE_DATADESC();
+    COutputEvent m_OnMapSpawn;
 
 private:
+    void FireOnMapSpawn();
 
-	// fired no matter why the map loaded
-	COutputEvent m_OnMapSpawn;
-
-	// fired for specified types of map loads
-	COutputEvent m_OnNewGame;
-	COutputEvent m_OnLoadGame;
-	COutputEvent m_OnMapTransition;
-	COutputEvent m_OnBackgroundMap;
-	COutputEvent m_OnMultiNewMap;
-	COutputEvent m_OnMultiNewRound;
-
-	string_t m_globalstate;
+    bool m_bFireOnce;
+    EHANDLE m_hEnt;
 };
 
 LINK_ENTITY_TO_CLASS(logic_auto, CLogicAuto);
 
+BEGIN_DATADESC(CLogicAuto)
 
-BEGIN_DATADESC( CLogicAuto )
-
-	DEFINE_KEYFIELD(m_globalstate, FIELD_STRING, "globalstate"),
-
-	// Outputs
-	DEFINE_OUTPUT(m_OnMapSpawn, "OnMapSpawn"),
-	DEFINE_OUTPUT(m_OnNewGame, "OnNewGame"),
-	DEFINE_OUTPUT(m_OnLoadGame, "OnLoadGame"),
-	DEFINE_OUTPUT(m_OnMapTransition, "OnMapTransition"),
-	DEFINE_OUTPUT(m_OnBackgroundMap, "OnBackgroundMap"),
-	DEFINE_OUTPUT(m_OnMultiNewMap, "OnMultiNewMap" ),
-	DEFINE_OUTPUT(m_OnMultiNewRound, "OnMultiNewRound" ),
+DEFINE_INPUTFUNC(FIELD_VOID, "Kill", InputKill),
+DEFINE_OUTPUT(m_OnMapSpawn, "OnMapSpawn"),
 
 END_DATADESC()
 
-
-//------------------------------------------------------------------------------
-// Purpose : Fire my outputs here if I fire on map reload
-//------------------------------------------------------------------------------
-void CLogicAuto::Activate(void)
+//-----------------------------------------------------------------------------
+// Purpose: Spawn
+//-----------------------------------------------------------------------------
+void CLogicAuto::Spawn(void)
 {
-	BaseClass::Activate();
-	SetNextThink( gpGlobals->curtime + 0.2 );
+    BaseClass::Spawn();
+    SetNextThink(gpGlobals->curtime + 0.1f);
+
+#ifndef CLIENT_DLL
+    Msg("[logic_auto] Forced OnMapLoad scheduled for logic_auto\n");
+#endif
 }
 
-
 //-----------------------------------------------------------------------------
-// Purpose: Called shortly after level spawn. Checks the global state and fires
-//			targets if the global state is set or if there is not global state
-//			to check.
+// Purpose: Think
 //-----------------------------------------------------------------------------
 void CLogicAuto::Think(void)
 {
-	if (!m_globalstate || GlobalEntity_GetState(m_globalstate) == GLOBAL_ON)
-	{
-		if (gpGlobals->eLoadType == MapLoad_Transition)
-		{
-			m_OnMapTransition.FireOutput(NULL, this);
-		}
-		else if (gpGlobals->eLoadType == MapLoad_NewGame)
-		{
-			m_OnNewGame.FireOutput(NULL, this);
-		}
-		else if (gpGlobals->eLoadType == MapLoad_LoadGame)
-		{
-			m_OnLoadGame.FireOutput(NULL, this);
-		}
-		else if (gpGlobals->eLoadType == MapLoad_Background)
-		{
-			m_OnBackgroundMap.FireOutput(NULL, this);
-		}
-
-		m_OnMapSpawn.FireOutput(NULL, this);
-
-		if ( g_pGameRules->IsMultiplayer() )
-		{
-			// In multiplayer, fire the new map / round events.
-			if ( g_pGameRules->InRoundRestart() )
-			{
-				m_OnMultiNewRound.FireOutput(NULL, this);
-			}
-			else
-			{
-				m_OnMultiNewMap.FireOutput(NULL, this);
-			}
-		}
-
-		if (m_spawnflags & SF_AUTO_FIREONCE)
-		{
-			UTIL_Remove(this);
-		}
-	}
+    FireOnMapSpawn();
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Kill input
+//-----------------------------------------------------------------------------
+void CLogicAuto::InputKill(inputdata_t& inputdata)
+{
+    UTIL_Remove(this);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Fire OnMapSpawn outputs and trigger any logic_achievement
+//-----------------------------------------------------------------------------
+void CLogicAuto::FireOnMapSpawn()
+{
+#ifndef CLIENT_DLL
+    Msg("[logic_auto] Delayed OnMapLoad fired for logic_auto\n");
+#endif
+
+    //
+    // 1. Fire the normal Hammer outputs so existing map logic works
+    //
+    m_OnMapSpawn.FireOutput(this, this);
+
+#ifndef CLIENT_DLL
+    //
+    // 2. Then find all logic_achievement entities and auto-fire them
+    //
+    CBaseEntity* pEnt = NULL;
+    while ((pEnt = gEntList.FindEntityByClassname(pEnt, "logic_achievement")) != NULL)
+    {
+        CLogicAchievement* pAch = dynamic_cast<CLogicAchievement*>(pEnt);
+        if (pAch && pAch->ShouldAutoFire())
+        {
+            pAch->FireEventFromLogicAuto(this);
+            Msg("[logic_auto] Auto-fired achievement: '%s'\n", pAch->GetAchievementEventName());
+        }
+    }
+#endif
+
+    if (m_bFireOnce)
+    {
+        UTIL_Remove(this);
+    }
+}

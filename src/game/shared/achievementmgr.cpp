@@ -66,6 +66,12 @@ extern ConVar developer;
 
 #define DEBUG_ACHIEVEMENTS_IN_RELEASE 0
 
+#ifdef CLIENT_DLL
+// Forward declare the handler so the function pointer passed to HookMessage
+// has the exact expected signature at compile time.
+void MsgFunc_AchievementUnlock(bf_read& msg);
+#endif
+
 /*#ifdef SWDS //drn0 steamapi work googleAI suggests we remove this
 // Hack this for now until we get steam_api recompiling in the Steam codebase.
 ISteamUserStats* SteamUserStats()
@@ -330,6 +336,17 @@ bool CAchievementMgr::Init()
 	ListenForGameEvent("player_death");
 	ListenForGameEvent("player_stats_updated");
 	usermessages->HookMessage("AchievementEvent", MsgFunc_AchievementEvent);
+	// --- Add this block: robust, debug-friendly hook for AchievementUnlock ---
+	if (!usermessages)
+	{
+		Warning("[Achievements] Init: usermessages interface is NULL; cannot hook AchievementUnlock yet\n");
+	}
+	else
+	{
+		Msg("[Achievements] Init: Hooking 'AchievementUnlock' usermessage handler...\n");
+		usermessages->HookMessage("AchievementUnlock", MsgFunc_AchievementUnlock);
+		Msg("[Achievements] Init: Hooked 'AchievementUnlock'\n");
+	}
 #endif // CLIENT_DLL
 
 #ifdef TF_CLIENT_DLL
@@ -1005,6 +1022,25 @@ void CAchievementMgr::AwardAchievement(int iAchievementID)
 			xboxsystem->AwardAchievement(XBX_GetPrimaryUserId(), iAchievementID);
 #endif
 	}
+#ifdef GAME_DLL
+	// --- Mirror unlock to client so it actually hits Steam API in multiplayer ---
+	CBaseAchievement* pAch = GetAchievementByID(iAchievementID);
+	if (pAch)
+	{
+		const char* pszName = pAch->GetName();
+		if (pszName && pszName[0])
+		{
+			// Send unlock to the first player (for now)
+			CBasePlayer* pPlayer = UTIL_GetLocalPlayer();
+			if (pPlayer)
+			{
+				extern void ServerAwardAchievement(CBasePlayer * pPlayer, const char* pchAchievementName);
+				ServerAwardAchievement(pPlayer, pszName);
+				Msg("[Server] Mirrored achievement '%s' to client\n", pszName);
+			}
+		}
+	}
+#endif // GAME_DLL
 }
 
 //-----------------------------------------------------------------------------
@@ -2038,6 +2074,35 @@ void MsgFunc_AchievementEvent(bf_read& msg)
 		return;
 	pAchievementMgr->OnAchievementEvent(iAchievementID, iCount);
 }
+
+#ifdef CLIENT_DLL
+
+//-----------------------------------------------------------------------------
+// Purpose: Client message handler for server-triggered achievement unlock
+//-----------------------------------------------------------------------------
+void MsgFunc_AchievementUnlock(bf_read& msg)
+{
+	char szName[256];
+	msg.ReadString(szName, sizeof(szName));
+
+	Msg("[Client] Received AchievementUnlock usermessage for '%s'\n", szName);
+
+	// Look up the achievement by name and award it locally
+	CAchievementMgr* pMgr = static_cast<CAchievementMgr*>(engine->GetAchievementMgr());
+	if (pMgr)
+	{
+		CBaseAchievement* pAch = pMgr->GetAchievementByName(szName);
+		if (pAch)
+		{
+			pMgr->AwardAchievement(pAch->GetAchievementID());
+		}
+		else
+		{
+			Warning("[Client] AchievementUnlock: no such achievement '%s'\n", szName);
+		}
+	}
+}
+#endif // CLIENT_DLL
 
 #if defined(_DEBUG) || defined(STAGING_ONLY) || DEBUG_ACHIEVEMENTS_IN_RELEASE
 CON_COMMAND_F(achievement_reset_all, "Clears all achievements", FCVAR_CHEAT)

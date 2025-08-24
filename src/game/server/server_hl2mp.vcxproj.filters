@@ -1874,6 +1874,9 @@
     <ClInclude Include="..\shared\hl2mp\weapon_cigarette.h">
       <Filter>Source Files\HL2MP\Weapons</Filter>
     </ClInclude>
+    <ClInclude Include="hl2\logic_achievement.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gamedll_replay.cpp">

@@ -44,6 +44,7 @@ void RegisterUserMessages( void )
 	usermessages->Register( "CreditsMsg", 1 );
 	usermessages->Register( "LogoTimeMsg", 4 );
 	usermessages->Register( "AchievementEvent", -1 );
+	usermessages->Register("AchievementUnlock", -1);
 	usermessages->Register( "UpdateJalopyRadar", -1 );
 	usermessages->Register("SoundscapeMaker_Recieve", -1); //drn0 adding sseditor
 	usermessages->Register("ShowScope", 1); // show the sniper scope

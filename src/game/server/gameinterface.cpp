@@ -47,6 +47,8 @@
 #include "ai_speech.h"
 #include "soundenvelope.h"
 #include "usermessages.h"
+#include "recipientfilter.h"   // CSingleUserRecipientFilter
+#include "hl2mp_player.h"
 #include "physics.h"
 #include "igameevents.h"
 #include "EventLog.h"
@@ -56,6 +58,8 @@
 #include "props.h"
 #include "timedeventmgr.h"
 #include "gameinterface.h"
+#include "achievementmgr.h"
+#include "cdll_int.h"   // player_info_t definition
 #include "eventqueue.h"
 #include "hltvdirector.h"
 #if defined( REPLAY_ENABLED )
@@ -137,6 +141,7 @@ extern IParticleSystemQuery *g_pParticleSystemQuery;
 
 extern ConVar commentary;
 
+
 #ifndef NO_STEAM
 // this context is not available on dedicated servers
 // WARNING! always check if interfaces are available before using
@@ -199,6 +204,26 @@ void SceneManager_ClientActive( CBasePlayer *player );
 
 class IMaterialSystem;
 class IStudioRender;
+class CBasePlayer;
+
+//-----------------------------------------------------------------------------
+// Purpose: Send an achievement unlock usermessage to the specified player
+//-----------------------------------------------------------------------------
+void SendAchievementUnlock(CBasePlayer* pPlayer, int iAchievementID)
+{
+	if (!pPlayer)
+		return;
+
+	CSingleUserRecipientFilter filter(pPlayer);
+	filter.MakeReliable();
+
+	UserMessageBegin(filter, "AchievementUnlock"); // <-- string name, not enum
+	WRITE_LONG(iAchievementID);
+	MessageEnd();
+
+	Msg("[Server] Sent AchievementUnlock usermessage (ID = %d) to player %s\n",
+		iAchievementID, pPlayer->GetPlayerName());
+}
 
 #ifdef _DEBUG
 static ConVar s_UseNetworkVars( "UseNetworkVars", "1", FCVAR_CHEAT, "For profiling, toggle network vars." );
@@ -1306,6 +1331,8 @@ void CServerGameDLL::GameFrame( bool simulating )
 
 	gpGlobals->frametime = oldframetime;
 }
+
+
 
 //-----------------------------------------------------------------------------
 // Purpose: Called every frame even if not ticking
@@ -3526,3 +3553,60 @@ CSteamID GetSteamIDForPlayerIndex( int iPlayerIndex )
 }
 
 #endif
+
+static int Server_GetAchievementIDByName(const char* name)
+{
+	if (!name || !*name)
+		return -1;
+
+	IAchievementMgr* pBase = engine->GetAchievementMgr();
+	CAchievementMgr* pMgr = dynamic_cast<CAchievementMgr*>(pBase);
+	if (!pMgr)
+		return -1;
+
+	CBaseAchievement* pAch = pMgr->GetAchievementByName(name);
+	return pAch ? pAch->GetAchievementID() : -1;
+}
+
+// Send the *standard* message the client actually listens to:
+//   usermessage "AchievementEvent" : SHORT id, SHORT count
+void ServerAwardAchievement(CBasePlayer* pPlayer, const char* pchAchievementName)
+{
+	if (!pPlayer || !pchAchievementName || !*pchAchievementName)
+		return;
+
+	// Strip optional "ACHIEVEMENT_EVENT_" prefix
+	const char* pName = pchAchievementName;
+	static const char* kPrefix = "ACHIEVEMENT_EVENT_";
+	const int nPrefixLen = Q_strlen(kPrefix);
+	if (!Q_strnicmp(pName, kPrefix, nPrefixLen))
+		pName += nPrefixLen;
+
+	// Only send to real humans (skip bots/HLTV/SourceTV as best as we can)
+	if (pPlayer->IsFakeClient())
+		return;
+
+	// Use the existing string-based usermessage your client hooks:
+	int msgType = usermessages->LookupUserMessage("AchievementUnlock");
+	if (msgType == -1)
+	{
+		Warning("[Server->Client] UserMessage 'AchievementUnlock' not registered!\n");
+		return;
+	}
+
+	CSingleUserRecipientFilter filter(pPlayer);
+	filter.MakeReliable();
+
+	bf_write* pBuffer = engine->UserMessageBegin(&filter, msgType);
+	if (!pBuffer)
+	{
+		Warning("[Server->Client] Failed to create 'AchievementUnlock' message for '%s'\n", pName);
+		return;
+	}
+
+	pBuffer->WriteString(pName);   // <-- send canonical achievement NAME
+	engine->MessageEnd();
+
+	Msg("[Server->Client] AchievementUnlock sent: name='%s' to %s\n",
+		pName, pPlayer->GetPlayerName());
+}
