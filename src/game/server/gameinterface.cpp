@@ -206,6 +206,32 @@ class IMaterialSystem;
 class IStudioRender;
 class CBasePlayer;
 
+CON_COMMAND(zombie_kill_increment, "Server-side zombie kill increment")
+{
+	if (args.ArgC() < 2)
+	{
+		Msg("[Server] Usage: zombie_kill_increment <userid>\n");
+		return;
+	}
+
+	int targetUserID = Q_atoi(args.Arg(1));
+
+	// Find the specific player by UserID
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
+		if (pPlayer && pPlayer->IsConnected() && pPlayer->GetUserID() == targetUserID)
+		{
+			// Send console command only to the player who killed the zombie
+			engine->ClientCommand(pPlayer->edict(), "zombie_kill_increment\n");
+			Msg("[Server] Sent zombie_kill_increment to player %s (UserID: %d)\n", pPlayer->GetPlayerName(), targetUserID);
+			return;
+		}
+	}
+
+	Msg("[Server] Could not find player with UserID: %d\n", targetUserID);
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Send an achievement unlock usermessage to the specified player
 //-----------------------------------------------------------------------------
@@ -214,10 +240,17 @@ void SendAchievementUnlock(CBasePlayer* pPlayer, int iAchievementID)
 	if (!pPlayer)
 		return;
 
+	// Prevent duplicate unlock for zombie kill achievement (MOD_GOT_COP_KILLS)
+	if (iAchievementID == 3)
+	{
+		Msg("[Server] Skipped SendAchievementUnlock for MOD_GOT_COP_KILLS (handled client-side)\n");
+		return;
+	}
+
 	CSingleUserRecipientFilter filter(pPlayer);
 	filter.MakeReliable();
 
-	UserMessageBegin(filter, "AchievementUnlock"); // <-- string name, not enum
+	UserMessageBegin(filter, "AchievementUnlock");
 	WRITE_LONG(iAchievementID);
 	MessageEnd();
 
@@ -793,7 +826,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		// return false; 
 	}
 #endif // NO_STEAM
-
+	usermessages->Register("ZombieKilled", 0);
 	return true;
 }
 

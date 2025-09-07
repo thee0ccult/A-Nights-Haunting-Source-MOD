@@ -2270,18 +2270,27 @@ void CNPC_BaseZombie::BecomeTorso( const Vector &vecTorsoForce, const Vector &ve
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-void CNPC_BaseZombie::Event_Killed( const CTakeDamageInfo &info )
+void CNPC_BaseZombie::Event_Killed(const CTakeDamageInfo& info)
 {
-	if ( info.GetDamageType() & DMG_VEHICLE )
+	if (info.GetDamageType() & DMG_VEHICLE)
 	{
 		Vector vecDamageDir = info.GetDamageForce();
-		VectorNormalize( vecDamageDir );
-
-		// Big blood splat
-		UTIL_BloodSpray( WorldSpaceCenter(), vecDamageDir, BLOOD_COLOR_RED, 8, FX_BLOODSPRAY_CLOUD );
+		VectorNormalize(vecDamageDir);
+		UTIL_BloodSpray(WorldSpaceCenter(), vecDamageDir, BLOOD_COLOR_RED, 8, FX_BLOODSPRAY_CLOUD);
 	}
 
-   	BaseClass::Event_Killed( info );
+	// Get the attacker (player who killed the zombie)
+	CBasePlayer* pAttacker = ToBasePlayer(info.GetAttacker());
+	if (pAttacker)
+	{
+		// Send command with the player's user ID
+		char cmd[128];
+		Q_snprintf(cmd, sizeof(cmd), "zombie_kill_increment %d\n", pAttacker->GetUserID());
+		engine->ServerCommand(cmd);
+		engine->ServerExecute();
+	}
+
+	BaseClass::Event_Killed(info);
 }
 
 //---------------------------------------------------------

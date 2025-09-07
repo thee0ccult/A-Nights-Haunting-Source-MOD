@@ -4,9 +4,16 @@
 
 #include "achievementmgr.h"
 #include "baseachievement.h"
+#include "convar.h"  // Add this include
+#include "usermessages.h"  // Add this
+#include "tier1/bitbuf.h"  // Add this
+#include "saverestore.h"        // Add this
+#include "saverestoretypes.h"   // Add this
 
 CAchievementMgr g_AchievementMgrMod; // Global achievement mgr for mod
 
+// Add forward declaration here:
+void __MsgFunc_ZombieKilled(bf_read& msg);
 #define ACHIEVEMENT_MOD_HIT_TRIGGER 1
 #define ACHIEVEMENT_MOD_GOT_SECRET_WEAPON 2
 #define ACHIEVEMENT_MOD_GOT_COP_KILLS 3
@@ -53,20 +60,49 @@ CAchievementMgr g_AchievementMgrMod; // Global achievement mgr for mod
 #define ACHIEVEMENT_MOD_TARGET_SHOOTER 44
 #define ACHIEVEMENT_MOD_BUCK_HUNTER 45
 #define ACHIEVEMENT_MOD_DUCK_HUNTER 46
-
+ConVar zombie_kills("zombie_kills", "0", FCVAR_ARCHIVE);
 
 // Storyline get 5 guard kills achievement
 
 class CAchievementModCopKills : public CBaseAchievement
 {
+public:
 	void Init()
 	{
-		SetFlags( ACH_LISTEN_PLAYER_KILL_ENEMY_EVENTS | ACH_SAVE_GLOBAL );
-		SetVictimFilter( "npc_metropolice" );
-		SetGoal( 5 );
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(5);
+
+		// Restore progress from Steam stat
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 zombieKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("zombie_kills", &zombieKills))
+			{
+				SetCount(zombieKills);
+				Msg("[Achievement] Restored zombie kills from Steam: %d/%d\n", zombieKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleZombieKill()
+	{
+		if (!IsAchieved())
+		{
+			// Increment both the achievement and Steam stat
+			IncrementCount();
+
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("zombie_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Zombie kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
 	}
 };
-DECLARE_ACHIEVEMENT( CAchievementModCopKills, ACHIEVEMENT_MOD_GOT_COP_KILLS, "MOD_GOT_COP_KILLS", 5 );
+
+DECLARE_ACHIEVEMENT(CAchievementModCopKills, ACHIEVEMENT_MOD_GOT_COP_KILLS, "MOD_GOT_COP_KILLS", 5);
 
 // storyline kill with oildrum achievement
 class CAchievementModPopWeasel : public CBaseAchievement
@@ -225,5 +261,34 @@ DECLARE_MAP_EVENT_ACHIEVEMENT_HIDDEN(ACHIEVEMENT_MOD_DUCK_HUNTER, "MOD_DUCK_HUNT
 
 // secret achievement secret plunderbread storyline
 DECLARE_MAP_EVENT_ACHIEVEMENT_HIDDEN(ACHIEVEMENT_MOD_HOLY_BREAD, "MOD_HOLY_BREAD", 5);
+
+CON_COMMAND(zombie_kill_increment, "Increment zombie kill count for achievement")
+{
+	extern CAchievementMgr g_AchievementMgrMod;
+	CBaseAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByID(ACHIEVEMENT_MOD_GOT_COP_KILLS);
+	CAchievementModCopKills* pCopAchievement = dynamic_cast<CAchievementModCopKills*>(pAchievement);
+	if (pCopAchievement)
+	{
+		pCopAchievement->HandleZombieKill();
+	}
+}
+
+// Add debug output to your message handler:
+void __MsgFunc_ZombieKilled(bf_read& msg)
+{
+	Msg("[Achievement Debug] ZombieKilled message received!\n");
+	extern CAchievementMgr g_AchievementMgrMod;
+	CBaseAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByID(ACHIEVEMENT_MOD_GOT_COP_KILLS);
+	CAchievementModCopKills* pCopAchievement = dynamic_cast<CAchievementModCopKills*>(pAchievement);
+	if (pCopAchievement)
+	{
+		Msg("[Achievement Debug] Calling HandleZombieKill...\n");
+		pCopAchievement->HandleZombieKill();
+	}
+	else
+	{
+		Msg("[Achievement Debug] Could not find achievement!\n");
+	}
+}
 
 #endif // GAME_DLL

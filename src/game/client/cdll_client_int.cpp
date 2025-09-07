@@ -178,6 +178,8 @@ CAchievementMgr g_AchievementMgr;
 #include "tier0/memdbgon.h"
 
 extern IClientMode *GetClientModeNormal();
+// Add this near the top with other forward declarations
+//extern void __MsgFunc_ZombieKilled(bf_read& msg);
 
 // IF YOU ADD AN INTERFACE, EXTERN IT IN THE HEADER FILE.
 IVEngineClient	*engine = NULL;
@@ -1094,6 +1096,12 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 	// Register user messages..
 	CUserMessageRegister::RegisterAll();
 
+	// Add this right after the above line:
+	Msg("[Client Debug] Registering ZombieKilled user message...\n");
+	extern void __MsgFunc_ZombieKilled(bf_read& msg);
+	usermessages->HookMessage("ZombieKilled", __MsgFunc_ZombieKilled);
+	Msg("[Client Debug] ZombieKilled user message registered!\n");
+
 	ClientVoiceMgr_Init();
 
 	// Embed voice status icons inside chat element
@@ -1124,6 +1132,12 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 	// Initialize achievements (must happen after SteamAPI is active)
 	g_AchievementMgr.Init();
 	g_AchievementMgr.PostInit();
+
+	// Add these lines right here: (pending delete)
+	//Msg("[Client Debug] About to register ZombieKilled message handler...\n");
+	//extern void RegisterZombieKilledMessage();
+	//RegisterZombieKilledMessage();
+	//Msg("[Client Debug] Finished registering ZombieKilled message handler!\n");
 
 	return true;
 
