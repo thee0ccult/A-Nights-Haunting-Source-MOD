@@ -60,10 +60,12 @@ void __MsgFunc_ZombieKilled(bf_read& msg);
 #define ACHIEVEMENT_MOD_TARGET_SHOOTER 44
 #define ACHIEVEMENT_MOD_BUCK_HUNTER 45
 #define ACHIEVEMENT_MOD_DUCK_HUNTER 46
+#define ACHIEVEMENT_MOD_GOT_COP_KILLS2 47
+#define ACHIEVEMENT_MOD_GOT_COP_KILLS3 48
+#define ACHIEVEMENT_MOD_TRAINING_DAY 49
 ConVar zombie_kills("zombie_kills", "0", FCVAR_ARCHIVE);
 
-// Storyline get 5 guard kills achievement
-
+// Storyline get 5 zombie kills achievement
 class CAchievementModCopKills : public CBaseAchievement
 {
 public:
@@ -104,31 +106,129 @@ public:
 
 DECLARE_ACHIEVEMENT(CAchievementModCopKills, ACHIEVEMENT_MOD_GOT_COP_KILLS, "MOD_GOT_COP_KILLS", 5);
 
-// storyline kill with oildrum achievement
+// Storyline get 50 zombie kills achievement
+
 class CAchievementModPopWeasel : public CBaseAchievement
 {
+public:
 	void Init()
 	{
-		SetFlags( ACH_LISTEN_PLAYER_KILL_ENEMY_EVENTS | ACH_SAVE_GLOBAL );
-		SetInflictorFilter( "prop_physics" );
-		SetGoal(1);
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(50);
+
+		// Restore progress from Steam stat
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 zombieKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("zombie_kills", &zombieKills))
+			{
+				SetCount(zombieKills);
+				Msg("[Achievement] Restored zombie kills from Steam: %d/%d\n", zombieKills, GetGoal());
+			}
+		}
 	}
 
-	virtual void Event_EntityKilled(CBaseEntity* pVictim, CBaseEntity* pAttacker, CBaseEntity* pInflictor, IGameEvent* event)
+	void HandleZombieKill()
 	{
-		const char* pszName = GetModelName(pInflictor);
-
-		// skip past any directories and get just the file name
-		pszName = V_UnqualifiedFileName(pszName);
-		// if model name matches one of the toilets, this counts
-		if ((0 == Q_stricmp(pszName, "oildrum001_explosive.mdl")) || (0 == Q_stricmp(pszName, "oildrum001_explosive.mdl")))
+		if (!IsAchieved())
 		{
+			// Increment both the achievement and Steam stat
 			IncrementCount();
+
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("zombie_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Zombie kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
 		}
 	}
 };
-DECLARE_ACHIEVEMENT( CAchievementModPopWeasel, ACHIEVEMENT_MOD_POP_WEASEL, "MOD_POP_WEASEL", 5 );
 
+DECLARE_ACHIEVEMENT(CAchievementModPopWeasel, ACHIEVEMENT_MOD_POP_WEASEL, "MOD_POP_WEASEL", 5);
+
+// Storyline get 666 zombie kills achievement
+class CAchievementModCopKills2 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(666);
+
+		// Restore progress from Steam stat
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 zombieKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("zombie_kills", &zombieKills))
+			{
+				SetCount(zombieKills);
+				Msg("[Achievement] Restored zombie kills from Steam: %d/%d\n", zombieKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleZombieKill()
+	{
+		if (!IsAchieved())
+		{
+			// Increment both the achievement and Steam stat
+			IncrementCount();
+
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("zombie_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Zombie kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+DECLARE_ACHIEVEMENT(CAchievementModCopKills2, ACHIEVEMENT_MOD_GOT_COP_KILLS2, "MOD_GOT_COP_KILLS2", 5);
+
+// Storyline get 333 zombie kills achievement
+class CAchievementModCopKills3 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(333);
+
+		// Restore progress from Steam stat
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 zombieKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("zombie_kills", &zombieKills))
+			{
+				SetCount(zombieKills);
+				Msg("[Achievement] Restored zombie kills from Steam: %d/%d\n", zombieKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleZombieKill()
+	{
+		if (!IsAchieved())
+		{
+			// Increment both the achievement and Steam stat
+			IncrementCount();
+
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("zombie_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Zombie kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+DECLARE_ACHIEVEMENT(CAchievementModCopKills3, ACHIEVEMENT_MOD_GOT_COP_KILLS3, "MOD_GOT_COP_KILLS3", 5);
 
 // Storyline hop the fence into junk yard achivement
 DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_HIT_TRIGGER, "MOD_HIT_TRIGGER", 5);
@@ -253,6 +353,9 @@ DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_BEAR_TRAP, "MOD_BEAR_TRAP", 5);
 // bulletgallery destroy 10 targets achievement
 DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_TARGET_SHOOTER, "MOD_TARGET_SHOOTER", 5);
 
+// bulletgallery play gamemode achievement
+DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_TRAINING_DAY, "MOD_TRAINING_DAY", 5);
+
 // secret achievement secret buck hunter bulletgallery
 DECLARE_MAP_EVENT_ACHIEVEMENT_HIDDEN(ACHIEVEMENT_MOD_BUCK_HUNTER, "MOD_BUCK_HUNTER", 5);
 
@@ -265,29 +368,93 @@ DECLARE_MAP_EVENT_ACHIEVEMENT_HIDDEN(ACHIEVEMENT_MOD_HOLY_BREAD, "MOD_HOLY_BREAD
 CON_COMMAND(zombie_kill_increment, "Increment zombie kill count for achievement")
 {
 	extern CAchievementMgr g_AchievementMgrMod;
-	CBaseAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByID(ACHIEVEMENT_MOD_GOT_COP_KILLS);
-	CAchievementModCopKills* pCopAchievement = dynamic_cast<CAchievementModCopKills*>(pAchievement);
-	if (pCopAchievement)
+
+	// List of zombie-related achievement IDs
+	int zombieIDs[] = { ACHIEVEMENT_MOD_GOT_COP_KILLS, ACHIEVEMENT_MOD_POP_WEASEL, ACHIEVEMENT_MOD_GOT_COP_KILLS2, ACHIEVEMENT_MOD_GOT_COP_KILLS3 };
+
+	for (int i = 0; i < ARRAYSIZE(zombieIDs); i++)
 	{
-		pCopAchievement->HandleZombieKill();
+		CBaseAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByID(zombieIDs[i]);
+		if (pAchievement)
+		{
+			// Dispatch to correct type if needed
+			if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS)
+			{
+				CAchievementModCopKills* pCopAchievement = dynamic_cast<CAchievementModCopKills*>(pAchievement);
+				if (pCopAchievement) pCopAchievement->HandleZombieKill();
+			}
+			else if (zombieIDs[i] == ACHIEVEMENT_MOD_POP_WEASEL)
+			{
+				CAchievementModPopWeasel* pWeaselAchievement = dynamic_cast<CAchievementModPopWeasel*>(pAchievement);
+				if (pWeaselAchievement) pWeaselAchievement->HandleZombieKill();
+			}
+			else if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS2)
+			{
+				CAchievementModCopKills2* pCop2Achievement = dynamic_cast<CAchievementModCopKills2*>(pAchievement);
+				if (pCop2Achievement) pCop2Achievement->HandleZombieKill();
+			}
+			else if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS3)
+			{
+				CAchievementModCopKills3* pCop3Achievement = dynamic_cast<CAchievementModCopKills3*>(pAchievement);
+				if (pCop3Achievement) pCop3Achievement->HandleZombieKill();
+			}
+		}
 	}
 }
 
-// Add debug output to your message handler:
 void __MsgFunc_ZombieKilled(bf_read& msg)
 {
 	Msg("[Achievement Debug] ZombieKilled message received!\n");
 	extern CAchievementMgr g_AchievementMgrMod;
-	CBaseAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByID(ACHIEVEMENT_MOD_GOT_COP_KILLS);
-	CAchievementModCopKills* pCopAchievement = dynamic_cast<CAchievementModCopKills*>(pAchievement);
-	if (pCopAchievement)
+
+	int zombieIDs[] = { ACHIEVEMENT_MOD_GOT_COP_KILLS, ACHIEVEMENT_MOD_POP_WEASEL, ACHIEVEMENT_MOD_GOT_COP_KILLS2, ACHIEVEMENT_MOD_GOT_COP_KILLS3 };
+
+	for (int i = 0; i < ARRAYSIZE(zombieIDs); i++)
 	{
-		Msg("[Achievement Debug] Calling HandleZombieKill...\n");
-		pCopAchievement->HandleZombieKill();
-	}
-	else
-	{
-		Msg("[Achievement Debug] Could not find achievement!\n");
+		CBaseAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByID(zombieIDs[i]);
+		if (pAchievement)
+		{
+			if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS)
+			{
+				CAchievementModCopKills* pCopAchievement = dynamic_cast<CAchievementModCopKills*>(pAchievement);
+				if (pCopAchievement)
+				{
+					Msg("[Achievement Debug] Calling HandleZombieKill for COP_KILLS...\n");
+					pCopAchievement->HandleZombieKill();
+				}
+			}
+			else if (zombieIDs[i] == ACHIEVEMENT_MOD_POP_WEASEL)
+			{
+				CAchievementModPopWeasel* pWeaselAchievement = dynamic_cast<CAchievementModPopWeasel*>(pAchievement);
+				if (pWeaselAchievement)
+				{
+					Msg("[Achievement Debug] Calling HandleZombieKill for POP_WEASEL...\n");
+					pWeaselAchievement->HandleZombieKill();
+				}
+			}
+			if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS2)
+			{
+				CAchievementModCopKills2* pCop2Achievement = dynamic_cast<CAchievementModCopKills2*>(pAchievement);
+				if (pCop2Achievement)
+				{
+					Msg("[Achievement Debug] Calling HandleZombieKill for COP_KILLS...\n");
+					pCop2Achievement->HandleZombieKill();
+				}
+			}
+			if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS3)
+			{
+				CAchievementModCopKills3* pCop3Achievement = dynamic_cast<CAchievementModCopKills3*>(pAchievement);
+				if (pCop3Achievement)
+				{
+					Msg("[Achievement Debug] Calling HandleZombieKill for COP_KILLS...\n");
+					pCop3Achievement->HandleZombieKill();
+				}
+			}
+		}
+		else
+		{
+			Msg("[Achievement Debug] Could not find achievement ID %d!\n", zombieIDs[i]);
+		}
 	}
 }
 
