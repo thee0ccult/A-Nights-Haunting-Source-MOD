@@ -1,8 +1,8 @@
 ﻿  Compiling pointeroverride.asm
+   Assembling: C:\anh\src\public\tier0\pointeroverride.asm
   Microsoft (R) Macro Assembler Version 12.00.31101.0
   Copyright (C) Microsoft Corporation.  All rights reserved.
   
-   Assembling: C:\anh\src\public\tier0\pointeroverride.asm
   Running VPC CRC Check - server_hl2mp.vpc
   stdafx.cpp
   EnvHudTasklist.cpp
@@ -553,8 +553,8 @@
   te_beamringpoint.cpp
   te_beamspline.cpp
   te_bloodsprite.cpp
-  te_bloodstream.cpp
   te_breakmodel.cpp
+  te_bloodstream.cpp
   te_bspdecal.cpp
   te_bubbles.cpp
   te_bubbletrail.cpp
