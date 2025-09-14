@@ -206,30 +206,54 @@ class IMaterialSystem;
 class IStudioRender;
 class CBasePlayer;
 
-CON_COMMAND(zombie_kill_increment, "Server-side zombie kill increment")
+// Add these arrays at the top of the file, after your includes
+static const char* g_SupportedNPCTypes[] = {
+	"npc_zombie",
+	"npc_combine_s",
+	"npc_manhack",
+	"npc_crow",
+	"npc_headcrab",
+	"npc_antlion",
+	NULL // Terminator
+};
+
+#ifndef CLIENT_DLL
+CON_COMMAND(zombie_kill_increment, "Server-side zombie kill forwarder")
 {
-	if (args.ArgC() < 2)
+	if (args.ArgC() < 3)
 	{
-		Msg("[Server] Usage: zombie_kill_increment <userid>\n");
 		return;
 	}
 
 	int targetUserID = Q_atoi(args.Arg(1));
+	const char* npcType = args.Arg(2);
 
-	// Find the specific player by UserID
+	// Find the player and send client command
 	for (int i = 1; i <= gpGlobals->maxClients; i++)
 	{
 		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
 		if (pPlayer && pPlayer->IsConnected() && pPlayer->GetUserID() == targetUserID)
 		{
-			// Send console command only to the player who killed the zombie
-			engine->ClientCommand(pPlayer->edict(), "zombie_kill_increment\n");
-			Msg("[Server] Sent zombie_kill_increment to player %s (UserID: %d)\n", pPlayer->GetPlayerName(), targetUserID);
+			// Send to client with corrected format
+			char clientCmd[256];
+			Q_snprintf(clientCmd, sizeof(clientCmd), "zombie_kill_increment %d %s", targetUserID, npcType);
+			engine->ClientCommand(pPlayer->edict(), clientCmd);
+			Msg("[Server] Forwarded to client: %s\n", clientCmd);
 			return;
 		}
 	}
+	Msg("[Server] Player with UserID %d not found\n", targetUserID);
+}
+#endif
 
-	Msg("[Server] Could not find player with UserID: %d\n", targetUserID);
+bool IsSupportedNPCType(const char* classname)
+{
+	for (int i = 0; g_SupportedNPCTypes[i] != NULL; i++)
+	{
+		if (FStrEq(classname, g_SupportedNPCTypes[i]))
+			return true;
+	}
+	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -771,6 +795,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	if ( !IGameSystem::InitAllSystems() )
 		return false;
 
+
 #if defined( REPLAY_ENABLED )
 	if ( gameeventmanager->LoadEventsFromFile( "resource/replayevents.res" ) <= 0 )
 	{
@@ -826,7 +851,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		// return false; 
 	}
 #endif // NO_STEAM
-	usermessages->Register("ZombieKilled", 0);
+
 	return true;
 }
 

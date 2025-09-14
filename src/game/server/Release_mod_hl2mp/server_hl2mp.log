@@ -553,8 +553,8 @@
   te_beamringpoint.cpp
   te_beamspline.cpp
   te_bloodsprite.cpp
-  te_breakmodel.cpp
   te_bloodstream.cpp
+  te_breakmodel.cpp
   te_bspdecal.cpp
   te_bubbles.cpp
   te_bubbletrail.cpp

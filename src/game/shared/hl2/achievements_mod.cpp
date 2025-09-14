@@ -66,6 +66,7 @@ void __MsgFunc_ZombieKilled(bf_read& msg);
 #define ACHIEVEMENT_MOD_GOT_COP_KILLS4 50
 #define ACHIEVEMENT_MOD_GOT_COP_KILLS5 51
 #define ACHIEVEMENT_MOD_GOT_COP_KILLS6 52
+#define ACHIEVEMENT_MOD_GOT_ZOP_KILLS 53
 ConVar zombie_kills("zombie_kills", "0", FCVAR_ARCHIVE);
 
 // Storyline get 6 zombie kills achievement
@@ -356,6 +357,47 @@ public:
 
 DECLARE_ACHIEVEMENT(CAchievementModCopKills6, ACHIEVEMENT_MOD_GOT_COP_KILLS6, "MOD_GOT_COP_KILLS6", 5);
 
+// Storyline get 6 crow kills achievement
+class CAchievementModZopKills : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(6);
+
+		// Restore progress from Steam stat
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 zombieKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("crow_kills", &zombieKills))
+			{
+				SetCount(zombieKills);
+				Msg("[Achievement] Restored crow kills from Steam: %d/%d\n", zombieKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleZombieKill()
+	{
+		if (!IsAchieved())
+		{
+			// Increment both the achievement and Steam stat
+			IncrementCount();
+
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("crow_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Crow kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+DECLARE_ACHIEVEMENT(CAchievementModZopKills, ACHIEVEMENT_MOD_GOT_ZOP_KILLS, "MOD_GOT_ZOP_KILLS", 5);
+
 // Storyline hop the fence into junk yard achivement
 DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_HIT_TRIGGER, "MOD_HIT_TRIGGER", 5);
 
@@ -491,154 +533,161 @@ DECLARE_MAP_EVENT_ACHIEVEMENT_HIDDEN(ACHIEVEMENT_MOD_DUCK_HUNTER, "MOD_DUCK_HUNT
 // secret achievement secret plunderbread storyline
 DECLARE_MAP_EVENT_ACHIEVEMENT_HIDDEN(ACHIEVEMENT_MOD_HOLY_BREAD, "MOD_HOLY_BREAD", 5);
 
-CON_COMMAND(zombie_kill_increment, "Increment zombie kill count for achievement")
+// Add this function before your console command:
+void UpdateNPCStat(const char* npcType)
 {
-	extern CAchievementMgr g_AchievementMgrMod;
+	if (!steamapicontext || !steamapicontext->SteamUserStats())
+		return;
 
-	// List of zombie-related achievement IDs
-	int zombieIDs[] = {
-		ACHIEVEMENT_MOD_GOT_COP_KILLS,
-		ACHIEVEMENT_MOD_POP_WEASEL,
-		ACHIEVEMENT_MOD_GOT_COP_KILLS2,
-		ACHIEVEMENT_MOD_GOT_COP_KILLS3,
-		ACHIEVEMENT_MOD_GOT_COP_KILLS4,
-		ACHIEVEMENT_MOD_GOT_COP_KILLS5,
-		ACHIEVEMENT_MOD_GOT_COP_KILLS6 };
-
-	for (int i = 0; i < ARRAYSIZE(zombieIDs); i++)
+	char statName[64];
+	// Special case: manhacks count as crow kills
+	if (FStrEq(npcType, "npc_manhack"))
 	{
-		CBaseAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByID(zombieIDs[i]);
-		if (pAchievement)
-		{
-			// Dispatch to correct type if needed
-			if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS)
-			{
-				CAchievementModCopKills* pCopAchievement = dynamic_cast<CAchievementModCopKills*>(pAchievement);
-				if (pCopAchievement) pCopAchievement->HandleZombieKill();
-			}
-			else if (zombieIDs[i] == ACHIEVEMENT_MOD_POP_WEASEL)
-			{
-				CAchievementModPopWeasel* pWeaselAchievement = dynamic_cast<CAchievementModPopWeasel*>(pAchievement);
-				if (pWeaselAchievement) pWeaselAchievement->HandleZombieKill();
-			}
-			else if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS2)
-			{
-				CAchievementModCopKills2* pCop2Achievement = dynamic_cast<CAchievementModCopKills2*>(pAchievement);
-				if (pCop2Achievement) pCop2Achievement->HandleZombieKill();
-			}
-			else if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS3)
-			{
-				CAchievementModCopKills3* pCop3Achievement = dynamic_cast<CAchievementModCopKills3*>(pAchievement);
-				if (pCop3Achievement) pCop3Achievement->HandleZombieKill();
-			}
-			else if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS4)
-			{
-				CAchievementModCopKills4* pCop4Achievement = dynamic_cast<CAchievementModCopKills4*>(pAchievement);
-				if (pCop4Achievement) pCop4Achievement->HandleZombieKill();
-			}
-			else if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS5)
-			{
-				CAchievementModCopKills5* pCop5Achievement = dynamic_cast<CAchievementModCopKills5*>(pAchievement);
-				if (pCop5Achievement) pCop5Achievement->HandleZombieKill();
-			}
-			else if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS6)
-			{
-				CAchievementModCopKills6* pCop6Achievement = dynamic_cast<CAchievementModCopKills6*>(pAchievement);
-				if (pCop6Achievement) pCop6Achievement->HandleZombieKill();
-			}
-		}
+		Q_snprintf(statName, sizeof(statName), "crow_kills");
 	}
+	else
+	{
+		// Remove "npc_" prefix and add "_kills" suffix for other types
+		Q_snprintf(statName, sizeof(statName), "%s_kills", npcType + 4);
+	}
+
+	int32 currentKills = 0;
+	steamapicontext->SteamUserStats()->GetStat(statName, &currentKills);
+	currentKills++;
+	steamapicontext->SteamUserStats()->SetStat(statName, currentKills);
+	steamapicontext->SteamUserStats()->StoreStats();
+	Msg("[Achievement] %s kills: %d (saved to Steam)\n", npcType, currentKills);
 }
 
-void __MsgFunc_ZombieKilled(bf_read& msg)
+// Replace your existing console command with this enhanced version:
+CON_COMMAND(zombie_kill_increment, "Increment zombie kill count for achievement")
 {
-	Msg("[Achievement Debug] ZombieKilled message received!\n");
+	// Add debug output to see what arguments we're receiving
+	Msg("[Console Debug] zombie_kill_increment called with %d args\n", args.ArgC());
+	for (int i = 0; i < args.ArgC(); i++)
+	{
+		Msg("[Console Debug] Arg[%d]: %s\n", i, args.Arg(i));
+	}
+
 	extern CAchievementMgr g_AchievementMgrMod;
 
-	int zombieIDs[] = {
-		ACHIEVEMENT_MOD_GOT_COP_KILLS,
-		ACHIEVEMENT_MOD_POP_WEASEL,
-		ACHIEVEMENT_MOD_GOT_COP_KILLS2,
-		ACHIEVEMENT_MOD_GOT_COP_KILLS3,
-		ACHIEVEMENT_MOD_GOT_COP_KILLS4,
-		ACHIEVEMENT_MOD_GOT_COP_KILLS5,
-		ACHIEVEMENT_MOD_GOT_COP_KILLS6
-	};
-
-	for (int i = 0; i < ARRAYSIZE(zombieIDs); i++)
+	// FIXED: Get NPC type from the correct argument position
+	const char* npcType = "npc_zombie";
+	if (args.ArgC() >= 3)  // Need at least 3 args for: command, userID, npcType
 	{
-		CBaseAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByID(zombieIDs[i]);
-		if (pAchievement)
+		npcType = args.Arg(2);  // NPC type is the 3rd argument (index 2)
+	}
+	else if (args.ArgC() >= 2)  // Backwards compatibility for old format
+	{
+		npcType = args.Arg(1);  // Old format where NPC type was 2nd argument
+	}
+
+	Msg("[Console Debug] Processing NPC type: %s\n", npcType);
+
+	// Handle zombie-specific achievements (only for npc_zombie kills)
+	if (FStrEq(npcType, "npc_zombie"))
+	{
+		Msg("[Console Debug] Processing zombie achievements...\n");
+
+		int zombieIDs[] = {
+			ACHIEVEMENT_MOD_GOT_COP_KILLS,
+			ACHIEVEMENT_MOD_POP_WEASEL,
+			ACHIEVEMENT_MOD_GOT_COP_KILLS2,
+			ACHIEVEMENT_MOD_GOT_COP_KILLS3,
+			ACHIEVEMENT_MOD_GOT_COP_KILLS4,
+			ACHIEVEMENT_MOD_GOT_COP_KILLS5,
+			ACHIEVEMENT_MOD_GOT_COP_KILLS6
+		};
+
+		for (int i = 0; i < ARRAYSIZE(zombieIDs); i++)
 		{
-			if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS)
+			CBaseAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByID(zombieIDs[i]);
+			if (pAchievement)
 			{
-				CAchievementModCopKills* pCopAchievement = dynamic_cast<CAchievementModCopKills*>(pAchievement);
-				if (pCopAchievement)
+				if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS)
 				{
-					Msg("[Achievement Debug] Calling HandleZombieKill for COP_KILLS...\n");
-					pCopAchievement->HandleZombieKill();
+					CAchievementModCopKills* pCopAchievement = dynamic_cast<CAchievementModCopKills*>(pAchievement);
+					if (pCopAchievement)
+					{
+						pCopAchievement->HandleZombieKill();
+						Msg("[Console Debug] Handled COP_KILLS achievement\n");
+					}
+				}
+				else if (zombieIDs[i] == ACHIEVEMENT_MOD_POP_WEASEL)
+				{
+					CAchievementModPopWeasel* pWeaselAchievement = dynamic_cast<CAchievementModPopWeasel*>(pAchievement);
+					if (pWeaselAchievement)
+					{
+						pWeaselAchievement->HandleZombieKill();
+						Msg("[Console Debug] Handled POP_WEASEL achievement\n");
+					}
+				}
+				else if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS2)
+				{
+					CAchievementModCopKills2* pCop2Achievement = dynamic_cast<CAchievementModCopKills2*>(pAchievement);
+					if (pCop2Achievement)
+					{
+						pCop2Achievement->HandleZombieKill();
+						Msg("[Console Debug] Handled COP_KILLS2 achievement\n");
+					}
+				}
+				else if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS3)
+				{
+					CAchievementModCopKills3* pCop3Achievement = dynamic_cast<CAchievementModCopKills3*>(pAchievement);
+					if (pCop3Achievement)
+					{
+						pCop3Achievement->HandleZombieKill();
+						Msg("[Console Debug] Handled COP_KILLS3 achievement\n");
+					}
+				}
+				else if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS4)
+				{
+					CAchievementModCopKills4* pCop4Achievement = dynamic_cast<CAchievementModCopKills4*>(pAchievement);
+					if (pCop4Achievement)
+					{
+						pCop4Achievement->HandleZombieKill();
+						Msg("[Console Debug] Handled COP_KILLS4 achievement\n");
+					}
+				}
+				else if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS5)
+				{
+					CAchievementModCopKills5* pCop5Achievement = dynamic_cast<CAchievementModCopKills5*>(pAchievement);
+					if (pCop5Achievement)
+					{
+						pCop5Achievement->HandleZombieKill();
+						Msg("[Console Debug] Handled COP_KILLS5 achievement\n");
+					}
+				}
+				else if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS6)
+				{
+					CAchievementModCopKills6* pCop6Achievement = dynamic_cast<CAchievementModCopKills6*>(pAchievement);
+					if (pCop6Achievement)
+					{
+						pCop6Achievement->HandleZombieKill();
+						Msg("[Console Debug] Handled COP_KILLS6 achievement\n");
+					}
 				}
 			}
-			else if (zombieIDs[i] == ACHIEVEMENT_MOD_POP_WEASEL)
-			{
-				CAchievementModPopWeasel* pWeaselAchievement = dynamic_cast<CAchievementModPopWeasel*>(pAchievement);
-				if (pWeaselAchievement)
-				{
-					Msg("[Achievement Debug] Calling HandleZombieKill for POP_WEASEL...\n");
-					pWeaselAchievement->HandleZombieKill();
-				}
-			}
-			if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS2)
-			{
-				CAchievementModCopKills2* pCop2Achievement = dynamic_cast<CAchievementModCopKills2*>(pAchievement);
-				if (pCop2Achievement)
-				{
-					Msg("[Achievement Debug] Calling HandleZombieKill for COP_KILLS...\n");
-					pCop2Achievement->HandleZombieKill();
-				}
-			}
-			if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS3)
-			{
-				CAchievementModCopKills3* pCop3Achievement = dynamic_cast<CAchievementModCopKills3*>(pAchievement);
-				if (pCop3Achievement)
-				{
-					Msg("[Achievement Debug] Calling HandleZombieKill for COP_KILLS...\n");
-					pCop3Achievement->HandleZombieKill();
-				}
-			}
-			if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS4)
-			{
-				CAchievementModCopKills4* pCop4Achievement = dynamic_cast<CAchievementModCopKills4*>(pAchievement);
-				if (pCop4Achievement)
-				{
-					Msg("[Achievement Debug] Calling HandleZombieKill for COP_KILLS...\n");
-					pCop4Achievement->HandleZombieKill();
-				}
-			}
-			if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS5)
-			{
-				CAchievementModCopKills5* pCop5Achievement = dynamic_cast<CAchievementModCopKills5*>(pAchievement);
-				if (pCop5Achievement)
-				{
-					Msg("[Achievement Debug] Calling HandleZombieKill for COP_KILLS...\n");
-					pCop5Achievement->HandleZombieKill();
-				}
-			}
-			if (zombieIDs[i] == ACHIEVEMENT_MOD_GOT_COP_KILLS6)
-			{
-				CAchievementModCopKills6* pCop6Achievement = dynamic_cast<CAchievementModCopKills6*>(pAchievement);
-				if (pCop6Achievement)
-				{
-					Msg("[Achievement Debug] Calling HandleZombieKill for COP_KILLS...\n");
-					pCop6Achievement->HandleZombieKill();
-				}
-			}
-		}
-		else
-		{
-			Msg("[Achievement Debug] Could not find achievement ID %d!\n", zombieIDs[i]);
 		}
 	}
+
+	// Handle manhack-specific achievements (for npc_manhack kills)
+	if (FStrEq(npcType, "npc_manhack"))
+	{
+		Msg("[Console Debug] Processing manhack achievements...\n");
+
+		CBaseAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByID(ACHIEVEMENT_MOD_GOT_ZOP_KILLS);
+		CAchievementModZopKills* pZopAchievement = dynamic_cast<CAchievementModZopKills*>(pAchievement);
+		if (pZopAchievement)
+		{
+			pZopAchievement->HandleZombieKill();
+			Msg("[Console Debug] Handled ZOP_KILLS (manhack) achievement\n");
+		}
+	}
+
+	// Update Steam stat for ALL NPC types
+	UpdateNPCStat(npcType);
+	Msg("[Console Debug] Updated Steam stat for: %s\n", npcType);
 }
 
 #endif // GAME_DLL

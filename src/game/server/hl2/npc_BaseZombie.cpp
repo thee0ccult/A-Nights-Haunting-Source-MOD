@@ -2283,11 +2283,12 @@ void CNPC_BaseZombie::Event_Killed(const CTakeDamageInfo& info)
 	CBasePlayer* pAttacker = ToBasePlayer(info.GetAttacker());
 	if (pAttacker)
 	{
-		// Send command with the player's user ID
+		// Use the same approach for both dedicated and local servers
 		char cmd[128];
-		Q_snprintf(cmd, sizeof(cmd), "zombie_kill_increment %d\n", pAttacker->GetUserID());
+		Q_snprintf(cmd, sizeof(cmd), "zombie_kill_increment %d %s\n", pAttacker->GetUserID(), GetClassname());
 		engine->ServerCommand(cmd);
 		engine->ServerExecute();
+		Msg("[Server Debug] Executed command: %s\n", cmd);
 	}
 
 	BaseClass::Event_Killed(info);

@@ -407,6 +407,17 @@ void CNPC_Manhack::Event_Killed( const CTakeDamageInfo &info )
 		KillSprites( 0.0f );
 	}
 	StopSound("NPC_Crow.Flap");
+	// Add achievement tracking for crow kills
+	CBasePlayer* pAttacker = ToBasePlayer(info.GetAttacker());
+	if (pAttacker)
+	{
+		// Use the actual classname "npc_manhack"
+		char cmd[128];
+		Q_snprintf(cmd, sizeof(cmd), "zombie_kill_increment %d %s\n", pAttacker->GetUserID(), GetClassname());
+		engine->ServerCommand(cmd);
+		engine->ServerExecute();
+	}
+
 	BaseClass::Event_Killed( info );
 }
 
