@@ -359,6 +359,28 @@ void CNPC_CombineS::Event_Killed( const CTakeDamageInfo &info )
 		}
 	}
 
+	if (pPlayer != NULL)
+	{
+		Msg("[Debug] Combine killed: classname = '%s'\n", GetClassname());
+
+		char cmd[128];
+		Q_snprintf(cmd, sizeof(cmd), "zombie_kill_increment %d %s\n", pPlayer->GetUserID(), GetClassname());
+
+		if (engine->IsDedicatedServer())
+		{
+			engine->ServerCommand(cmd);
+			engine->ServerExecute();
+			Msg("[Server Debug] Dedicated - executed: %s\n", cmd);
+		}
+		else
+		{
+			engine->ServerCommand(cmd);
+			engine->ServerExecute();
+			Msg("[Server Debug] Local - executed: %s\n", cmd);
+		}
+	}
+
+
 	BaseClass::Event_Killed( info );
 }
 

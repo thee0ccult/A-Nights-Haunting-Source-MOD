@@ -3085,35 +3085,46 @@ void CNPC_MetroPolice::ReleaseManhack( void )
 	}
 }
 
-//-----------------------------------------------------------------------------
-// 
-//-----------------------------------------------------------------------------
-void CNPC_MetroPolice::Event_Killed( const CTakeDamageInfo &info )
+void CNPC_MetroPolice::Event_Killed(const CTakeDamageInfo& info)
 {
 	// Release the manhack if we're in the middle of deploying him
-	if ( m_hManhack && m_hManhack->IsAlive() )
+	if (m_hManhack && m_hManhack->IsAlive())
 	{
 		ReleaseManhack();
 		m_hManhack = NULL;
 	}
-
-	CBasePlayer *pPlayer = ToBasePlayer( info.GetAttacker() );
-
-	if ( pPlayer != NULL )
+	CBasePlayer* pPlayer = ToBasePlayer(info.GetAttacker());
+	if (pPlayer != NULL)
 	{
-		CHalfLife2 *pHL2GameRules = static_cast<CHalfLife2 *>(g_pGameRules);
-
+		CHalfLife2* pHL2GameRules = static_cast<CHalfLife2*>(g_pGameRules);
 		// Attempt to drop health
-		if ( pHL2GameRules->NPC_ShouldDropHealth( pPlayer ) )
+		if (pHL2GameRules->NPC_ShouldDropHealth(pPlayer))
 		{
-			DropItem( "item_healthvial", WorldSpaceCenter()+RandomVector(-4,4), RandomAngle(0,360) );
+			DropItem("item_healthvial", WorldSpaceCenter() + RandomVector(-4, 4), RandomAngle(0, 360));
 			pHL2GameRules->NPC_DroppedHealth();
 		}
+
+		// ADD THIS ACHIEVEMENT TRACKING CODE:
+		Msg("[Debug] MetroPolice killed: classname = '%s'\n", GetClassname());
+
+		char cmd[128];
+		Q_snprintf(cmd, sizeof(cmd), "zombie_kill_increment %d %s\n", pPlayer->GetUserID(), GetClassname());
+
+		if (engine->IsDedicatedServer())
+		{
+			engine->ServerCommand(cmd);
+			engine->ServerExecute();
+			Msg("[Server Debug] Dedicated - executed: %s\n", cmd);
+		}
+		else
+		{
+			engine->ServerCommand(cmd);
+			engine->ServerExecute();
+			Msg("[Server Debug] Local - executed: %s\n", cmd);
+		}
 	}
-
-	BaseClass::Event_Killed( info );
+	BaseClass::Event_Killed(info);
 }
-
 //-----------------------------------------------------------------------------
 // Try to enter a slot where we shoot a pistol 
 //-----------------------------------------------------------------------------
