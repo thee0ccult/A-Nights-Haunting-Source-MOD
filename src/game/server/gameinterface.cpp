@@ -246,6 +246,34 @@ CON_COMMAND(zombie_kill_increment, "Server-side zombie kill forwarder")
 }
 #endif
 
+#ifndef CLIENT_DLL
+CON_COMMAND(player_kill_increment, "Server-side player kill forwarder")
+{
+	if (args.ArgC() < 2)
+	{
+		return;
+	}
+
+	int targetUserID = Q_atoi(args.Arg(1));
+
+	// Find the player and send client command
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
+		if (pPlayer && pPlayer->IsConnected() && pPlayer->GetUserID() == targetUserID)
+		{
+			// Send to client
+			char clientCmd[256];
+			Q_snprintf(clientCmd, sizeof(clientCmd), "player_kill_increment");
+			engine->ClientCommand(pPlayer->edict(), clientCmd);
+			Msg("[Server] Forwarded player kill to client: %s\n", pPlayer->GetPlayerName());
+			return;
+		}
+	}
+	Msg("[Server] Player with UserID %d not found\n", targetUserID);
+}
+#endif
+
 bool IsSupportedNPCType(const char* classname)
 {
 	for (int i = 0; g_SupportedNPCTypes[i] != NULL; i++)

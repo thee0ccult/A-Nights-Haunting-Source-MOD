@@ -1260,13 +1260,13 @@ void CHL2MP_Player::DetonateTripmines( void )
 	EmitSound( "Weapon_SLAM.SatchelDetonate" );
 }
 
-void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
+void CHL2MP_Player::Event_Killed(const CTakeDamageInfo& info)
 {
 	//update damage info with our accumulated physics force
 	CTakeDamageInfo subinfo = info;
-	subinfo.SetDamageForce( m_vecTotalBulletForce );
+	subinfo.SetDamageForce(m_vecTotalBulletForce);
 
-	SetNumAnimOverlays( 0 );
+	SetNumAnimOverlays(0);
 
 	// Note: since we're dead, it won't draw us on the client, but we don't set EF_NODRAW
 	// because we still want to transmit to the clients in our PVS.
@@ -1274,35 +1274,60 @@ void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
 
 	DetonateTripmines();
 
-	BaseClass::Event_Killed( subinfo );
+	BaseClass::Event_Killed(subinfo);
 
-	if ( info.GetDamageType() & DMG_DISSOLVE )
+	if (info.GetDamageType() & DMG_DISSOLVE)
 	{
-		if ( m_hRagdoll )
+		if (m_hRagdoll)
 		{
-			m_hRagdoll->GetBaseAnimating()->Dissolve( NULL, gpGlobals->curtime, false, ENTITY_DISSOLVE_NORMAL );
+			m_hRagdoll->GetBaseAnimating()->Dissolve(NULL, gpGlobals->curtime, false, ENTITY_DISSOLVE_NORMAL);
 		}
 	}
 
-	CBaseEntity *pAttacker = info.GetAttacker();
-
-	if ( pAttacker )
+	CBaseEntity* pAttacker = info.GetAttacker();
+	if (pAttacker)
 	{
 		int iScoreToAdd = 1;
 
-		if ( pAttacker == this )
+		if (pAttacker == this)
 		{
 			iScoreToAdd = -1;
 		}
 
-		GetGlobalTeam( pAttacker->GetTeamNumber() )->AddScore( iScoreToAdd );
+		GetGlobalTeam(pAttacker->GetTeamNumber())->AddScore(iScoreToAdd);
+
+		// ADD THIS PLAYER KILL TRACKING CODE:
+		CBasePlayer* pAttackerPlayer = ToBasePlayer(pAttacker);
+		if (pAttackerPlayer && pAttackerPlayer != this && pAttackerPlayer->IsPlayer())
+		{
+			// Only count if attacker is a different player (not suicide/self-damage)
+			Msg("[Debug] Player killed by player: attacker = %s, victim = %s\n",
+				pAttackerPlayer->GetPlayerName(), this->GetPlayerName());
+
+			char cmd[128];
+			Q_snprintf(cmd, sizeof(cmd), "player_kill_increment %d\n", pAttackerPlayer->GetUserID());
+
+			if (engine->IsDedicatedServer())
+			{
+				engine->ServerCommand(cmd);
+				engine->ServerExecute();
+				Msg("[Server Debug] Dedicated - executed: %s\n", cmd);
+			}
+			else
+			{
+				engine->ServerCommand(cmd);
+				engine->ServerExecute();
+				Msg("[Server Debug] Local - executed: %s\n", cmd);
+			}
+		}
 	}
 
 	FlashlightTurnOff();
 
 	m_lifeState = LIFE_DEAD;
 
-	RemoveEffects( EF_NODRAW );	// still draw player body
+	RemoveEffects(EF_NODRAW);	// still draw player body
+
 	StopZooming();
 }
 
