@@ -310,6 +310,119 @@ void SendAchievementUnlock(CBasePlayer* pPlayer, int iAchievementID)
 		iAchievementID, pPlayer->GetPlayerName());
 }
 
+#ifndef CLIENT_DLL
+CON_COMMAND(tool_kill_increment, "Server-side tool kill forwarder")
+{
+	if (args.ArgC() < 3)
+	{
+		return;
+	}
+
+	int targetUserID = Q_atoi(args.Arg(1));
+	const char* weaponName = args.Arg(2);
+
+	// Find the player and send client command
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
+		if (pPlayer && pPlayer->IsConnected() && pPlayer->GetUserID() == targetUserID)
+		{
+			// Send to client
+			char clientCmd[256];
+			Q_snprintf(clientCmd, sizeof(clientCmd), "tool_kill_increment %d %s", targetUserID, weaponName);
+			engine->ClientCommand(pPlayer->edict(), clientCmd);
+			Msg("[Server] Forwarded tool kill to client: %s with %s\n", pPlayer->GetPlayerName(), weaponName);
+			return;
+		}
+	}
+	Msg("[Server] Player with UserID %d not found\n", targetUserID);
+}
+#endif
+
+// 5. Helper function to check if weapon is a tool:
+bool IsToolWeapon(const char* weaponName)
+{
+	if (!weaponName)
+		return false;
+
+	// List of tool weapons that should count for HOOLIGAN_TOOLERY
+	const char* toolWeapons[] = {
+		"weapon_axe",
+		"weapon_bat",
+		"weapon_blowtorch",
+		"weapon_cicle",
+		"weapon_cigarette",
+		"weapon_cleaver",
+		"weapon_crowbar",
+		"weapon_hammer",
+		"weapon_hockeystick",
+		"weapon_knife",
+		"weapon_pickaxe",
+		"weapon_pipe",
+		"weapon_pipewrench",
+		"weapon_pitchfork",
+		"weapon_shovel",
+		"weapon_sledgehammer"
+	};
+
+	for (int i = 0; i < ARRAYSIZE(toolWeapons); i++)
+	{
+		if (FStrEq(weaponName, toolWeapons[i]))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+// =============================================================================
+// UNIVERSAL TOOL KILL TRACKING FUNCTION
+// =============================================================================
+
+// Add this function to track tool kills from any source
+void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info)
+{
+	if (!pAttacker || !pVictim)
+		return;
+
+	// Get the weapon that caused the kill
+	CBaseCombatWeapon* pWeapon = pAttacker->GetActiveWeapon();
+	const char* weaponName = "unknown";
+
+	if (pWeapon)
+	{
+		weaponName = pWeapon->GetClassname();
+	}
+	else if (info.GetInflictor())
+	{
+		weaponName = info.GetInflictor()->GetClassname();
+	}
+
+	Msg("[Debug] Tool kill tracked: weapon = %s\n", weaponName);
+
+	// Only count if it's a tool weapon
+	if (IsToolWeapon(weaponName))
+	{
+		char cmd[128];
+		Q_snprintf(cmd, sizeof(cmd), "tool_kill_increment %d %s\n", pAttacker->GetUserID(), weaponName);
+
+		if (engine->IsDedicatedServer())
+		{
+			engine->ServerCommand(cmd);
+			engine->ServerExecute();
+			Msg("[Server Debug] Dedicated - executed tool kill: %s\n", cmd);
+		}
+		else
+		{
+			engine->ServerCommand(cmd);
+			engine->ServerExecute();
+			Msg("[Server Debug] Local - executed tool kill: %s\n", cmd);
+		}
+	}
+}
+
 #ifdef _DEBUG
 static ConVar s_UseNetworkVars( "UseNetworkVars", "1", FCVAR_CHEAT, "For profiling, toggle network vars." );
 #endif

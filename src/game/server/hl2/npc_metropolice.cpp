@@ -119,6 +119,9 @@ ConVar	metropolice_chase_use_follow( "metropolice_chase_use_follow", "0" );
 ConVar  metropolice_move_and_melee("metropolice_move_and_melee", "1" );
 ConVar  metropolice_charge("metropolice_charge", "1" );
 
+// Add this declaration at the top of npc_BaseZombie.cpp
+extern void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
+
 // How many clips of pistol ammo a metropolice carries.
 #define METROPOLICE_NUM_CLIPS			5
 #define METROPOLICE_BURST_RELOAD_COUNT	20
@@ -3123,6 +3126,7 @@ void CNPC_MetroPolice::Event_Killed(const CTakeDamageInfo& info)
 			Msg("[Server Debug] Local - executed: %s\n", cmd);
 		}
 	}
+	TrackToolKill(pPlayer, this, info);
 	BaseClass::Event_Killed(info);
 }
 //-----------------------------------------------------------------------------

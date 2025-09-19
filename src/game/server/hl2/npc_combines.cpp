@@ -51,6 +51,10 @@ LINK_ENTITY_TO_CLASS( npc_combine_s, CNPC_CombineS );
 extern Activity ACT_WALK_EASY;
 extern Activity ACT_WALK_MARCH;
 
+// Add this declaration at the top of npc_BaseZombie.cpp
+extern void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
+
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -379,7 +383,7 @@ void CNPC_CombineS::Event_Killed( const CTakeDamageInfo &info )
 			Msg("[Server Debug] Local - executed: %s\n", cmd);
 		}
 	}
-
+	TrackToolKill(pPlayer, this, info);
 
 	BaseClass::Event_Killed( info );
 }

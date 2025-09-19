@@ -90,6 +90,12 @@ void __MsgFunc_ZombieKilled(bf_read& msg);
 #define ACHIEVEMENT_MOD_GOT_BOP_KILLS4 74
 #define ACHIEVEMENT_MOD_GOT_BOP_KILLS5 75
 #define ACHIEVEMENT_MOD_GOT_BOP_KILLS6 76
+#define ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY 77
+#define ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY2 78
+#define ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY3 79
+#define ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY4 80
+#define ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY5 81
+#define ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY6 82
 
 ConVar zombie_kills("zombie_kills", "0", FCVAR_ARCHIVE);
 
@@ -1340,6 +1346,241 @@ public:
 // 3. Declare the achievement:
 DECLARE_ACHIEVEMENT(CAchievementModBopKills6, ACHIEVEMENT_MOD_GOT_BOP_KILLS6, "MOD_GOT_BOP_KILLS6", 5);
 
+// get 6 kills with melee weapons
+class CAchievementModHooliganToolery : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(6); // 6 tool weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 toolKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("tool_kills", &toolKills))
+			{
+				SetCount(toolKills);
+				Msg("[Achievement] Restored tool kills from Steam: %d/%d\n", toolKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleToolKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("tool_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Tool kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModHooliganToolery, ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY, "MOD_HOOLIGAN_TOOLERY", 5);
+
+// get 69 kills with melee weapons
+class CAchievementModHooliganToolery2 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(69); // 69 tool weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 toolKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("tool_kills", &toolKills))
+			{
+				SetCount(toolKills);
+				Msg("[Achievement] Restored tool kills from Steam: %d/%d\n", toolKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleToolKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("tool_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Tool kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModHooliganToolery2, ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY2, "MOD_HOOLIGAN_TOOLERY2", 5);
+
+// get 222 kills with melee weapons
+class CAchievementModHooliganToolery3 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(222); // 222 tool weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 toolKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("tool_kills", &toolKills))
+			{
+				SetCount(toolKills);
+				Msg("[Achievement] Restored tool kills from Steam: %d/%d\n", toolKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleToolKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("tool_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Tool kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModHooliganToolery3, ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY3, "MOD_HOOLIGAN_TOOLERY3", 5);
+
+// get 444 kills with melee weapons
+class CAchievementModHooliganToolery4 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(444); // 444 tool weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 toolKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("tool_kills", &toolKills))
+			{
+				SetCount(toolKills);
+				Msg("[Achievement] Restored tool kills from Steam: %d/%d\n", toolKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleToolKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("tool_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Tool kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModHooliganToolery4, ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY4, "MOD_HOOLIGAN_TOOLERY4", 5);
+
+// get 666 kills with melee weapons
+class CAchievementModHooliganToolery5 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(666); // 666 tool weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 toolKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("tool_kills", &toolKills))
+			{
+				SetCount(toolKills);
+				Msg("[Achievement] Restored tool kills from Steam: %d/%d\n", toolKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleToolKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("tool_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Tool kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModHooliganToolery5, ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY5, "MOD_HOOLIGAN_TOOLERY5", 5);
+
+// get 999 kills with melee weapons
+class CAchievementModHooliganToolery6 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(999); // 999 tool weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 toolKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("tool_kills", &toolKills))
+			{
+				SetCount(toolKills);
+				Msg("[Achievement] Restored tool kills from Steam: %d/%d\n", toolKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleToolKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("tool_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Tool kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModHooliganToolery6, ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY6, "MOD_HOOLIGAN_TOOLERY6", 5);
+
+
 // Storyline hop the fence into junk yard achivement
 DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_HIT_TRIGGER, "MOD_HIT_TRIGGER", 5);
 
@@ -1875,4 +2116,110 @@ CON_COMMAND(player_kill_increment, "Increment player kill count for achievement"
 
 	Msg("[Console Debug] Processed all BOP_KILLS achievements\n");
 }
+// 4. Create console command for tool kills:
+CON_COMMAND(tool_kill_increment, "Increment tool kill count for achievement")
+{
+	Msg("[Console Debug] tool_kill_increment called with %d args\n", args.ArgC());
+	for (int i = 0; i < args.ArgC(); i++)
+	{
+		Msg("[Console Debug] Arg[%d]: %s\n", i, args.Arg(i));
+	}
+
+	extern CAchievementMgr g_AchievementMgrMod;
+
+	// Get weapon name from arguments
+	const char* weaponName = "unknown";
+	if (args.ArgC() >= 3)
+	{
+		weaponName = args.Arg(2);
+	}
+
+	Msg("[Console Debug] Processing tool kill with: %s\n", weaponName);
+
+	// Array of all tool kill achievement IDs
+	int toolKillIDs[] = {
+		ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY,
+		ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY2,
+		ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY3,
+		ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY4,
+		ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY5,
+		ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY6
+	};
+
+	for (int i = 0; i < ARRAYSIZE(toolKillIDs); i++)
+	{
+		CBaseAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByID(toolKillIDs[i]);
+		if (pAchievement)
+		{
+			if (toolKillIDs[i] == ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY)
+			{
+				CAchievementModHooliganToolery* pToolAchievement = dynamic_cast<CAchievementModHooliganToolery*>(pAchievement);
+				if (pToolAchievement)
+				{
+					pToolAchievement->HandleToolKill();
+					Msg("[Console Debug] Handled HOOLIGAN_TOOLERY achievement\n");
+				}
+			}
+			else if (toolKillIDs[i] == ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY2)
+			{
+				CAchievementModHooliganToolery2* pTool2Achievement = dynamic_cast<CAchievementModHooliganToolery2*>(pAchievement);
+				if (pTool2Achievement)
+				{
+					pTool2Achievement->HandleToolKill();
+					Msg("[Console Debug] Handled HOOLIGAN_TOOLERY2 achievement\n");
+				}
+			}
+			else if (toolKillIDs[i] == ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY3)
+			{
+				CAchievementModHooliganToolery3* pTool3Achievement = dynamic_cast<CAchievementModHooliganToolery3*>(pAchievement);
+				if (pTool3Achievement)
+				{
+					pTool3Achievement->HandleToolKill();
+					Msg("[Console Debug] Handled HOOLIGAN_TOOLERY3 achievement\n");
+				}
+			}
+			else if (toolKillIDs[i] == ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY4)
+			{
+				CAchievementModHooliganToolery4* pTool4Achievement = dynamic_cast<CAchievementModHooliganToolery4*>(pAchievement);
+				if (pTool4Achievement)
+				{
+					pTool4Achievement->HandleToolKill();
+					Msg("[Console Debug] Handled HOOLIGAN_TOOLERY4 achievement\n");
+				}
+			}
+			else if (toolKillIDs[i] == ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY5)
+			{
+				CAchievementModHooliganToolery5* pTool5Achievement = dynamic_cast<CAchievementModHooliganToolery5*>(pAchievement);
+				if (pTool5Achievement)
+				{
+					pTool5Achievement->HandleToolKill();
+					Msg("[Console Debug] Handled HOOLIGAN_TOOLERY5 achievement\n");
+				}
+			}
+			else if (toolKillIDs[i] == ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY6)
+			{
+				CAchievementModHooliganToolery6* pTool6Achievement = dynamic_cast<CAchievementModHooliganToolery6*>(pAchievement);
+				if (pTool6Achievement)
+				{
+					pTool6Achievement->HandleToolKill();
+					Msg("[Console Debug] Handled HOOLIGAN_TOOLERY6 achievement\n");
+				}
+			}
+		}
+	}
+
+	// Update Steam stat for tool kills (single stat shared by all tiers)
+	if (steamapicontext && steamapicontext->SteamUserStats())
+	{
+		int32 currentKills = 0;
+		steamapicontext->SteamUserStats()->GetStat("tool_kills", &currentKills);
+		currentKills++;
+		steamapicontext->SteamUserStats()->SetStat("tool_kills", currentKills);
+		steamapicontext->SteamUserStats()->StoreStats();
+		Msg("[Achievement] tool kills: %d (saved to Steam)\n", currentKills);
+	}
+
+	Msg("[Console Debug] Processed all HOOLIGAN_TOOLERY achievements\n");
+}
+
 #endif // GAME_DLL

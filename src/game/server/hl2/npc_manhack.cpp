@@ -85,6 +85,8 @@ ConVar	sk_manhack_v2( "sk_manhack_v2","1");
 extern void		SpawnBlood(Vector vecSpot, const Vector &vAttackDir, int bloodColor, float flDamage);
 extern float	GetFloorZ(const Vector &origin);
 
+extern void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
+
 //-----------------------------------------------------------------------------
 // Private activities.
 //-----------------------------------------------------------------------------
@@ -417,7 +419,7 @@ void CNPC_Manhack::Event_Killed( const CTakeDamageInfo &info )
 		engine->ServerCommand(cmd);
 		engine->ServerExecute();
 	}
-
+	TrackToolKill(pAttacker, this, info);
 	BaseClass::Event_Killed( info );
 }
 
