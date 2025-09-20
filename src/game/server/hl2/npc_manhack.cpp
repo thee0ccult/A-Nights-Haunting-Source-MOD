@@ -86,6 +86,7 @@ extern void		SpawnBlood(Vector vecSpot, const Vector &vAttackDir, int bloodColor
 extern float	GetFloorZ(const Vector &origin);
 
 extern void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
+extern void TrackProjectileKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
 
 //-----------------------------------------------------------------------------
 // Private activities.
@@ -420,6 +421,7 @@ void CNPC_Manhack::Event_Killed( const CTakeDamageInfo &info )
 		engine->ServerExecute();
 	}
 	TrackToolKill(pAttacker, this, info);
+	TrackProjectileKill(pAttacker, this, info);
 	BaseClass::Event_Killed( info );
 }
 

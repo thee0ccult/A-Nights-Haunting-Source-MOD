@@ -121,6 +121,7 @@ ConVar  metropolice_charge("metropolice_charge", "1" );
 
 // Add this declaration at the top of npc_BaseZombie.cpp
 extern void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
+extern void TrackProjectileKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
 
 // How many clips of pistol ammo a metropolice carries.
 #define METROPOLICE_NUM_CLIPS			5
@@ -3127,6 +3128,7 @@ void CNPC_MetroPolice::Event_Killed(const CTakeDamageInfo& info)
 		}
 	}
 	TrackToolKill(pPlayer, this, info);
+	TrackProjectileKill(pPlayer, this, info);
 	BaseClass::Event_Killed(info);
 }
 //-----------------------------------------------------------------------------

@@ -96,6 +96,24 @@ void __MsgFunc_ZombieKilled(bf_read& msg);
 #define ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY4 80
 #define ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY5 81
 #define ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY6 82
+#define ACHIEVEMENT_MOD_PISTOL_PLAY 83
+#define ACHIEVEMENT_MOD_PISTOL_PLAY2 84
+#define ACHIEVEMENT_MOD_PISTOL_PLAY3 85
+#define ACHIEVEMENT_MOD_PISTOL_PLAY4 86
+#define ACHIEVEMENT_MOD_PISTOL_PLAY5 87
+#define ACHIEVEMENT_MOD_PISTOL_PLAY6 88
+#define ACHIEVEMENT_MOD_PISTOL_PLAY7 89
+#define ACHIEVEMENT_MOD_PISTOL_PLAY8 90
+#define ACHIEVEMENT_MOD_PISTOL_PLAY9 91
+#define ACHIEVEMENT_MOD_PISTOL_PLAY10 92
+#define ACHIEVEMENT_MOD_GOT_BOP_KILLS7 93
+#define ACHIEVEMENT_MOD_GOT_BOP_KILLS8 94
+#define ACHIEVEMENT_MOD_GOT_BOP_KILLS9 95
+#define ACHIEVEMENT_MOD_GOT_TOP_KILLS7 96
+#define ACHIEVEMENT_MOD_GOT_TOP_KILLS8 97
+#define ACHIEVEMENT_MOD_GOT_TOP_KILLS9 98
+#define ACHIEVEMENT_MOD_GOT_ZOP_KILLS7 99
+#define ACHIEVEMENT_MOD_GOT_ZOP_KILLS8 100
 
 ConVar zombie_kills("zombie_kills", "0", FCVAR_ARCHIVE);
 
@@ -633,6 +651,87 @@ public:
 
 DECLARE_ACHIEVEMENT(CAchievementModZopKills6, ACHIEVEMENT_MOD_GOT_ZOP_KILLS6, "MOD_GOT_ZOP_KILLS6", 5);
 
+// Storyline get 1666 crow kills achievement
+class CAchievementModZopKills7 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(1666);
+
+		// Restore progress from Steam stat
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 zombieKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("crow_kills", &zombieKills))
+			{
+				SetCount(zombieKills);
+				Msg("[Achievement] Restored crow kills from Steam: %d/%d\n", zombieKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleZombieKill()
+	{
+		if (!IsAchieved())
+		{
+			// Increment both the achievement and Steam stat
+			IncrementCount();
+
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("crow_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Crow kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+DECLARE_ACHIEVEMENT(CAchievementModZopKills7, ACHIEVEMENT_MOD_GOT_ZOP_KILLS7, "MOD_GOT_ZOP_KILLS7", 5);
+
+// Storyline get 2666 crow kills achievement
+class CAchievementModZopKills8 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(2666);
+
+		// Restore progress from Steam stat
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 zombieKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("crow_kills", &zombieKills))
+			{
+				SetCount(zombieKills);
+				Msg("[Achievement] Restored crow kills from Steam: %d/%d\n", zombieKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleZombieKill()
+	{
+		if (!IsAchieved())
+		{
+			// Increment both the achievement and Steam stat
+			IncrementCount();
+
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("crow_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Crow kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+DECLARE_ACHIEVEMENT(CAchievementModZopKills8, ACHIEVEMENT_MOD_GOT_ZOP_KILLS8, "MOD_GOT_ZOP_KILLS8", 5);
 
 // storyline get 6 metropolice kills
 class CAchievementModPopKills : public CBaseAchievement
@@ -1112,6 +1211,121 @@ public:
 
 DECLARE_ACHIEVEMENT(CAchievementModTopKills6, ACHIEVEMENT_MOD_GOT_TOP_KILLS6, "MOD_GOT_TOP_KILLS6", 5);
 
+//kill 2222 guards
+class CAchievementModTopKills7 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(2222); // Adjust this number as needed
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 combineKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("combines_kills", &combineKills))
+			{
+				SetCount(combineKills);
+				Msg("[Achievement] Restored combine kills from Steam: %d/%d\n", combineKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleCombineKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("combines_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Combine kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+DECLARE_ACHIEVEMENT(CAchievementModTopKills7, ACHIEVEMENT_MOD_GOT_TOP_KILLS7, "MOD_GOT_TOP_KILLS7", 5);
+
+//kill 3333 guards
+class CAchievementModTopKills8 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(3333); // Adjust this number as needed
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 combineKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("combines_kills", &combineKills))
+			{
+				SetCount(combineKills);
+				Msg("[Achievement] Restored combine kills from Steam: %d/%d\n", combineKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleCombineKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("combines_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Combine kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+DECLARE_ACHIEVEMENT(CAchievementModTopKills8, ACHIEVEMENT_MOD_GOT_TOP_KILLS8, "MOD_GOT_TOP_KILLS8", 5);
+
+//kill 6666 guards
+class CAchievementModTopKills9 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(6666); // Adjust this number as needed
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 combineKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("combines_kills", &combineKills))
+			{
+				SetCount(combineKills);
+				Msg("[Achievement] Restored combine kills from Steam: %d/%d\n", combineKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleCombineKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("combines_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Combine kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+DECLARE_ACHIEVEMENT(CAchievementModTopKills9, ACHIEVEMENT_MOD_GOT_TOP_KILLS9, "MOD_GOT_TOP_KILLS9", 5);
+
+
 // player vs player kills 6
 class CAchievementModBopKills : public CBaseAchievement
 {
@@ -1346,6 +1560,124 @@ public:
 // 3. Declare the achievement:
 DECLARE_ACHIEVEMENT(CAchievementModBopKills6, ACHIEVEMENT_MOD_GOT_BOP_KILLS6, "MOD_GOT_BOP_KILLS6", 5);
 
+// player vs player kills 2666
+class CAchievementModBopKills7 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(2666); // Adjust this number as needed for PvP kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 playerKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("player_kills", &playerKills))
+			{
+				SetCount(playerKills);
+				Msg("[Achievement] Restored player kills from Steam: %d/%d\n", playerKills, GetGoal());
+			}
+		}
+	}
+
+	void HandlePlayerKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("player_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Player kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModBopKills7, ACHIEVEMENT_MOD_GOT_BOP_KILLS7, "MOD_GOT_BOP_KILLS7", 5);
+
+// player vs player kills 3666
+class CAchievementModBopKills8 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(3666); // Adjust this number as needed for PvP kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 playerKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("player_kills", &playerKills))
+			{
+				SetCount(playerKills);
+				Msg("[Achievement] Restored player kills from Steam: %d/%d\n", playerKills, GetGoal());
+			}
+		}
+	}
+
+	void HandlePlayerKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("player_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Player kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModBopKills8, ACHIEVEMENT_MOD_GOT_BOP_KILLS8, "MOD_GOT_BOP_KILLS8", 5);
+
+// player vs player kills 6666
+class CAchievementModBopKills9 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(6666); // Adjust this number as needed for PvP kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 playerKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("player_kills", &playerKills))
+			{
+				SetCount(playerKills);
+				Msg("[Achievement] Restored player kills from Steam: %d/%d\n", playerKills, GetGoal());
+			}
+		}
+	}
+
+	void HandlePlayerKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("player_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Player kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModBopKills9, ACHIEVEMENT_MOD_GOT_BOP_KILLS9, "MOD_GOT_BOP_KILLS9", 5);
+
+
 // get 6 kills with melee weapons
 class CAchievementModHooliganToolery : public CBaseAchievement
 {
@@ -1579,6 +1911,396 @@ public:
 
 // 3. Declare the achievement:
 DECLARE_ACHIEVEMENT(CAchievementModHooliganToolery6, ACHIEVEMENT_MOD_HOOLIGAN_TOOLERY6, "MOD_HOOLIGAN_TOOLERY6", 5);
+
+// get 6 kills with bullet driven weapons
+class CAchievementModPistolPlay : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(6); // 6 projectile weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 projectileKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("projectile_kills", &projectileKills))
+			{
+				SetCount(projectileKills);
+				Msg("[Achievement] Restored projectile kills from Steam: %d/%d\n", projectileKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleProjectileKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("projectile_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Projectile kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModPistolPlay, ACHIEVEMENT_MOD_PISTOL_PLAY, "MOD_PISTOL_PLAY", 5);
+
+// get 69 kills with bullet driven weapons
+class CAchievementModPistolPlay2 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(69); // 69 projectile weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 projectileKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("projectile_kills", &projectileKills))
+			{
+				SetCount(projectileKills);
+				Msg("[Achievement] Restored projectile kills from Steam: %d/%d\n", projectileKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleProjectileKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("projectile_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Projectile kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModPistolPlay2, ACHIEVEMENT_MOD_PISTOL_PLAY2, "MOD_PISTOL_PLAY2", 5);
+
+// get 222 kills with bullet driven weapons
+class CAchievementModPistolPlay3 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(222); // 222 projectile weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 projectileKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("projectile_kills", &projectileKills))
+			{
+				SetCount(projectileKills);
+				Msg("[Achievement] Restored projectile kills from Steam: %d/%d\n", projectileKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleProjectileKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("projectile_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Projectile kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModPistolPlay3, ACHIEVEMENT_MOD_PISTOL_PLAY3, "MOD_PISTOL_PLAY3", 5);
+
+// get 444 kills with bullet driven weapons
+class CAchievementModPistolPlay4 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(444); // 444 projectile weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 projectileKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("projectile_kills", &projectileKills))
+			{
+				SetCount(projectileKills);
+				Msg("[Achievement] Restored projectile kills from Steam: %d/%d\n", projectileKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleProjectileKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("projectile_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Projectile kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModPistolPlay4, ACHIEVEMENT_MOD_PISTOL_PLAY4, "MOD_PISTOL_PLAY4", 5);
+
+// get 666 kills with bullet driven weapons
+class CAchievementModPistolPlay5 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(666); // 666 projectile weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 projectileKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("projectile_kills", &projectileKills))
+			{
+				SetCount(projectileKills);
+				Msg("[Achievement] Restored projectile kills from Steam: %d/%d\n", projectileKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleProjectileKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("projectile_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Projectile kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModPistolPlay5, ACHIEVEMENT_MOD_PISTOL_PLAY5, "MOD_PISTOL_PLAY5", 5);
+
+// get 999 kills with bullet driven weapons
+class CAchievementModPistolPlay6 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(999); // 999 projectile weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 projectileKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("projectile_kills", &projectileKills))
+			{
+				SetCount(projectileKills);
+				Msg("[Achievement] Restored projectile kills from Steam: %d/%d\n", projectileKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleProjectileKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("projectile_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Projectile kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModPistolPlay6, ACHIEVEMENT_MOD_PISTOL_PLAY6, "MOD_PISTOL_PLAY6", 5);
+
+// get 1666 kills with bullet driven weapons
+class CAchievementModPistolPlay7 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(1666); // 1666 projectile weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 projectileKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("projectile_kills", &projectileKills))
+			{
+				SetCount(projectileKills);
+				Msg("[Achievement] Restored projectile kills from Steam: %d/%d\n", projectileKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleProjectileKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("projectile_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Projectile kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModPistolPlay7, ACHIEVEMENT_MOD_PISTOL_PLAY7, "MOD_PISTOL_PLAY7", 5);
+
+// get 2666 kills with bullet driven weapons
+class CAchievementModPistolPlay8 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(2666); // 2666 projectile weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 projectileKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("projectile_kills", &projectileKills))
+			{
+				SetCount(projectileKills);
+				Msg("[Achievement] Restored projectile kills from Steam: %d/%d\n", projectileKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleProjectileKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("projectile_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Projectile kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModPistolPlay8, ACHIEVEMENT_MOD_PISTOL_PLAY8, "MOD_PISTOL_PLAY8", 5);
+
+// get 3666 kills with bullet driven weapons
+class CAchievementModPistolPlay9 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(3666); // 3666 projectile weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 projectileKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("projectile_kills", &projectileKills))
+			{
+				SetCount(projectileKills);
+				Msg("[Achievement] Restored projectile kills from Steam: %d/%d\n", projectileKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleProjectileKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("projectile_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Projectile kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModPistolPlay9, ACHIEVEMENT_MOD_PISTOL_PLAY9, "MOD_PISTOL_PLAY9", 5);
+
+// get 6666 kills with bullet driven weapons
+class CAchievementModPistolPlay10 : public CBaseAchievement
+{
+public:
+	void Init()
+	{
+		SetFlags(ACH_SAVE_GLOBAL);
+		SetGoal(6666); // 6666 projectile weapon kills
+
+		if (steamapicontext && steamapicontext->SteamUserStats())
+		{
+			int32 projectileKills = 0;
+			if (steamapicontext->SteamUserStats()->GetStat("projectile_kills", &projectileKills))
+			{
+				SetCount(projectileKills);
+				Msg("[Achievement] Restored projectile kills from Steam: %d/%d\n", projectileKills, GetGoal());
+			}
+		}
+	}
+
+	void HandleProjectileKill()
+	{
+		if (!IsAchieved())
+		{
+			IncrementCount();
+			if (steamapicontext && steamapicontext->SteamUserStats())
+			{
+				int32 newCount = GetCount();
+				steamapicontext->SteamUserStats()->SetStat("projectile_kills", newCount);
+				steamapicontext->SteamUserStats()->StoreStats();
+				Msg("[Achievement] Projectile kill count: %d/%d (saved to Steam)\n", newCount, GetGoal());
+			}
+		}
+	}
+};
+
+// 3. Declare the achievement:
+DECLARE_ACHIEVEMENT(CAchievementModPistolPlay10, ACHIEVEMENT_MOD_PISTOL_PLAY10, "MOD_PISTOL_PLAY10", 5);
 
 
 // Storyline hop the fence into junk yard achivement
@@ -1866,7 +2588,9 @@ CON_COMMAND(zombie_kill_increment, "Increment zombie kill count for achievement"
 			ACHIEVEMENT_MOD_GOT_ZOP_KILLS3,
 			ACHIEVEMENT_MOD_GOT_ZOP_KILLS4,
 			ACHIEVEMENT_MOD_GOT_ZOP_KILLS5,
-			ACHIEVEMENT_MOD_GOT_ZOP_KILLS6
+			ACHIEVEMENT_MOD_GOT_ZOP_KILLS6,
+			ACHIEVEMENT_MOD_GOT_ZOP_KILLS7,
+			ACHIEVEMENT_MOD_GOT_ZOP_KILLS8
 		};
 
 		for (int i = 0; i < ARRAYSIZE(manhackIDs); i++)
@@ -1903,6 +2627,16 @@ CON_COMMAND(zombie_kill_increment, "Increment zombie kill count for achievement"
 				{
 					CAchievementModZopKills6* pZop6Achievement = dynamic_cast<CAchievementModZopKills6*>(pAchievement);
 					if (pZop6Achievement) pZop6Achievement->HandleZombieKill();
+				}
+				else if (manhackIDs[i] == ACHIEVEMENT_MOD_GOT_ZOP_KILLS7)
+				{
+					CAchievementModZopKills7* pZop7Achievement = dynamic_cast<CAchievementModZopKills7*>(pAchievement);
+					if (pZop7Achievement) pZop7Achievement->HandleZombieKill();
+				}
+				else if (manhackIDs[i] == ACHIEVEMENT_MOD_GOT_ZOP_KILLS8)
+				{
+					CAchievementModZopKills8* pZop8Achievement = dynamic_cast<CAchievementModZopKills8*>(pAchievement);
+					if (pZop8Achievement) pZop8Achievement->HandleZombieKill();
 				}
 			}
 		}
@@ -1976,7 +2710,10 @@ CON_COMMAND(zombie_kill_increment, "Increment zombie kill count for achievement"
 			ACHIEVEMENT_MOD_GOT_TOP_KILLS3,
 			ACHIEVEMENT_MOD_GOT_TOP_KILLS4,
 			ACHIEVEMENT_MOD_GOT_TOP_KILLS5,
-			ACHIEVEMENT_MOD_GOT_TOP_KILLS6
+			ACHIEVEMENT_MOD_GOT_TOP_KILLS6,
+			ACHIEVEMENT_MOD_GOT_TOP_KILLS7,
+			ACHIEVEMENT_MOD_GOT_TOP_KILLS8,
+			ACHIEVEMENT_MOD_GOT_TOP_KILLS9
 		};
 
 		for (int i = 0; i < ARRAYSIZE(combineIDs); i++)
@@ -2014,6 +2751,21 @@ CON_COMMAND(zombie_kill_increment, "Increment zombie kill count for achievement"
 					CAchievementModTopKills6* pTop6Achievement = dynamic_cast<CAchievementModTopKills6*>(pAchievement);
 					if (pTop6Achievement) pTop6Achievement->HandleCombineKill();
 				}
+				else if (combineIDs[i] == ACHIEVEMENT_MOD_GOT_TOP_KILLS7)
+				{
+					CAchievementModTopKills7* pTop7Achievement = dynamic_cast<CAchievementModTopKills7*>(pAchievement);
+					if (pTop7Achievement) pTop7Achievement->HandleCombineKill();
+				}
+				else if (combineIDs[i] == ACHIEVEMENT_MOD_GOT_TOP_KILLS8)
+				{
+					CAchievementModTopKills8* pTop8Achievement = dynamic_cast<CAchievementModTopKills8*>(pAchievement);
+					if (pTop8Achievement) pTop8Achievement->HandleCombineKill();
+				}
+				else if (combineIDs[i] == ACHIEVEMENT_MOD_GOT_TOP_KILLS6)
+				{
+					CAchievementModTopKills9* pTop9Achievement = dynamic_cast<CAchievementModTopKills9*>(pAchievement);
+					if (pTop9Achievement) pTop9Achievement->HandleCombineKill();
+				}
 			}
 		}
 		Msg("[Console Debug] Handled all TOP_KILLS (combine) achievements\n");
@@ -2038,7 +2790,10 @@ CON_COMMAND(player_kill_increment, "Increment player kill count for achievement"
 		ACHIEVEMENT_MOD_GOT_BOP_KILLS3,
 		ACHIEVEMENT_MOD_GOT_BOP_KILLS4,
 		ACHIEVEMENT_MOD_GOT_BOP_KILLS5,
-		ACHIEVEMENT_MOD_GOT_BOP_KILLS6
+		ACHIEVEMENT_MOD_GOT_BOP_KILLS6,
+		ACHIEVEMENT_MOD_GOT_BOP_KILLS7,
+		ACHIEVEMENT_MOD_GOT_BOP_KILLS8,
+		ACHIEVEMENT_MOD_GOT_BOP_KILLS9
 	};
 
 	for (int i = 0; i < ARRAYSIZE(playerKillIDs); i++)
@@ -2097,6 +2852,33 @@ CON_COMMAND(player_kill_increment, "Increment player kill count for achievement"
 				if (pBop6Achievement)
 				{
 					pBop6Achievement->HandlePlayerKill();
+					Msg("[Console Debug] Handled BOP_KILLS6 (player) achievement\n");
+				}
+			}
+			else if (playerKillIDs[i] == ACHIEVEMENT_MOD_GOT_BOP_KILLS7)
+			{
+				CAchievementModBopKills7* pBop7Achievement = dynamic_cast<CAchievementModBopKills7*>(pAchievement);
+				if (pBop7Achievement)
+				{
+					pBop7Achievement->HandlePlayerKill();
+					Msg("[Console Debug] Handled BOP_KILLS6 (player) achievement\n");
+				}
+			}
+			else if (playerKillIDs[i] == ACHIEVEMENT_MOD_GOT_BOP_KILLS8)
+			{
+				CAchievementModBopKills8* pBop8Achievement = dynamic_cast<CAchievementModBopKills8*>(pAchievement);
+				if (pBop8Achievement)
+				{
+					pBop8Achievement->HandlePlayerKill();
+					Msg("[Console Debug] Handled BOP_KILLS6 (player) achievement\n");
+				}
+			}
+			else if (playerKillIDs[i] == ACHIEVEMENT_MOD_GOT_BOP_KILLS9)
+			{
+				CAchievementModBopKills9* pBop9Achievement = dynamic_cast<CAchievementModBopKills9*>(pAchievement);
+				if (pBop9Achievement)
+				{
+					pBop9Achievement->HandlePlayerKill();
 					Msg("[Console Debug] Handled BOP_KILLS6 (player) achievement\n");
 				}
 			}
@@ -2220,6 +3002,152 @@ CON_COMMAND(tool_kill_increment, "Increment tool kill count for achievement")
 	}
 
 	Msg("[Console Debug] Processed all HOOLIGAN_TOOLERY achievements\n");
+}
+
+// 4. Create console command for projectile kills:
+CON_COMMAND(projectile_kill_increment, "Increment projectile kill count for achievement")
+{
+	Msg("[Console Debug] projectile_kill_increment called with %d args\n", args.ArgC());
+	for (int i = 0; i < args.ArgC(); i++)
+	{
+		Msg("[Console Debug] Arg[%d]: %s\n", i, args.Arg(i));
+	}
+
+	extern CAchievementMgr g_AchievementMgrMod;
+
+	// Get weapon name from arguments
+	const char* weaponName = "unknown";
+	if (args.ArgC() >= 3)
+	{
+		weaponName = args.Arg(2);
+	}
+
+	Msg("[Console Debug] Processing projectile kill with: %s\n", weaponName);
+
+	// Array of all projectile kill achievement IDs
+	int projectileKillIDs[] = {
+		ACHIEVEMENT_MOD_PISTOL_PLAY,
+		ACHIEVEMENT_MOD_PISTOL_PLAY2,
+		ACHIEVEMENT_MOD_PISTOL_PLAY3,
+		ACHIEVEMENT_MOD_PISTOL_PLAY4,
+		ACHIEVEMENT_MOD_PISTOL_PLAY5,
+		ACHIEVEMENT_MOD_PISTOL_PLAY6,
+		ACHIEVEMENT_MOD_PISTOL_PLAY7,
+		ACHIEVEMENT_MOD_PISTOL_PLAY8,
+		ACHIEVEMENT_MOD_PISTOL_PLAY9,
+		ACHIEVEMENT_MOD_PISTOL_PLAY10
+	};
+
+	for (int i = 0; i < ARRAYSIZE(projectileKillIDs); i++)
+	{
+		CBaseAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByID(projectileKillIDs[i]);
+		if (pAchievement)
+		{
+			if (projectileKillIDs[i] == ACHIEVEMENT_MOD_PISTOL_PLAY)
+			{
+				CAchievementModPistolPlay* pProjectileAchievement = dynamic_cast<CAchievementModPistolPlay*>(pAchievement);
+				if (pProjectileAchievement)
+				{
+					pProjectileAchievement->HandleProjectileKill();
+					Msg("[Console Debug] Handled PISTOL_PLAY achievement\n");
+				}
+			}
+			else if (projectileKillIDs[i] == ACHIEVEMENT_MOD_PISTOL_PLAY2)
+			{
+				CAchievementModPistolPlay2* pProjectile2Achievement = dynamic_cast<CAchievementModPistolPlay2*>(pAchievement);
+				if (pProjectile2Achievement)
+				{
+					pProjectile2Achievement->HandleProjectileKill();
+					Msg("[Console Debug] Handled PISTOL_PLAY2 achievement\n");
+				}
+			}
+			else if (projectileKillIDs[i] == ACHIEVEMENT_MOD_PISTOL_PLAY3)
+			{
+				CAchievementModPistolPlay3* pProjectile3Achievement = dynamic_cast<CAchievementModPistolPlay3*>(pAchievement);
+				if (pProjectile3Achievement)
+				{
+					pProjectile3Achievement->HandleProjectileKill();
+					Msg("[Console Debug] Handled PISTOL_PLAY3 achievement\n");
+				}
+			}
+			else if (projectileKillIDs[i] == ACHIEVEMENT_MOD_PISTOL_PLAY4)
+			{
+				CAchievementModPistolPlay4* pProjectile4Achievement = dynamic_cast<CAchievementModPistolPlay4*>(pAchievement);
+				if (pProjectile4Achievement)
+				{
+					pProjectile4Achievement->HandleProjectileKill();
+					Msg("[Console Debug] Handled PISTOL_PLAY4 achievement\n");
+				}
+			}
+			else if (projectileKillIDs[i] == ACHIEVEMENT_MOD_PISTOL_PLAY5)
+			{
+				CAchievementModPistolPlay5* pProjectile5Achievement = dynamic_cast<CAchievementModPistolPlay5*>(pAchievement);
+				if (pProjectile5Achievement)
+				{
+					pProjectile5Achievement->HandleProjectileKill();
+					Msg("[Console Debug] Handled PISTOL_PLAY5 achievement\n");
+				}
+			}
+			else if (projectileKillIDs[i] == ACHIEVEMENT_MOD_PISTOL_PLAY6)
+			{
+				CAchievementModPistolPlay6* pProjectile6Achievement = dynamic_cast<CAchievementModPistolPlay6*>(pAchievement);
+				if (pProjectile6Achievement)
+				{
+					pProjectile6Achievement->HandleProjectileKill();
+					Msg("[Console Debug] Handled PISTOL_PLAY6 achievement\n");
+				}
+			}
+			else if (projectileKillIDs[i] == ACHIEVEMENT_MOD_PISTOL_PLAY7)
+			{
+				CAchievementModPistolPlay7* pProjectile7Achievement = dynamic_cast<CAchievementModPistolPlay7*>(pAchievement);
+				if (pProjectile7Achievement)
+				{
+					pProjectile7Achievement->HandleProjectileKill();
+					Msg("[Console Debug] Handled PISTOL_PLAY7 achievement\n");
+				}
+			}
+			else if (projectileKillIDs[i] == ACHIEVEMENT_MOD_PISTOL_PLAY8)
+			{
+				CAchievementModPistolPlay8* pProjectile8Achievement = dynamic_cast<CAchievementModPistolPlay8*>(pAchievement);
+				if (pProjectile8Achievement)
+				{
+					pProjectile8Achievement->HandleProjectileKill();
+					Msg("[Console Debug] Handled PISTOL_PLAY8 achievement\n");
+				}
+			}
+			else if (projectileKillIDs[i] == ACHIEVEMENT_MOD_PISTOL_PLAY9)
+			{
+				CAchievementModPistolPlay9* pProjectile9Achievement = dynamic_cast<CAchievementModPistolPlay9*>(pAchievement);
+				if (pProjectile9Achievement)
+				{
+					pProjectile9Achievement->HandleProjectileKill();
+					Msg("[Console Debug] Handled PISTOL_PLAY9 achievement\n");
+				}
+			}
+			else if (projectileKillIDs[i] == ACHIEVEMENT_MOD_PISTOL_PLAY10)
+			{
+				CAchievementModPistolPlay10* pProjectile10Achievement = dynamic_cast<CAchievementModPistolPlay10*>(pAchievement);
+				if (pProjectile10Achievement)
+				{
+					pProjectile10Achievement->HandleProjectileKill();
+					Msg("[Console Debug] Handled PISTOL_PLAY10 achievement\n");
+				}
+			}
+		}
+	}
+
+	// Update Steam stat for projectile kills (single stat shared by all tiers)
+	if (steamapicontext && steamapicontext->SteamUserStats())
+	{
+		int32 currentKills = 0;
+		steamapicontext->SteamUserStats()->GetStat("projectile_kills", &currentKills);
+		currentKills++;
+		steamapicontext->SteamUserStats()->SetStat("projectile_kills", currentKills);
+		steamapicontext->SteamUserStats()->StoreStats();
+		Msg("[Achievement] projectile kills: %d (saved to Steam)\n", currentKills);
+	}
+
+	Msg("[Console Debug] Processed all PISTOL_PLAY achievements\n");
 }
 
 #endif // GAME_DLL

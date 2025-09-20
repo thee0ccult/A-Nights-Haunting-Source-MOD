@@ -62,6 +62,7 @@ END_DATADESC()
 
 // Add this declaration at the top of npc_BaseZombie.cpp
 extern void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
+extern void TrackProjectileKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
 
 const char *g_ppszRandomCitizenModels[] = 
 {
@@ -1323,6 +1324,7 @@ void CHL2MP_Player::Event_Killed(const CTakeDamageInfo& info)
 				Msg("[Server Debug] Local - executed: %s\n", cmd);
 			}
 			TrackToolKill(pAttackerPlayer, this, info);
+			TrackProjectileKill(pAttackerPlayer, this, info);
 		}
 	}
 

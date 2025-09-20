@@ -161,6 +161,7 @@ ConVar zombie_ambushdist( "zombie_ambushdist", "16000" );
 
 // Add this declaration at the top of npc_BaseZombie.cpp
 extern void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
+extern void TrackProjectileKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
 
 //=========================================================
 // For a couple of reasons, we keep a running count of how
@@ -2294,6 +2295,7 @@ void CNPC_BaseZombie::Event_Killed(const CTakeDamageInfo& info)
 		Msg("[Server Debug] Executed command: %s\n", cmd);
 	}
 	TrackToolKill(pAttacker, this, info);
+	TrackProjectileKill(pAttacker, this, info);
 	BaseClass::Event_Killed(info);
 
 }

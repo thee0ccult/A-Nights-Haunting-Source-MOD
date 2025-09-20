@@ -53,6 +53,7 @@ extern Activity ACT_WALK_MARCH;
 
 // Add this declaration at the top of npc_BaseZombie.cpp
 extern void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
+extern void TrackProjectileKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
 
 
 //-----------------------------------------------------------------------------
@@ -384,6 +385,7 @@ void CNPC_CombineS::Event_Killed( const CTakeDamageInfo &info )
 		}
 	}
 	TrackToolKill(pPlayer, this, info);
+	TrackProjectileKill(pPlayer, this, info);
 
 	BaseClass::Event_Killed( info );
 }

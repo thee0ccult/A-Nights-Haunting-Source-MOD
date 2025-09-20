@@ -423,6 +423,121 @@ void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDama
 	}
 }
 
+// 5. Helper function to check if weapon is projectile (add to gameinterface.cpp):
+bool IsProjectileWeapon(const char* weaponName)
+{
+	if (!weaponName)
+		return false;
+
+	// List of projectile weapons that should count for PISTOL_PLAY
+	const char* projectileWeapons[] = {
+		"weapon_357",
+		"weapon_ak47",
+		"weapon_ar2",
+		"weapon_baikal56",
+		"weapon_crossbow",
+		"weapon_dualies",
+		"weapon_fiveseven",
+		"weapon_galil",
+		"weapon_glock",
+		"weapon_m3pump",
+		"weapon_m4a1",
+		"weapon_m249",
+		"weapon_mp5",
+		"weapon_p228",
+		"weapon_patriot",
+		"weapon_pistol",
+		"weapon_scout",
+		"weapon_sg552",
+		"weapon_shotgun",
+		"weapon_rpg",
+		"weapon_smg1",
+		"weapon_ump45"
+	};
+
+	for (int i = 0; i < ARRAYSIZE(projectileWeapons); i++)
+	{
+		if (FStrEq(weaponName, projectileWeapons[i]))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+// 6. Universal projectile kill tracking function (add to gameinterface.cpp):
+void TrackProjectileKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info)
+{
+	if (!pAttacker || !pVictim)
+		return;
+
+	// Get the weapon that caused the kill
+	CBaseCombatWeapon* pWeapon = pAttacker->GetActiveWeapon();
+	const char* weaponName = "unknown";
+
+	if (pWeapon)
+	{
+		weaponName = pWeapon->GetClassname();
+	}
+	else if (info.GetInflictor())
+	{
+		weaponName = info.GetInflictor()->GetClassname();
+	}
+
+	Msg("[Debug] Projectile kill tracked: weapon = %s\n", weaponName);
+
+	// Only count if it's a projectile weapon
+	if (IsProjectileWeapon(weaponName))
+	{
+		char cmd[128];
+		Q_snprintf(cmd, sizeof(cmd), "projectile_kill_increment %d %s\n", pAttacker->GetUserID(), weaponName);
+
+		if (engine->IsDedicatedServer())
+		{
+			engine->ServerCommand(cmd);
+			engine->ServerExecute();
+			Msg("[Server Debug] Dedicated - executed projectile kill: %s\n", cmd);
+		}
+		else
+		{
+			engine->ServerCommand(cmd);
+			engine->ServerExecute();
+			Msg("[Server Debug] Local - executed projectile kill: %s\n", cmd);
+		}
+	}
+}
+
+// 7. Server-side console command (add to gameinterface.cpp):
+#ifndef CLIENT_DLL
+CON_COMMAND(projectile_kill_increment, "Server-side projectile kill forwarder")
+{
+	if (args.ArgC() < 3)
+	{
+		return;
+	}
+
+	int targetUserID = Q_atoi(args.Arg(1));
+	const char* weaponName = args.Arg(2);
+
+	// Find the player and send client command
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
+		if (pPlayer && pPlayer->IsConnected() && pPlayer->GetUserID() == targetUserID)
+		{
+			// Send to client
+			char clientCmd[256];
+			Q_snprintf(clientCmd, sizeof(clientCmd), "projectile_kill_increment %d %s", targetUserID, weaponName);
+			engine->ClientCommand(pPlayer->edict(), clientCmd);
+			Msg("[Server] Forwarded projectile kill to client: %s with %s\n", pPlayer->GetPlayerName(), weaponName);
+			return;
+		}
+	}
+	Msg("[Server] Player with UserID %d not found\n", targetUserID);
+}
+#endif
+
 #ifdef _DEBUG
 static ConVar s_UseNetworkVars( "UseNetworkVars", "1", FCVAR_CHEAT, "For profiling, toggle network vars." );
 #endif
