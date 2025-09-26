@@ -1096,6 +1096,12 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 	// Register user messages..
 	CUserMessageRegister::RegisterAll();
 
+	// Add this right after the above line:
+	Msg("[Client Debug] Registering ZombieKilled user message...\n");
+	extern void __MsgFunc_ZombieKilled(bf_read& msg);
+	usermessages->HookMessage("ZombieKilled", __MsgFunc_ZombieKilled);
+	Msg("[Client Debug] ZombieKilled user message registered!\n");
+
 	ClientVoiceMgr_Init();
 
 	// Embed voice status icons inside chat element

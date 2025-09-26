@@ -646,6 +646,17 @@ void CAchievementMgr::LevelShutdownPreEntity()
 	}
 #endif
 
+#ifndef NO_STEAM
+	if (IsPC() && steamapicontext && steamapicontext->SteamUserStats())
+	{
+		Msg("[Achievements] LevelShutdownPreEntity: forcing final StoreStats() before shutdown\n");
+		if (!steamapicontext->SteamUserStats()->StoreStats())
+		{
+			Warning("[Achievements] LevelShutdownPreEntity: final StoreStats() FAILED\n");
+		}
+	}
+#endif
+
 	// still upload (for cloud saves or server sync)
 	UploadUserData();
 

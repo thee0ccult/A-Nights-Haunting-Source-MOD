@@ -206,82 +206,30 @@ class IMaterialSystem;
 class IStudioRender;
 class CBasePlayer;
 
-// Add these arrays at the top of the file, after your includes
-static const char* g_SupportedNPCTypes[] = {
-	"npc_zombie",
-	"npc_combine_s",
-	"npc_manhack",
-	"npc_crow",
-	"npc_headcrab",
-	"npc_antlion",
-	NULL // Terminator
-};
-
-#ifndef CLIENT_DLL
-CON_COMMAND(zombie_kill_increment, "Server-side zombie kill forwarder")
-{
-	if (args.ArgC() < 3)
-	{
-		return;
-	}
-
-	int targetUserID = Q_atoi(args.Arg(1));
-	const char* npcType = args.Arg(2);
-
-	// Find the player and send client command
-	for (int i = 1; i <= gpGlobals->maxClients; i++)
-	{
-		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
-		if (pPlayer && pPlayer->IsConnected() && pPlayer->GetUserID() == targetUserID)
-		{
-			// Send to client with corrected format
-			char clientCmd[256];
-			Q_snprintf(clientCmd, sizeof(clientCmd), "zombie_kill_increment %d %s", targetUserID, npcType);
-			engine->ClientCommand(pPlayer->edict(), clientCmd);
-			Msg("[Server] Forwarded to client: %s\n", clientCmd);
-			return;
-		}
-	}
-	Msg("[Server] Player with UserID %d not found\n", targetUserID);
-}
-#endif
-
-#ifndef CLIENT_DLL
-CON_COMMAND(player_kill_increment, "Server-side player kill forwarder")
+CON_COMMAND(zombie_kill_increment, "Server-side zombie kill increment")
 {
 	if (args.ArgC() < 2)
 	{
+		Msg("[Server] Usage: zombie_kill_increment <userid>\n");
 		return;
 	}
 
 	int targetUserID = Q_atoi(args.Arg(1));
 
-	// Find the player and send client command
+	// Find the specific player by UserID
 	for (int i = 1; i <= gpGlobals->maxClients; i++)
 	{
 		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
 		if (pPlayer && pPlayer->IsConnected() && pPlayer->GetUserID() == targetUserID)
 		{
-			// Send to client
-			char clientCmd[256];
-			Q_snprintf(clientCmd, sizeof(clientCmd), "player_kill_increment");
-			engine->ClientCommand(pPlayer->edict(), clientCmd);
-			Msg("[Server] Forwarded player kill to client: %s\n", pPlayer->GetPlayerName());
+			// Send console command only to the player who killed the zombie
+			engine->ClientCommand(pPlayer->edict(), "zombie_kill_increment\n");
+			Msg("[Server] Sent zombie_kill_increment to player %s (UserID: %d)\n", pPlayer->GetPlayerName(), targetUserID);
 			return;
 		}
 	}
-	Msg("[Server] Player with UserID %d not found\n", targetUserID);
-}
-#endif
 
-bool IsSupportedNPCType(const char* classname)
-{
-	for (int i = 0; g_SupportedNPCTypes[i] != NULL; i++)
-	{
-		if (FStrEq(classname, g_SupportedNPCTypes[i]))
-			return true;
-	}
-	return false;
+	Msg("[Server] Could not find player with UserID: %d\n", targetUserID);
 }
 
 //-----------------------------------------------------------------------------
@@ -309,234 +257,6 @@ void SendAchievementUnlock(CBasePlayer* pPlayer, int iAchievementID)
 	Msg("[Server] Sent AchievementUnlock usermessage (ID = %d) to player %s\n",
 		iAchievementID, pPlayer->GetPlayerName());
 }
-
-#ifndef CLIENT_DLL
-CON_COMMAND(tool_kill_increment, "Server-side tool kill forwarder")
-{
-	if (args.ArgC() < 3)
-	{
-		return;
-	}
-
-	int targetUserID = Q_atoi(args.Arg(1));
-	const char* weaponName = args.Arg(2);
-
-	// Find the player and send client command
-	for (int i = 1; i <= gpGlobals->maxClients; i++)
-	{
-		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
-		if (pPlayer && pPlayer->IsConnected() && pPlayer->GetUserID() == targetUserID)
-		{
-			// Send to client
-			char clientCmd[256];
-			Q_snprintf(clientCmd, sizeof(clientCmd), "tool_kill_increment %d %s", targetUserID, weaponName);
-			engine->ClientCommand(pPlayer->edict(), clientCmd);
-			Msg("[Server] Forwarded tool kill to client: %s with %s\n", pPlayer->GetPlayerName(), weaponName);
-			return;
-		}
-	}
-	Msg("[Server] Player with UserID %d not found\n", targetUserID);
-}
-#endif
-
-// 5. Helper function to check if weapon is a tool:
-bool IsToolWeapon(const char* weaponName)
-{
-	if (!weaponName)
-		return false;
-
-	// List of tool weapons that should count for HOOLIGAN_TOOLERY
-	const char* toolWeapons[] = {
-		"weapon_axe",
-		"weapon_bat",
-		"weapon_blowtorch",
-		"weapon_cicle",
-		"weapon_cigarette",
-		"weapon_cleaver",
-		"weapon_crowbar",
-		"weapon_hammer",
-		"weapon_hockeystick",
-		"weapon_knife",
-		"weapon_pickaxe",
-		"weapon_pipe",
-		"weapon_pipewrench",
-		"weapon_pitchfork",
-		"weapon_shovel",
-		"weapon_sledgehammer"
-	};
-
-	for (int i = 0; i < ARRAYSIZE(toolWeapons); i++)
-	{
-		if (FStrEq(weaponName, toolWeapons[i]))
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-
-// =============================================================================
-// UNIVERSAL TOOL KILL TRACKING FUNCTION
-// =============================================================================
-
-// Add this function to track tool kills from any source
-void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info)
-{
-	if (!pAttacker || !pVictim)
-		return;
-
-	// Get the weapon that caused the kill
-	CBaseCombatWeapon* pWeapon = pAttacker->GetActiveWeapon();
-	const char* weaponName = "unknown";
-
-	if (pWeapon)
-	{
-		weaponName = pWeapon->GetClassname();
-	}
-	else if (info.GetInflictor())
-	{
-		weaponName = info.GetInflictor()->GetClassname();
-	}
-
-	Msg("[Debug] Tool kill tracked: weapon = %s\n", weaponName);
-
-	// Only count if it's a tool weapon
-	if (IsToolWeapon(weaponName))
-	{
-		char cmd[128];
-		Q_snprintf(cmd, sizeof(cmd), "tool_kill_increment %d %s\n", pAttacker->GetUserID(), weaponName);
-
-		if (engine->IsDedicatedServer())
-		{
-			engine->ServerCommand(cmd);
-			engine->ServerExecute();
-			Msg("[Server Debug] Dedicated - executed tool kill: %s\n", cmd);
-		}
-		else
-		{
-			engine->ServerCommand(cmd);
-			engine->ServerExecute();
-			Msg("[Server Debug] Local - executed tool kill: %s\n", cmd);
-		}
-	}
-}
-
-// 5. Helper function to check if weapon is projectile (add to gameinterface.cpp):
-bool IsProjectileWeapon(const char* weaponName)
-{
-	if (!weaponName)
-		return false;
-
-	// List of projectile weapons that should count for PISTOL_PLAY
-	const char* projectileWeapons[] = {
-		"weapon_357",
-		"weapon_ak47",
-		"weapon_ar2",
-		"weapon_baikal56",
-		"weapon_crossbow",
-		"weapon_dualies",
-		"weapon_fiveseven",
-		"weapon_galil",
-		"weapon_glock",
-		"weapon_m3pump",
-		"weapon_m4a1",
-		"weapon_m249",
-		"weapon_mp5",
-		"weapon_p228",
-		"weapon_patriot",
-		"weapon_pistol",
-		"weapon_scout",
-		"weapon_sg552",
-		"weapon_shotgun",
-		"weapon_rpg",
-		"weapon_smg1",
-		"weapon_ump45"
-	};
-
-	for (int i = 0; i < ARRAYSIZE(projectileWeapons); i++)
-	{
-		if (FStrEq(weaponName, projectileWeapons[i]))
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
-// 6. Universal projectile kill tracking function (add to gameinterface.cpp):
-void TrackProjectileKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info)
-{
-	if (!pAttacker || !pVictim)
-		return;
-
-	// Get the weapon that caused the kill
-	CBaseCombatWeapon* pWeapon = pAttacker->GetActiveWeapon();
-	const char* weaponName = "unknown";
-
-	if (pWeapon)
-	{
-		weaponName = pWeapon->GetClassname();
-	}
-	else if (info.GetInflictor())
-	{
-		weaponName = info.GetInflictor()->GetClassname();
-	}
-
-	Msg("[Debug] Projectile kill tracked: weapon = %s\n", weaponName);
-
-	// Only count if it's a projectile weapon
-	if (IsProjectileWeapon(weaponName))
-	{
-		char cmd[128];
-		Q_snprintf(cmd, sizeof(cmd), "projectile_kill_increment %d %s\n", pAttacker->GetUserID(), weaponName);
-
-		if (engine->IsDedicatedServer())
-		{
-			engine->ServerCommand(cmd);
-			engine->ServerExecute();
-			Msg("[Server Debug] Dedicated - executed projectile kill: %s\n", cmd);
-		}
-		else
-		{
-			engine->ServerCommand(cmd);
-			engine->ServerExecute();
-			Msg("[Server Debug] Local - executed projectile kill: %s\n", cmd);
-		}
-	}
-}
-
-// 7. Server-side console command (add to gameinterface.cpp):
-#ifndef CLIENT_DLL
-CON_COMMAND(projectile_kill_increment, "Server-side projectile kill forwarder")
-{
-	if (args.ArgC() < 3)
-	{
-		return;
-	}
-
-	int targetUserID = Q_atoi(args.Arg(1));
-	const char* weaponName = args.Arg(2);
-
-	// Find the player and send client command
-	for (int i = 1; i <= gpGlobals->maxClients; i++)
-	{
-		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
-		if (pPlayer && pPlayer->IsConnected() && pPlayer->GetUserID() == targetUserID)
-		{
-			// Send to client
-			char clientCmd[256];
-			Q_snprintf(clientCmd, sizeof(clientCmd), "projectile_kill_increment %d %s", targetUserID, weaponName);
-			engine->ClientCommand(pPlayer->edict(), clientCmd);
-			Msg("[Server] Forwarded projectile kill to client: %s with %s\n", pPlayer->GetPlayerName(), weaponName);
-			return;
-		}
-	}
-	Msg("[Server] Player with UserID %d not found\n", targetUserID);
-}
-#endif
 
 #ifdef _DEBUG
 static ConVar s_UseNetworkVars( "UseNetworkVars", "1", FCVAR_CHEAT, "For profiling, toggle network vars." );
@@ -1051,7 +771,6 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 	if ( !IGameSystem::InitAllSystems() )
 		return false;
 
-
 #if defined( REPLAY_ENABLED )
 	if ( gameeventmanager->LoadEventsFromFile( "resource/replayevents.res" ) <= 0 )
 	{
@@ -1107,7 +826,7 @@ bool CServerGameDLL::DLLInit( CreateInterfaceFn appSystemFactory,
 		// return false; 
 	}
 #endif // NO_STEAM
-
+	usermessages->Register("ZombieKilled", 0);
 	return true;
 }
 

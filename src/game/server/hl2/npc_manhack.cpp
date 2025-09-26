@@ -85,9 +85,6 @@ ConVar	sk_manhack_v2( "sk_manhack_v2","1");
 extern void		SpawnBlood(Vector vecSpot, const Vector &vAttackDir, int bloodColor, float flDamage);
 extern float	GetFloorZ(const Vector &origin);
 
-extern void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
-extern void TrackProjectileKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
-
 //-----------------------------------------------------------------------------
 // Private activities.
 //-----------------------------------------------------------------------------
@@ -410,18 +407,6 @@ void CNPC_Manhack::Event_Killed( const CTakeDamageInfo &info )
 		KillSprites( 0.0f );
 	}
 	StopSound("NPC_Crow.Flap");
-	// Add achievement tracking for crow kills
-	CBasePlayer* pAttacker = ToBasePlayer(info.GetAttacker());
-	if (pAttacker)
-	{
-		// Use the actual classname "npc_manhack"
-		char cmd[128];
-		Q_snprintf(cmd, sizeof(cmd), "zombie_kill_increment %d %s\n", pAttacker->GetUserID(), GetClassname());
-		engine->ServerCommand(cmd);
-		engine->ServerExecute();
-	}
-	TrackToolKill(pAttacker, this, info);
-	TrackProjectileKill(pAttacker, this, info);
 	BaseClass::Event_Killed( info );
 }
 

@@ -159,10 +159,6 @@ ConVar zombie_decaymax( "zombie_decaymax", "0.4" );
 
 ConVar zombie_ambushdist( "zombie_ambushdist", "16000" );
 
-// Add this declaration at the top of npc_BaseZombie.cpp
-extern void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
-extern void TrackProjectileKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
-
 //=========================================================
 // For a couple of reasons, we keep a running count of how
 // many zombies in the world are angry at any given time.
@@ -2287,17 +2283,14 @@ void CNPC_BaseZombie::Event_Killed(const CTakeDamageInfo& info)
 	CBasePlayer* pAttacker = ToBasePlayer(info.GetAttacker());
 	if (pAttacker)
 	{
-		// Use the same approach for both dedicated and local servers
+		// Send command with the player's user ID
 		char cmd[128];
-		Q_snprintf(cmd, sizeof(cmd), "zombie_kill_increment %d %s\n", pAttacker->GetUserID(), GetClassname());
+		Q_snprintf(cmd, sizeof(cmd), "zombie_kill_increment %d\n", pAttacker->GetUserID());
 		engine->ServerCommand(cmd);
 		engine->ServerExecute();
-		Msg("[Server Debug] Executed command: %s\n", cmd);
 	}
-	TrackToolKill(pAttacker, this, info);
-	TrackProjectileKill(pAttacker, this, info);
-	BaseClass::Event_Killed(info);
 
+	BaseClass::Event_Killed(info);
 }
 
 //---------------------------------------------------------

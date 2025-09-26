@@ -51,11 +51,6 @@ LINK_ENTITY_TO_CLASS( npc_combine_s, CNPC_CombineS );
 extern Activity ACT_WALK_EASY;
 extern Activity ACT_WALK_MARCH;
 
-// Add this declaration at the top of npc_BaseZombie.cpp
-extern void TrackToolKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
-extern void TrackProjectileKill(CBasePlayer* pAttacker, CBaseEntity* pVictim, const CTakeDamageInfo& info);
-
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -363,29 +358,6 @@ void CNPC_CombineS::Event_Killed( const CTakeDamageInfo &info )
 			}
 		}
 	}
-
-	if (pPlayer != NULL)
-	{
-		Msg("[Debug] Combine killed: classname = '%s'\n", GetClassname());
-
-		char cmd[128];
-		Q_snprintf(cmd, sizeof(cmd), "zombie_kill_increment %d %s\n", pPlayer->GetUserID(), GetClassname());
-
-		if (engine->IsDedicatedServer())
-		{
-			engine->ServerCommand(cmd);
-			engine->ServerExecute();
-			Msg("[Server Debug] Dedicated - executed: %s\n", cmd);
-		}
-		else
-		{
-			engine->ServerCommand(cmd);
-			engine->ServerExecute();
-			Msg("[Server Debug] Local - executed: %s\n", cmd);
-		}
-	}
-	TrackToolKill(pPlayer, this, info);
-	TrackProjectileKill(pPlayer, this, info);
 
 	BaseClass::Event_Killed( info );
 }
