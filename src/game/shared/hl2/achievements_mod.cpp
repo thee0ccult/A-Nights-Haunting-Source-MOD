@@ -60,83 +60,96 @@ void __MsgFunc_ZombieKilled(bf_read& msg);
 #define ACHIEVEMENT_MOD_TARGET_SHOOTER 44
 #define ACHIEVEMENT_MOD_BUCK_HUNTER 45
 #define ACHIEVEMENT_MOD_DUCK_HUNTER 46
+#define ACHIEVEMENT_MOD_GOT_COP_KILLS2 47
+#define ACHIEVEMENT_MOD_GOT_COP_KILLS3 48
+#define ACHIEVEMENT_MOD_GOT_COP_KILLS4 49
+#define ACHIEVEMENT_MOD_GOT_COP_KILLS5 50
+#define ACHIEVEMENT_MOD_GOT_COP_KILLS6 51
 ConVar zombie_kills("zombie_kills", "0", FCVAR_ARCHIVE);
 
-// Storyline get 9400 zombies kills achievement
-class CAchievementModCopKills : public CBaseAchievement
+class CZombieKillAchievement : public CBaseAchievement
 {
 public:
-	void Init()
-	{
-		SetFlags(ACH_SAVE_GLOBAL);
-		SetGoal(9400);
+    virtual void HandleZombieKill()
+    {
+        if (!IsAchieved())
+        {
+            IncrementCount();
+            int32 newCount = GetCount();
+            if (steamapicontext && steamapicontext->SteamUserStats())
+            {
+                steamapicontext->SteamUserStats()->SetStat("zombie_kills", newCount);
+                steamapicontext->SteamUserStats()->StoreStats();
+                IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
+                CAchievementMgr* pMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
+                if (pMgr) pMgr->SetDirty(true);
+                zombie_kills.SetValue(newCount);
+            }
+            if (newCount >= GetGoal())
+            {
+                Msg("[Achievement] %s completed!\n", GetName()); // Use GetName() here
+            }
+        }
+    }
 
-		// Just start with local value, don’t query Steam yet
-		SetCount(zombie_kills.GetInt());
-		Msg("[Achievement] Init: Local zombie kills = %d/%d (waiting for Steam sync)\n", GetCount(), GetGoal());
-	}
+    virtual int GetSteamStat() const
+    {
+        if (steamapicontext && steamapicontext->SteamUserStats())
+        {
+            int32 val = -1;
+            if (steamapicontext->SteamUserStats()->GetStat("zombie_kills", &val))
+                return val;
+        }
+        return -1;
+    }
 
-	void HandleZombieKill()
-	{
-		if (!IsAchieved())
-		{
-			IncrementCount();
-			int32 newCount = GetCount();
-
-			if (steamapicontext && steamapicontext->SteamUserStats())
-			{
-				bool statSet = steamapicontext->SteamUserStats()->SetStat("zombie_kills", newCount);
-				bool statsStored = steamapicontext->SteamUserStats()->StoreStats();
-
-				// Mark the real achievement manager dirty
-				IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
-				CAchievementMgr* pAchievementMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
-				if (pAchievementMgr)
-				{
-					pAchievementMgr->SetDirty(true);
-				}
-
-				Msg("[Achievement] Zombie kill: %d/%d (Steam: %s/%s)\n",
-					newCount, GetGoal(),
-					statSet ? "SET" : "FAIL",
-					statsStored ? "STORE" : "FAIL");
-
-				zombie_kills.SetValue(newCount);
-			}
-
-			if (newCount >= GetGoal())
-			{
-				Msg("[Achievement] MOD_GOT_COP_KILLS completed!\n");
-			}
-		}
-	}
-
-	// Debug methods
-	int32 GetSteamStat()
-	{
-		if (steamapicontext && steamapicontext->SteamUserStats())
-		{
-			int32 steamStat = 0;
-			if (steamapicontext->SteamUserStats()->GetStat("zombie_kills", &steamStat))
-				return steamStat;
-		}
-		return -1;
-	}
-
-	void ForceSteamSync()
-	{
-		if (steamapicontext && steamapicontext->SteamUserStats())
-		{
-			int32 currentCount = GetCount();
-			steamapicontext->SteamUserStats()->SetStat("zombie_kills", currentCount);
-			steamapicontext->SteamUserStats()->StoreStats();
-			zombie_kills.SetValue(currentCount);
-			Msg("[Achievement] Force sync: %d zombie kills\n", currentCount);
-		}
-	}
+    virtual void ForceSteamSync()
+    {
+        if (steamapicontext && steamapicontext->SteamUserStats())
+        {
+            steamapicontext->SteamUserStats()->StoreStats();
+            Msg("[Achievement] ForceSteamSync executed for %s\n", GetName());
+        }
+    }
 };
 
-DECLARE_ACHIEVEMENT(CAchievementModCopKills, ACHIEVEMENT_MOD_GOT_COP_KILLS, "MOD_GOT_COP_KILLS", 5);
+// Generic Zombie Kill Achievement Template
+#define DECLARE_ZOMBIE_KILL_ACHIEVEMENT(CLASSNAME, ID, SHORTNAME, GOAL) \
+class CLASSNAME : public CZombieKillAchievement \
+{ \
+public: \
+    void Init() override \
+    { \
+        SetFlags(ACH_SAVE_GLOBAL); \
+        SetGoal(GOAL); \
+        SetCount(zombie_kills.GetInt()); \
+        Msg("[Achievement] Init: Local zombie kills = %d/%d (" SHORTNAME ")\n", GetCount(), GetGoal()); \
+    } \
+}; \
+DECLARE_ACHIEVEMENT(CLASSNAME, ID, SHORTNAME, 5)
+// 9400 zombies (original one)
+DECLARE_ZOMBIE_KILL_ACHIEVEMENT(CAchievementModCopKills,
+    ACHIEVEMENT_MOD_GOT_COP_KILLS, "MOD_GOT_COP_KILLS", 9400);
+
+// 666 zombies
+DECLARE_ZOMBIE_KILL_ACHIEVEMENT(CAchievementModCopKills2,
+    ACHIEVEMENT_MOD_GOT_COP_KILLS2, "MOD_GOT_COP_KILLS2", 666);
+
+// 333 zombies
+DECLARE_ZOMBIE_KILL_ACHIEVEMENT(CAchievementModCopKills3,
+    ACHIEVEMENT_MOD_GOT_COP_KILLS3, "MOD_GOT_COP_KILLS3", 333);
+
+// 999 zombies
+DECLARE_ZOMBIE_KILL_ACHIEVEMENT(CAchievementModCopKills4,
+    ACHIEVEMENT_MOD_GOT_COP_KILLS4, "MOD_GOT_COP_KILLS4", 999);
+
+// 1966 zombies
+DECLARE_ZOMBIE_KILL_ACHIEVEMENT(CAchievementModCopKills5,
+    ACHIEVEMENT_MOD_GOT_COP_KILLS5, "MOD_GOT_COP_KILLS5", 1966);
+
+// 6 zombies
+DECLARE_ZOMBIE_KILL_ACHIEVEMENT(CAchievementModCopKills6,
+    ACHIEVEMENT_MOD_GOT_COP_KILLS6, "MOD_GOT_COP_KILLS6", 6);
 
 // Storyline hop the fence into junk yard achivement
 DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_HIT_TRIGGER, "MOD_HIT_TRIGGER", 5);
@@ -270,133 +283,197 @@ DECLARE_MAP_EVENT_ACHIEVEMENT_HIDDEN(ACHIEVEMENT_MOD_DUCK_HUNTER, "MOD_DUCK_HUNT
 // secret achievement secret plunderbread storyline
 DECLARE_MAP_EVENT_ACHIEVEMENT_HIDDEN(ACHIEVEMENT_MOD_HOLY_BREAD, "MOD_HOLY_BREAD", 5);
 
-CON_COMMAND(zombie_kill_increment, "Increment zombie kill count for achievement")
+CON_COMMAND(zombie_kill_increment, "Increment zombie kill count for all zombie kill achievements")
 {
-	// Use the main global achievement manager
-	IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
-	CAchievementMgr* pAchievementMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
+    IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
+    CAchievementMgr* pAchievementMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
 
-	if (!pAchievementMgr)
-	{
-		Msg("[Console] ERROR: Could not get main achievement manager!\n");
-		return;
-	}
+    if (!pAchievementMgr)
+    {
+        Msg("[Console] ERROR: Could not get main achievement manager!\n");
+        return;
+    }
 
-	CBaseAchievement* pAchievement = pAchievementMgr->GetAchievementByID(ACHIEVEMENT_MOD_GOT_COP_KILLS);
-	CAchievementModCopKills* pCopAchievement = dynamic_cast<CAchievementModCopKills*>(pAchievement);
-	if (pCopAchievement)
-	{
-		Msg("[Console] Before increment: %d/%d\n", pCopAchievement->GetCount(), pCopAchievement->GetGoal());
-		pCopAchievement->HandleZombieKill();
-		Msg("[Console] After increment: %d/%d\n", pCopAchievement->GetCount(), pCopAchievement->GetGoal());
-	}
-	else
-	{
-		Msg("[Console] ERROR: Could not find zombie kill achievement!\n");
-	}
+    // List of all zombie-kill achievement names
+    const char* zombieAchievements[] = {
+        "MOD_GOT_COP_KILLS",
+        "MOD_GOT_COP_KILLS2",
+        "MOD_GOT_COP_KILLS3",
+        "MOD_GOT_COP_KILLS4",
+        "MOD_GOT_COP_KILLS5",
+        "MOD_GOT_COP_KILLS6"
+    };
+
+    Msg("[Console] Incrementing zombie kill across all zombie achievements...\n");
+
+    for (int i = 0; i < ARRAYSIZE(zombieAchievements); i++)
+    {
+        const char* achName = zombieAchievements[i];
+
+        CBaseAchievement* pAchievement = pAchievementMgr->GetAchievementByName(achName);
+        auto* pZombieAchievement = dynamic_cast<CZombieKillAchievement*>(pAchievement);
+
+        if (pZombieAchievement)
+        {
+            Msg("[Console] Before increment: %d/%d (%s)\n",
+                pZombieAchievement->GetCount(), pZombieAchievement->GetGoal(), achName);
+
+            pZombieAchievement->HandleZombieKill();
+
+            Msg("[Console] After increment: %d/%d (%s)\n",
+                pZombieAchievement->GetCount(), pZombieAchievement->GetGoal(), achName);
+        }
+        else
+        {
+            Msg("[Console] ERROR: Could not find zombie achievement %s!\n", achName);
+        }
+    }
 }
 
-CON_COMMAND(zombie_kill_debug, "Debug zombie kill achievement and Steam stat")
+CON_COMMAND(zombie_kill_debug, "Debug all zombie kill achievements and Steam stat")
 {
-	IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
-	CAchievementMgr* pAchievementMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
+    IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
+    CAchievementMgr* pAchievementMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
 
-	if (!pAchievementMgr)
-	{
-		Msg("[Debug] ERROR: Could not get main achievement manager!\n");
-		return;
-	}
+    if (!pAchievementMgr)
+    {
+        Msg("[Debug] ERROR: Could not get main achievement manager!\n");
+        return;
+    }
 
-	CBaseAchievement* pAchievement = pAchievementMgr->GetAchievementByID(ACHIEVEMENT_MOD_GOT_COP_KILLS);
-	CAchievementModCopKills* pCopAchievement = dynamic_cast<CAchievementModCopKills*>(pAchievement);
+    const char* zombieAchievements[] = {
+        "MOD_GOT_COP_KILLS",
+        "MOD_GOT_COP_KILLS2",
+        "MOD_GOT_COP_KILLS3",
+        "MOD_GOT_COP_KILLS4",
+        "MOD_GOT_COP_KILLS5",
+        "MOD_GOT_COP_KILLS6"
+    };
 
-	if (pCopAchievement)
-	{
-		int32 achievementCount = pCopAchievement->GetCount();
-		int32 steamStat = pCopAchievement->GetSteamStat();
-		int32 convarValue = zombie_kills.GetInt();
+    Msg("[Debug] ===== Zombie Kill Achievements =====\n");
 
-		Msg("[Debug] Achievement count: %d/%d\n", achievementCount, pCopAchievement->GetGoal());
+    for (int i = 0; i < ARRAYSIZE(zombieAchievements); i++)
+    {
+        const char* achName = zombieAchievements[i];
 
-		char szSteamStat[32];
-		Q_snprintf(szSteamStat, sizeof(szSteamStat), "%d", steamStat);
-		Msg("[Debug] Steam stat: %s\n", steamStat >= 0 ? szSteamStat : "INVALID");
-		Msg("[Debug] ConVar value: %d\n", convarValue);
-		Msg("[Debug] Achievement status: %s\n", pCopAchievement->IsAchieved() ? "COMPLETE" : "IN PROGRESS");
+        CBaseAchievement* pAchievement = pAchievementMgr->GetAchievementByName(achName);
+        auto* pZombieAchievement = dynamic_cast<CZombieKillAchievement*>(pAchievement);
 
-		if (steamStat >= 0 && achievementCount != steamStat)
-		{
-			Msg("[Debug] WARNING: Achievement (%d) != Steam stat (%d)\n", achievementCount, steamStat);
-		}
-		else if (steamStat >= 0)
-		{
-			Msg("[Debug] Achievement and Steam stat are synced\n");
-		}
-	}
-	else
-	{
-		Msg("[Debug] ERROR: Could not find achievement!\n");
-	}
+        if (pZombieAchievement)
+        {
+            int32 achievementCount = pZombieAchievement->GetCount();
+            int32 steamStat = pZombieAchievement->GetSteamStat();
+            int32 convarValue = zombie_kills.GetInt();
+
+            Msg("[Debug][%s] Count: %d/%d\n",
+                achName, achievementCount, pZombieAchievement->GetGoal());
+
+            if (steamStat >= 0)
+                Msg("[Debug][%s] Steam stat: %d\n", achName, steamStat);
+            else
+                Msg("[Debug][%s] Steam stat: INVALID\n", achName);
+
+            Msg("[Debug][%s] ConVar value: %d\n", achName, convarValue);
+            Msg("[Debug][%s] Status: %s\n",
+                achName, pZombieAchievement->IsAchieved() ? "COMPLETE" : "IN PROGRESS");
+
+            if (steamStat >= 0 && achievementCount != steamStat)
+            {
+                Msg("[Debug][%s] WARNING: Local count (%d) != Steam stat (%d)\n",
+                    achName, achievementCount, steamStat);
+            }
+            else if (steamStat >= 0)
+            {
+                Msg("[Debug][%s] Local and Steam are synced\n", achName);
+            }
+        }
+        else
+        {
+            Msg("[Debug] ERROR: Could not find achievement %s!\n", achName);
+        }
+    }
 }
 
-CON_COMMAND(zombie_kill_sync, "Force sync zombie kill achievement with Steam")
+CON_COMMAND(zombie_kill_sync, "Force sync all zombie kill achievements with Steam")
 {
-	IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
-	CAchievementMgr* pAchievementMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
+    IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
+    CAchievementMgr* pAchievementMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
 
-	if (!pAchievementMgr)
-	{
-		Msg("[Console] ERROR: Could not get main achievement manager!\n");
-		return;
-	}
+    if (!pAchievementMgr)
+    {
+        Msg("[Console] ERROR: Could not get main achievement manager!\n");
+        return;
+    }
 
-	CBaseAchievement* pAchievement = pAchievementMgr->GetAchievementByID(ACHIEVEMENT_MOD_GOT_COP_KILLS);
-	CAchievementModCopKills* pCopAchievement = dynamic_cast<CAchievementModCopKills*>(pAchievement);
-	if (pCopAchievement)
-	{
-		pCopAchievement->ForceSteamSync();
-		Msg("[Console] Forced synchronization complete\n");
-	}
-	else
-	{
-		Msg("[Console] ERROR: Could not find achievement!\n");
-	}
+    const char* zombieAchievements[] = {
+        "MOD_GOT_COP_KILLS",
+        "MOD_GOT_COP_KILLS2",
+        "MOD_GOT_COP_KILLS3",
+        "MOD_GOT_COP_KILLS4",
+        "MOD_GOT_COP_KILLS5",
+        "MOD_GOT_COP_KILLS6"
+    };
+
+    Msg("[Console] Forcing Steam sync on all zombie kill achievements...\n");
+
+    for (int i = 0; i < ARRAYSIZE(zombieAchievements); i++)
+    {
+        const char* achName = zombieAchievements[i];
+
+        CBaseAchievement* pAchievement = pAchievementMgr->GetAchievementByName(achName);
+        auto* pZombieAchievement = dynamic_cast<CZombieKillAchievement*>(pAchievement);
+
+        if (pZombieAchievement)
+        {
+            pZombieAchievement->ForceSteamSync();
+            Msg("[Console] Sync complete for %s (%d/%d)\n",
+                achName, pZombieAchievement->GetCount(), pZombieAchievement->GetGoal());
+        }
+        else
+        {
+            Msg("[Console] ERROR: Could not find zombie achievement %s!\n", achName);
+        }
+    }
 }
 
 // Message handler - USE THE MAIN ACHIEVEMENT MANAGER
 void __MsgFunc_ZombieKilled(bf_read& msg)
 {
-	Msg("[Achievement] ZombieKilled message received!\n");
+    Msg("[Achievement] ZombieKilled message received!\n");
 
-	IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
-	CAchievementMgr* pAchievementMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
+    IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
+    CAchievementMgr* pAchievementMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
 
-	if (!pAchievementMgr)
-	{
-		Msg("[Achievement] ERROR: Could not get main achievement manager!\n");
-		return;
-	}
+    if (!pAchievementMgr)
+    {
+        Msg("[Achievement] ERROR: Could not get main achievement manager!\n");
+        return;
+    }
 
-	CBaseAchievement* pAchievement = pAchievementMgr->GetAchievementByID(ACHIEVEMENT_MOD_GOT_COP_KILLS);
-	CAchievementModCopKills* pCopAchievement = dynamic_cast<CAchievementModCopKills*>(pAchievement);
+    const char* zombieAchievements[] = {
+        "MOD_GOT_COP_KILLS",
+        "MOD_GOT_COP_KILLS2",
+        "MOD_GOT_COP_KILLS3",
+        "MOD_GOT_COP_KILLS4",
+        "MOD_GOT_COP_KILLS5",
+        "MOD_GOT_COP_KILLS6"
+    };
 
-	if (pCopAchievement)
-	{
-		if (!pCopAchievement->IsAchieved())
-		{
-			Msg("[Achievement] Processing kill (current: %d/%d)\n",
-				pCopAchievement->GetCount(), pCopAchievement->GetGoal());
-			pCopAchievement->HandleZombieKill();
-		}
-		else
-		{
-			Msg("[Achievement] Already completed - ignoring kill\n");
-		}
-	}
-	else
-	{
-		Msg("[Achievement] ERROR: Achievement not found!\n");
-	}
+    for (int i = 0; i < ARRAYSIZE(zombieAchievements); i++)
+    {
+        const char* achName = zombieAchievements[i];
+
+        CBaseAchievement* pAchievement = pAchievementMgr->GetAchievementByName(achName);
+        auto* pZombieAchievement = dynamic_cast<CZombieKillAchievement*>(pAchievement);
+
+        if (pZombieAchievement && !pZombieAchievement->IsAchieved())
+        {
+            Msg("[Achievement] Processing kill for %s (current: %d/%d)\n",
+                achName, pZombieAchievement->GetCount(), pZombieAchievement->GetGoal());
+
+            pZombieAchievement->HandleZombieKill();
+        }
+    }
 }
 
 #endif // GAME_DLL
