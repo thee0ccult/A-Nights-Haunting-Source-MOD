@@ -1298,6 +1298,16 @@ void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
 		GetGlobalTeam( pAttacker->GetTeamNumber() )->AddScore( iScoreToAdd );
 	}
 
+	// --- existing code ---
+	if (pAttacker && pAttacker->IsPlayer())
+	{
+		CHL2MP_Player* pKiller = ToHL2MPPlayer(pAttacker);
+		if (pKiller && pKiller != this) // prevent suicides
+		{
+			engine->ServerCommand("player_kill_increment\n");
+		}
+	}
+
 	FlashlightTurnOff();
 
 	m_lifeState = LIFE_DEAD;

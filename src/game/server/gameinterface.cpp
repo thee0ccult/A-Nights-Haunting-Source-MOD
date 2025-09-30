@@ -263,6 +263,57 @@ CON_COMMAND(manhack_kill_increment, "Server-side manhack kill increment")
 	Msg("[Server] Could not find player with UserID: %d\n", targetUserID);
 }
 
+// =======================================================
+// Server-side MetroPolice kill increment
+// =======================================================
+CON_COMMAND(metropolice_kill_increment, "Server-side metropolice kill increment")
+{
+	if (args.ArgC() < 2)
+	{
+		Msg("[Server] Usage: metropolice_kill_increment <userid>\n");
+		return;
+	}
+
+	int targetUserID = Q_atoi(args.Arg(1));
+
+	// Find the specific player by UserID
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
+		if (pPlayer && pPlayer->IsConnected() && pPlayer->GetUserID() == targetUserID)
+		{
+			// Send console command only to the player who killed the metropolice
+			engine->ClientCommand(pPlayer->edict(), "metropolice_kill_increment\n");
+
+			Msg("[Server] Sent metropolice_kill_increment to player %s (UserID: %d)\n",
+				pPlayer->GetPlayerName(), targetUserID);
+			return;
+		}
+	}
+
+	Msg("[Server] Could not find player with UserID: %d\n", targetUserID);
+}
+
+CON_COMMAND(combine_kill_increment, "Increment Combine soldier kill stat")
+{
+	int playerIndex = UTIL_GetCommandClientIndex();
+	if (playerIndex <= 0)
+		return;
+
+	CBasePlayer* pPlayer = UTIL_PlayerByIndex(playerIndex);
+	if (!pPlayer)
+		return;
+
+	// Forward to client
+	engine->ClientCommand(pPlayer->edict(), "combine_kill_increment\n");
+}
+
+CON_COMMAND(player_kill_increment, "Increment Player-vs-Player kill achievement progress")
+{
+	// forward to client
+	engine->ClientCommand(UTIL_GetCommandClient()->edict(), "player_kill_increment\n");
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Send an achievement unlock usermessage to the specified player
 //-----------------------------------------------------------------------------

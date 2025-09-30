@@ -73,12 +73,43 @@ void __MsgFunc_ZombieKilled(bf_read& msg);
 #define ACHIEVEMENT_MOD_GOT_ZOP_KILLS6 57
 #define ACHIEVEMENT_MOD_GOT_ZOP_KILLS7 58
 #define ACHIEVEMENT_MOD_GOT_ZOP_KILLS8 59
+#define ACHIEVEMENT_MOD_GOT_POP_KILLS 60
+#define ACHIEVEMENT_MOD_GOT_POP_KILLS2 61
+#define ACHIEVEMENT_MOD_GOT_POP_KILLS3 62
+#define ACHIEVEMENT_MOD_GOT_POP_KILLS4 63
+#define ACHIEVEMENT_MOD_GOT_POP_KILLS5 64
+#define ACHIEVEMENT_MOD_GOT_POP_KILLS6 65
+#define ACHIEVEMENT_MOD_GOT_TOP_KILLS 66
+#define ACHIEVEMENT_MOD_GOT_TOP_KILLS2 67
+#define ACHIEVEMENT_MOD_GOT_TOP_KILLS3 68
+#define ACHIEVEMENT_MOD_GOT_TOP_KILLS4 69
+#define ACHIEVEMENT_MOD_GOT_TOP_KILLS5 70
+#define ACHIEVEMENT_MOD_GOT_TOP_KILLS6 71
+#define ACHIEVEMENT_MOD_GOT_TOP_KILLS7 72
+#define ACHIEVEMENT_MOD_GOT_TOP_KILLS8 73
+#define ACHIEVEMENT_MOD_GOT_TOP_KILLS9 74
+#define ACHIEVEMENT_MOD_GOT_BOP_KILLS 75
+#define ACHIEVEMENT_MOD_GOT_BOP_KILLS2 76
+#define ACHIEVEMENT_MOD_GOT_BOP_KILLS3 77
+#define ACHIEVEMENT_MOD_GOT_BOP_KILLS4 78
+#define ACHIEVEMENT_MOD_GOT_BOP_KILLS5 79
+#define ACHIEVEMENT_MOD_GOT_BOP_KILLS6 80
+#define ACHIEVEMENT_MOD_GOT_BOP_KILLS7 81
+#define ACHIEVEMENT_MOD_GOT_BOP_KILLS8 82
+#define ACHIEVEMENT_MOD_GOT_BOP_KILLS9 83
 
 
 // (stored across sessions via FCVAR_ARCHIVE)
+//Zombie Kills
 ConVar zombie_kills("zombie_kills", "0", FCVAR_ARCHIVE);
+//Manhack Kills
 ConVar manhack_kills("manhack_kills", "0", FCVAR_ARCHIVE);
-
+// MetroPolice kills
+ConVar metropolice_kills("metropolice_kills", "0", FCVAR_ARCHIVE, "Number of MetroPolice kills");
+// Combine kills
+ConVar combines_kills("combines_kills", "0", FCVAR_ARCHIVE, "Number of Combine soldier kills");
+// Player kills
+ConVar player_kills("player_kills", "0", FCVAR_ARCHIVE, "Number of player-vs-player kills");
 class CZombieKillAchievement : public CBaseAchievement
 {
 public:
@@ -297,6 +328,306 @@ DECLARE_MANHACK_KILL_ACHIEVEMENT(CAchievementModZopKills7,
 // 2666 crows
 DECLARE_MANHACK_KILL_ACHIEVEMENT(CAchievementModZopKills8,
     ACHIEVEMENT_MOD_GOT_ZOP_KILLS8, "MOD_GOT_ZOP_KILLS8", 2666);
+
+// =======================================================
+// MetroPolice Kill Achievement Macro
+// Backed by Steam stat "metropolice_kills"
+// =======================================================
+class CMetropoliceKillAchievement : public CBaseAchievement
+{
+public:
+    virtual void HandleMetropoliceKill()
+    {
+        if (!IsAchieved())
+        {
+            IncrementCount();
+            int32 newCount = GetCount();
+
+            if (steamapicontext && steamapicontext->SteamUserStats())
+            {
+                steamapicontext->SteamUserStats()->SetStat("metropolice_kills", newCount);
+                steamapicontext->SteamUserStats()->StoreStats();
+
+                IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
+                CAchievementMgr* pMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
+                if (pMgr) pMgr->SetDirty(true);
+
+                ConVarRef metropolice_kills("metropolice_kills");
+                if (metropolice_kills.IsValid())
+                    metropolice_kills.SetValue(newCount);
+            }
+
+            if (newCount >= GetGoal())
+            {
+                Msg("[Achievement] %s completed!\n", GetName());
+            }
+        }
+    }
+
+    virtual void Init() override
+    {
+        SetFlags(ACH_SAVE_GLOBAL);
+
+        int32 statVal = 0;
+        if (steamapicontext && steamapicontext->SteamUserStats() &&
+            steamapicontext->SteamUserStats()->GetStat("metropolice_kills", &statVal))
+        {
+            SetCount(statVal);
+            ConVarRef metropolice_kills("metropolice_kills");
+            if (metropolice_kills.IsValid())
+                metropolice_kills.SetValue(statVal);
+        }
+        else
+        {
+            ConVarRef metropolice_kills("metropolice_kills");
+            if (metropolice_kills.IsValid())
+                SetCount(metropolice_kills.GetInt());
+        }
+
+        Msg("[Achievement] Init: Local metropolice kills = %d\n", GetCount());
+    }
+
+    virtual void ForceSteamSync()
+    {
+        if (steamapicontext && steamapicontext->SteamUserStats())
+        {
+            steamapicontext->SteamUserStats()->StoreStats();
+            Msg("[Achievement] ForceSteamSync executed for %s\n", GetName());
+        }
+    }
+};
+
+
+// =======================================================
+// MetroPolice Kill Achievement Macro
+// Inherits from CMetropoliceKillAchievement so each class
+// automatically supports HandleMetropoliceKill()
+// =======================================================
+#define DECLARE_METROPOLICE_KILL_ACHIEVEMENT(CLASSNAME, ID, SHORTNAME, GOAL) \
+class CLASSNAME : public CMetropoliceKillAchievement \
+{ \
+public: \
+    void Init() override \
+    { \
+        CMetropoliceKillAchievement::Init(); \
+        SetGoal(GOAL); \
+        Msg("[Achievement] Init: %s goal set to %d\n", SHORTNAME, GOAL); \
+    } \
+}; \
+DECLARE_ACHIEVEMENT(CLASSNAME, ID, SHORTNAME, 5)
+
+
+// =======================================================
+// MetroPolice Kill Achievements
+// =======================================================
+
+// 6 kills
+DECLARE_METROPOLICE_KILL_ACHIEVEMENT(CAchievementModPopKills,
+    ACHIEVEMENT_MOD_GOT_POP_KILLS, "MOD_GOT_POP_KILLS", 6);
+
+// 66 kills
+DECLARE_METROPOLICE_KILL_ACHIEVEMENT(CAchievementModPopKills2,
+    ACHIEVEMENT_MOD_GOT_POP_KILLS2, "MOD_GOT_POP_KILLS2", 66);
+
+// 333 kills
+DECLARE_METROPOLICE_KILL_ACHIEVEMENT(CAchievementModPopKills3,
+    ACHIEVEMENT_MOD_GOT_POP_KILLS3, "MOD_GOT_POP_KILLS3", 333);
+
+// 666 kills
+DECLARE_METROPOLICE_KILL_ACHIEVEMENT(CAchievementModPopKills4,
+    ACHIEVEMENT_MOD_GOT_POP_KILLS4, "MOD_GOT_POP_KILLS4", 666);
+
+// 999 kills
+DECLARE_METROPOLICE_KILL_ACHIEVEMENT(CAchievementModPopKills5,
+    ACHIEVEMENT_MOD_GOT_POP_KILLS5, "MOD_GOT_POP_KILLS5", 999);
+
+// 1666 kills
+DECLARE_METROPOLICE_KILL_ACHIEVEMENT(CAchievementModPopKills6,
+    ACHIEVEMENT_MOD_GOT_POP_KILLS6, "MOD_GOT_POP_KILLS6", 1666);
+
+// =======================================================
+// Combine Kill Achievement Base
+// =======================================================
+class CCombineKillAchievement : public CBaseAchievement
+{
+public:
+    void Init() override
+    {
+        SetFlags(ACH_SAVE_GLOBAL);
+        SetStoreProgressInSteam(true);
+
+        ConVarRef combines_kills("combines_kills");
+        if (combines_kills.IsValid())
+            SetCount(combines_kills.GetInt());
+    }
+
+    void HandleCombineKill()
+    {
+        if (IsAchieved())
+            return;
+
+        IncrementCount();
+
+        ConVarRef combines_kills("combines_kills");
+        if (combines_kills.IsValid())
+            combines_kills.SetValue(GetCount());
+
+        if (steamapicontext && steamapicontext->SteamUserStats())
+        {
+            steamapicontext->SteamUserStats()->SetStat("combines_kills", GetCount());
+            steamapicontext->SteamUserStats()->StoreStats();
+        }
+    }
+
+    void ForceSteamSync()
+    {
+        if (steamapicontext && steamapicontext->SteamUserStats())
+        {
+            int val = 0;
+            if (steamapicontext->SteamUserStats()->GetStat("combines_kills", &val))
+            {
+                SetCount(val);
+                ConVarRef combines_kills("combines_kills");
+                if (combines_kills.IsValid())
+                    combines_kills.SetValue(val);
+            }
+        }
+    }
+};
+#define DECLARE_COMBINE_KILL_ACHIEVEMENT(CLASSNAME, ID, SHORTNAME, GOAL) \
+class CLASSNAME : public CCombineKillAchievement \
+{ \
+public: \
+    void Init() override \
+    { \
+        CCombineKillAchievement::Init(); \
+        SetGoal(GOAL); \
+    } \
+}; \
+DECLARE_ACHIEVEMENT(CLASSNAME, ID, SHORTNAME, 5)
+
+// 6 kills
+DECLARE_COMBINE_KILL_ACHIEVEMENT(CAchievementModTopKills,
+    ACHIEVEMENT_MOD_GOT_TOP_KILLS, "MOD_GOT_TOP_KILLS", 6);
+
+// 88 kills
+DECLARE_COMBINE_KILL_ACHIEVEMENT(CAchievementModTopKills2,
+    ACHIEVEMENT_MOD_GOT_TOP_KILLS2, "MOD_GOT_TOP_KILLS2", 88);
+
+// 222 kills
+DECLARE_COMBINE_KILL_ACHIEVEMENT(CAchievementModTopKills3,
+    ACHIEVEMENT_MOD_GOT_TOP_KILLS3, "MOD_GOT_TOP_KILLS3", 222);
+
+// 444 kills
+DECLARE_COMBINE_KILL_ACHIEVEMENT(CAchievementModTopKills4,
+    ACHIEVEMENT_MOD_GOT_TOP_KILLS4, "MOD_GOT_TOP_KILLS4", 444);
+
+// 666 kills
+DECLARE_COMBINE_KILL_ACHIEVEMENT(CAchievementModTopKills5,
+    ACHIEVEMENT_MOD_GOT_TOP_KILLS5, "MOD_GOT_TOP_KILLS5", 666);
+
+// 1111 kills
+DECLARE_COMBINE_KILL_ACHIEVEMENT(CAchievementModTopKills6,
+    ACHIEVEMENT_MOD_GOT_TOP_KILLS6, "MOD_GOT_TOP_KILLS6", 1111);
+
+// 2222 kills
+DECLARE_COMBINE_KILL_ACHIEVEMENT(CAchievementModTopKills7,
+    ACHIEVEMENT_MOD_GOT_TOP_KILLS7, "MOD_GOT_TOP_KILLS7", 2222);
+
+// 3333 kills
+DECLARE_COMBINE_KILL_ACHIEVEMENT(CAchievementModTopKills8,
+    ACHIEVEMENT_MOD_GOT_TOP_KILLS8, "MOD_GOT_TOP_KILLS8", 3333);
+
+// 6666 kills
+DECLARE_COMBINE_KILL_ACHIEVEMENT(CAchievementModTopKills9,
+    ACHIEVEMENT_MOD_GOT_TOP_KILLS9, "MOD_GOT_TOP_KILLS9", 6666);
+
+// =======================================================
+// Player Kill Achievement Base
+// =======================================================
+class CPlayerKillAchievement : public CBaseAchievement
+{
+public:
+    void Init() override
+    {
+        SetFlags(ACH_SAVE_GLOBAL);
+        SetStoreProgressInSteam(true);
+
+        ConVarRef player_kills("player_kills");
+        if (player_kills.IsValid())
+            SetCount(player_kills.GetInt());
+    }
+
+    // Public wrapper so client code can safely increment
+    void HandlePlayerKill()
+    {
+        IncrementCount();
+
+        ConVarRef player_kills("player_kills");
+        if (player_kills.IsValid())
+            player_kills.SetValue(GetCount());
+
+        if (steamapicontext && steamapicontext->SteamUserStats())
+        {
+            steamapicontext->SteamUserStats()->SetStat("player_kills", GetCount());
+            steamapicontext->SteamUserStats()->StoreStats();
+        }
+    }
+};
+
+// =======================================================
+// Macro to define Player Kill Achievements
+// =======================================================
+#define DECLARE_PLAYER_KILL_ACHIEVEMENT(CLASSNAME, ID, SHORTNAME, GOAL) \
+class CLASSNAME : public CPlayerKillAchievement \
+{ \
+public: \
+    void Init() override \
+    { \
+        CPlayerKillAchievement::Init(); \
+        SetGoal(GOAL); \
+    } \
+}; \
+DECLARE_ACHIEVEMENT(CLASSNAME, ID, SHORTNAME, 5)
+
+// =======================================================
+// Define Achievements
+// =======================================================
+// 6 kills
+DECLARE_PLAYER_KILL_ACHIEVEMENT(CAchievementModBopKills,
+    ACHIEVEMENT_MOD_GOT_BOP_KILLS, "MOD_GOT_BOP_KILLS", 6);
+
+// 69 kills
+DECLARE_PLAYER_KILL_ACHIEVEMENT(CAchievementModBopKills2,
+    ACHIEVEMENT_MOD_GOT_BOP_KILLS2, "MOD_GOT_BOP_KILLS2", 69);
+
+// 333 kills
+DECLARE_PLAYER_KILL_ACHIEVEMENT(CAchievementModBopKills3,
+    ACHIEVEMENT_MOD_GOT_BOP_KILLS3, "MOD_GOT_BOP_KILLS3", 333);
+
+// 666 kills
+DECLARE_PLAYER_KILL_ACHIEVEMENT(CAchievementModBopKills4,
+    ACHIEVEMENT_MOD_GOT_BOP_KILLS4, "MOD_GOT_BOP_KILLS4", 666);
+
+// 999 kills
+DECLARE_PLAYER_KILL_ACHIEVEMENT(CAchievementModBopKills5,
+    ACHIEVEMENT_MOD_GOT_BOP_KILLS5, "MOD_GOT_BOP_KILLS5", 999);
+
+// 1666 kills
+DECLARE_PLAYER_KILL_ACHIEVEMENT(CAchievementModBopKills6,
+    ACHIEVEMENT_MOD_GOT_BOP_KILLS6, "MOD_GOT_BOP_KILLS6", 1666);
+
+// 2666 kills
+DECLARE_PLAYER_KILL_ACHIEVEMENT(CAchievementModBopKills7,
+    ACHIEVEMENT_MOD_GOT_BOP_KILLS7, "MOD_GOT_BOP_KILLS7", 2666);
+
+// 3666 kills
+DECLARE_PLAYER_KILL_ACHIEVEMENT(CAchievementModBopKills8,
+    ACHIEVEMENT_MOD_GOT_BOP_KILLS8, "MOD_GOT_BOP_KILLS8", 3666);
+
+// 6666 kills
+DECLARE_PLAYER_KILL_ACHIEVEMENT(CAchievementModBopKills9,
+    ACHIEVEMENT_MOD_GOT_BOP_KILLS9, "MOD_GOT_BOP_KILLS9", 6666);
 
 
 // Storyline hop the fence into junk yard achivement
@@ -646,6 +977,98 @@ CON_COMMAND_F(manhack_kill_increment, "Increment crow (manhack) kill achievement
     }
 
     Msg("[Achievement] Crow (manhack) kill increment processed client-side\n");
+}
+
+// =======================================================
+// Client-side MetroPolice (Guard) kill increment handler
+// =======================================================
+CON_COMMAND_F(metropolice_kill_increment, "Increment MetroPolice (guard) kill achievement progress", FCVAR_CLIENTCMD_CAN_EXECUTE)
+{
+    int count = g_AchievementMgrMod.GetAchievementCount();
+    for (int i = 0; i < count; ++i)
+    {
+        IAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByIndex(i);
+        if (!pAchievement)
+            continue;
+
+        // Only update our MetroPolice kill achievements
+        CMetropoliceKillAchievement* pPopAch = dynamic_cast<CMetropoliceKillAchievement*>(pAchievement);
+        if (pPopAch)
+        {
+            pPopAch->HandleMetropoliceKill();
+        }
+    }
+
+    Msg("[Achievement] MetroPolice kill increment processed client-side\n");
+}
+
+CON_COMMAND_F(combine_kill_increment, "Increment Combine soldier kill achievements", FCVAR_CLIENTCMD_CAN_EXECUTE)
+{
+    int count = g_AchievementMgrMod.GetAchievementCount();
+    for (int i = 0; i < count; ++i)
+    {
+        IAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByIndex(i);
+        if (!pAchievement)
+            continue;
+
+        if (Q_stristr(pAchievement->GetName(), "MOD_GOT_TOP_KILLS") != nullptr)
+        {
+            CCombineKillAchievement* pCombineAch = dynamic_cast<CCombineKillAchievement*>(pAchievement);
+            if (pCombineAch)
+                pCombineAch->HandleCombineKill();
+        }
+    }
+
+    Msg("[Achievement] Combine soldier kill increment processed\n");
+}
+
+// =======================================================
+// Client-side Player Kill increment handler
+// =======================================================
+CON_COMMAND_F(player_kill_increment, "Increment Player kill achievement progress", FCVAR_CLIENTCMD_CAN_EXECUTE)
+{
+    int count = g_AchievementMgrMod.GetAchievementCount();
+    for (int i = 0; i < count; ++i)
+    {
+        IAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByIndex(i);
+        if (!pAchievement)
+            continue;
+
+        // We only care about Player Kill achievements
+        if (Q_stristr(pAchievement->GetName(), "MOD_GOT_BOP_KILLS") != nullptr)
+        {
+            CPlayerKillAchievement* pPlayerAch = dynamic_cast<CPlayerKillAchievement*>(pAchievement);
+            if (pPlayerAch)
+            {
+                // Use our public wrapper (safe — calls IncrementCount internally)
+                pPlayerAch->HandlePlayerKill();
+
+                int32 newCount = pPlayerAch->GetCount();
+
+                if (steamapicontext && steamapicontext->SteamUserStats())
+                {
+                    steamapicontext->SteamUserStats()->SetStat("player_kills", newCount);
+                    steamapicontext->SteamUserStats()->StoreStats();
+
+                    IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
+                    CAchievementMgr* pMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
+                    if (pMgr)
+                        pMgr->SetDirty(true);
+
+                    ConVarRef player_kills("player_kills");
+                    if (player_kills.IsValid())
+                        player_kills.SetValue(newCount);
+                }
+
+                if (newCount >= pPlayerAch->GetGoal())
+                {
+                    Msg("[Achievement] %s completed!\n", pAchievement->GetName());
+                }
+            }
+        }
+    }
+
+    Msg("[Achievement] Player kill increment processed client-side\n");
 }
 
 #endif // GAME_DLL

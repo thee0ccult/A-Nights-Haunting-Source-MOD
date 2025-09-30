@@ -787,6 +787,30 @@ void CAchievementMgr::UploadUserData()
 				Msg("[Achievements] UploadUserData: crow_kills uploaded = %d\n", manhack_kills.GetInt());
 			}
 
+			// --- CUSTOM: upload metropolice_kills stat ---
+			ConVarRef metropolice_kills("metropolice_kills");
+			if (metropolice_kills.IsValid())
+			{
+				steamapicontext->SteamUserStats()->SetStat("metropolice_kills", metropolice_kills.GetInt());
+				Msg("[Achievements] UploadUserData: metropolice_kills uploaded = %d\n", metropolice_kills.GetInt());
+			}
+
+			// --- CUSTOM: upload combines_kills stat ---
+			ConVarRef combines_kills("combines_kills");
+			if (combines_kills.IsValid())
+			{
+				steamapicontext->SteamUserStats()->SetStat("combines_kills", combines_kills.GetInt());
+				Msg("[Achievements] UploadUserData: combines_kills uploaded = %d\n", combines_kills.GetInt());
+			}
+
+			// --- CUSTOM: upload player_kills stat ---
+			ConVarRef player_kills("player_kills");
+			if (player_kills.IsValid())
+			{
+				steamapicontext->SteamUserStats()->SetStat("player_kills", player_kills.GetInt());
+				Msg("[Achievements] UploadUserData: player_kills uploaded = %d\n", player_kills.GetInt());
+			}
+
 			// Upload all stats/achievements to Steam
 			steamapicontext->SteamUserStats()->StoreStats();
 			m_bSteamDataDirty = false;
@@ -1121,6 +1145,33 @@ void CAchievementMgr::UpdateAchievement(int iAchievementID, int nData)
 				steamapicontext->SteamUserStats()->SetStat("crow_kills", newVal);
 				m_bSteamDataDirty = true; // mark for StoreStats
 				Msg("[Achievements] UpdateAchievement: crow_kills updated = %d\n", newVal);
+			}
+
+			// --- CUSTOM: keep metropolice_kills Steam stat in sync ---
+			if (Q_stristr(pAchievement->GetName(), "MOD_GOT_POP_KILLS") != nullptr)
+			{
+				int newVal = pAchievement->GetCount();
+				steamapicontext->SteamUserStats()->SetStat("metropolice_kills", newVal);
+				m_bSteamDataDirty = true; // mark for StoreStats
+				Msg("[Achievements] UpdateAchievement: metropolice_kills updated = %d\n", newVal);
+			}
+
+			// --- CUSTOM: keep combines_kills Steam stat in sync ---
+			if (Q_stristr(pAchievement->GetName(), "MOD_GOT_TOP_KILLS") != nullptr)
+			{
+				int newVal = pAchievement->GetCount();
+				steamapicontext->SteamUserStats()->SetStat("combines_kills", newVal);
+				m_bSteamDataDirty = true; // mark for StoreStats
+				Msg("[Achievements] UpdateAchievement: combines_kills updated = %d\n", newVal);
+			}
+
+			// --- CUSTOM: keep player_kills Steam stat in sync ---
+			if (Q_stristr(pAchievement->GetName(), "MOD_GOT_BOP_KILLS") != nullptr)
+			{
+				int newVal = pAchievement->GetCount();
+				steamapicontext->SteamUserStats()->SetStat("player_kills", newVal);
+				m_bSteamDataDirty = true; // mark for StoreStats
+				Msg("[Achievements] UpdateAchievement: player_kills updated = %d\n", newVal);
 			}
 		}
 #endif
@@ -2053,6 +2104,106 @@ void CAchievementMgr::UpdateStateFromSteam_Internal()
 		Warning("[Achievements] UpdateStateFromSteam_Internal: failed to fetch crow_kills stat\n");
 	}
 	// --- END CUSTOM ---
+	// --- CUSTOM: sync metropolice_kills counter from Steam ---
+	int32 metropoliceKills = 0;
+	if (steamapicontext->SteamUserStats()->GetStat("metropolice_kills", &metropoliceKills))
+	{
+		Msg("[Achievements] UpdateStateFromSteam_Internal: metropolice_kills stat synced, value = %d\n", metropoliceKills);
+
+		// Update local ConVar
+		ConVarRef metropolice_kills("metropolice_kills");
+		if (metropolice_kills.IsValid())
+			metropolice_kills.SetValue(metropoliceKills);
+
+		// Push this into our MetroPolice achievements
+		FOR_EACH_MAP(m_mapAchievement, j)
+		{
+			CBaseAchievement* pAch = m_mapAchievement[j];
+
+			if (Q_stristr(pAch->GetName(), "MOD_GOT_POP_KILLS") != nullptr)
+			{
+				pAch->SetCount(metropoliceKills);
+				if (metropoliceKills >= pAch->GetGoal() && !pAch->IsAchieved())
+				{
+					pAch->SetAchieved(true);
+					Msg("[Achievements] metropolice_kills: auto-unlocked '%s' (goal=%d)\n",
+						pAch->GetName(), pAch->GetGoal());
+				}
+			}
+		}
+	}
+	else
+	{
+		Warning("[Achievements] UpdateStateFromSteam_Internal: failed to fetch metropolice_kills stat\n");
+	}
+
+	// --- CUSTOM: sync combines_kills counter from Steam ---
+	int32 combineKills = 0;
+	if (steamapicontext->SteamUserStats()->GetStat("combines_kills", &combineKills))
+	{
+		Msg("[Achievements] UpdateStateFromSteam_Internal: combines_kills stat synced, value = %d\n", combineKills);
+
+		// Update local ConVar
+		ConVarRef combines_kills("combines_kills");
+		if (combines_kills.IsValid())
+			combines_kills.SetValue(combineKills);
+
+		// Push into our Combine achievements
+		FOR_EACH_MAP(m_mapAchievement, j)
+		{
+			CBaseAchievement* pAch = m_mapAchievement[j];
+
+			if (Q_stristr(pAch->GetName(), "MOD_GOT_TOP_KILLS") != nullptr)
+			{
+				pAch->SetCount(combineKills);
+				if (combineKills >= pAch->GetGoal() && !pAch->IsAchieved())
+				{
+					pAch->SetAchieved(true);
+					Msg("[Achievements] combines_kills: auto-unlocked '%s' (goal=%d)\n",
+						pAch->GetName(), pAch->GetGoal());
+				}
+			}
+		}
+	}
+	else
+	{
+		Warning("[Achievements] UpdateStateFromSteam_Internal: failed to fetch combines_kills stat\n");
+	}
+
+	// --- CUSTOM: sync player_kills counter from Steam ---
+	int32 playerKills = 0;
+	if (steamapicontext->SteamUserStats()->GetStat("player_kills", &playerKills))
+	{
+		Msg("[Achievements] UpdateStateFromSteam_Internal: player_kills stat synced, value = %d\n", playerKills);
+
+		// Update local ConVar
+		ConVarRef player_kills("player_kills");
+		if (player_kills.IsValid())
+			player_kills.SetValue(playerKills);
+
+		// Push into our Player Kill achievements
+		FOR_EACH_MAP(m_mapAchievement, j)
+		{
+			CBaseAchievement* pAch = m_mapAchievement[j];
+
+			if (Q_stristr(pAch->GetName(), "MOD_GOT_BOP_KILLS") != nullptr)
+			{
+				pAch->SetCount(playerKills);
+				if (playerKills >= pAch->GetGoal() && !pAch->IsAchieved())
+				{
+					pAch->SetAchieved(true);
+					Msg("[Achievements] player_kills: auto-unlocked '%s' (goal=%d)\n",
+						pAch->GetName(), pAch->GetGoal());
+				}
+			}
+		}
+	}
+	else
+	{
+		Warning("[Achievements] UpdateStateFromSteam_Internal: failed to fetch player_kills stat\n");
+	}
+
+
 	// Debug print at entry
 	Msg("[Achievements] UpdateStateFromSteam_Internal: syncing %d achievements from Steam...\n",
 		m_mapAchievement.Count());

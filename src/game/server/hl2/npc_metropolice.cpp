@@ -3088,30 +3088,24 @@ void CNPC_MetroPolice::ReleaseManhack( void )
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
-void CNPC_MetroPolice::Event_Killed( const CTakeDamageInfo &info )
+void CNPC_MetroPolice::Event_Killed(const CTakeDamageInfo& info)
 {
-	// Release the manhack if we're in the middle of deploying him
-	if ( m_hManhack && m_hManhack->IsAlive() )
+	BaseClass::Event_Killed(info);
+
+	// =======================================================
+	// Achievement System: Count metropolice (guard) kills
+	// =======================================================
+	if (info.GetAttacker() && info.GetAttacker()->IsPlayer())
 	{
-		ReleaseManhack();
-		m_hManhack = NULL;
-	}
-
-	CBasePlayer *pPlayer = ToBasePlayer( info.GetAttacker() );
-
-	if ( pPlayer != NULL )
-	{
-		CHalfLife2 *pHL2GameRules = static_cast<CHalfLife2 *>(g_pGameRules);
-
-		// Attempt to drop health
-		if ( pHL2GameRules->NPC_ShouldDropHealth( pPlayer ) )
+		CBasePlayer* pPlayer = ToBasePlayer(info.GetAttacker());
+		if (pPlayer)
 		{
-			DropItem( "item_healthvial", WorldSpaceCenter()+RandomVector(-4,4), RandomAngle(0,360) );
-			pHL2GameRules->NPC_DroppedHealth();
+			engine->ServerCommand(CFmtStr("metropolice_kill_increment %d\n", pPlayer->GetUserID()));
+
+			Msg("[Achievement] MetroPolice kill credited to player %s (UserID: %d)\n",
+				pPlayer->GetPlayerName(), pPlayer->GetUserID());
 		}
 	}
-
-	BaseClass::Event_Killed( info );
 }
 
 //-----------------------------------------------------------------------------

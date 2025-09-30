@@ -360,6 +360,13 @@ void CNPC_CombineS::Event_Killed( const CTakeDamageInfo &info )
 	}
 
 	BaseClass::Event_Killed( info );
+
+	// --- CUSTOM: Track Combine soldier kills ---
+	if (pPlayer)
+	{
+		// Fire a console command to increment client-side stat
+		engine->ClientCommand(pPlayer->edict(), "combine_kill_increment\n");
+	}
 }
 
 //-----------------------------------------------------------------------------
