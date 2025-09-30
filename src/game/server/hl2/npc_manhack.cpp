@@ -408,6 +408,22 @@ void CNPC_Manhack::Event_Killed( const CTakeDamageInfo &info )
 	}
 	StopSound("NPC_Crow.Flap");
 	BaseClass::Event_Killed( info );
+
+	// =======================================================
+	// Achievement System: Count crow (manhack) kills
+	// =======================================================
+	if (info.GetAttacker() && info.GetAttacker()->IsPlayer())
+	{
+		CBasePlayer* pPlayer = ToBasePlayer(info.GetAttacker());
+		if (pPlayer)
+		{
+			// Fire the increment command on the server side
+			engine->ServerCommand(CFmtStr("manhack_kill_increment %d\n", pPlayer->GetUserID()));
+
+			Msg("[Achievement] Crow (npc_manhack) kill credited to player %s (UserID: %d)\n",
+				pPlayer->GetPlayerName(), pPlayer->GetUserID());
+		}
+	}
 }
 
 void CNPC_Manhack::HitPhysicsObject( CBaseEntity *pOther )

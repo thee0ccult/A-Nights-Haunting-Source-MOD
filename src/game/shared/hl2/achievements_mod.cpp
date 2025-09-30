@@ -65,7 +65,19 @@ void __MsgFunc_ZombieKilled(bf_read& msg);
 #define ACHIEVEMENT_MOD_GOT_COP_KILLS4 49
 #define ACHIEVEMENT_MOD_GOT_COP_KILLS5 50
 #define ACHIEVEMENT_MOD_GOT_COP_KILLS6 51
+#define ACHIEVEMENT_MOD_GOT_ZOP_KILLS 52
+#define ACHIEVEMENT_MOD_GOT_ZOP_KILLS2 53
+#define ACHIEVEMENT_MOD_GOT_ZOP_KILLS3 54
+#define ACHIEVEMENT_MOD_GOT_ZOP_KILLS4 55
+#define ACHIEVEMENT_MOD_GOT_ZOP_KILLS5 56
+#define ACHIEVEMENT_MOD_GOT_ZOP_KILLS6 57
+#define ACHIEVEMENT_MOD_GOT_ZOP_KILLS7 58
+#define ACHIEVEMENT_MOD_GOT_ZOP_KILLS8 59
+
+
+// (stored across sessions via FCVAR_ARCHIVE)
 ConVar zombie_kills("zombie_kills", "0", FCVAR_ARCHIVE);
+ConVar manhack_kills("manhack_kills", "0", FCVAR_ARCHIVE);
 
 class CZombieKillAchievement : public CBaseAchievement
 {
@@ -150,6 +162,142 @@ DECLARE_ZOMBIE_KILL_ACHIEVEMENT(CAchievementModCopKills5,
 // 6 zombies
 DECLARE_ZOMBIE_KILL_ACHIEVEMENT(CAchievementModCopKills6,
     ACHIEVEMENT_MOD_GOT_COP_KILLS6, "MOD_GOT_COP_KILLS6", 6);
+
+// Achievement class for crow kills (backed by Steam stat "crow_kills")
+// =======================================================
+// Manhack (Crow) Kill Achievement Base — Steam stat sync
+// =======================================================
+class CManhackKillAchievement : public CBaseAchievement
+{
+public:
+    virtual void HandleManhackKill()
+    {
+        if (!IsAchieved())
+        {
+            IncrementCount();
+            int32 newCount = GetCount();
+
+            if (steamapicontext && steamapicontext->SteamUserStats())
+            {
+                steamapicontext->SteamUserStats()->SetStat("crow_kills", newCount);
+                steamapicontext->SteamUserStats()->StoreStats();
+
+                IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
+                CAchievementMgr* pMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
+                if (pMgr) pMgr->SetDirty(true);
+
+                manhack_kills.SetValue(newCount);
+            }
+
+            if (newCount >= GetGoal())
+            {
+                Msg("[Achievement] %s completed!\n", GetName());
+            }
+        }
+    }
+
+    virtual int GetSteamStat() const
+    {
+        if (steamapicontext && steamapicontext->SteamUserStats())
+        {
+            int32 val = -1;
+            if (steamapicontext->SteamUserStats()->GetStat("crow_kills", &val))
+                return val;
+        }
+        return -1;
+    }
+
+    // NEW: initialize local count from Steam at game startup
+    virtual void Init() override
+    {
+        SetFlags(ACH_SAVE_GLOBAL);
+
+        int32 statVal = 0;
+        if (steamapicontext && steamapicontext->SteamUserStats())
+        {
+            if (steamapicontext->SteamUserStats()->GetStat("crow_kills", &statVal))
+            {
+                manhack_kills.SetValue(statVal);
+                SetCount(statVal);
+            }
+            else
+            {
+                // fallback to ConVar if Steam stat not found
+                SetCount(manhack_kills.GetInt());
+            }
+        }
+        else
+        {
+            SetCount(manhack_kills.GetInt());
+        }
+
+        Msg("[Achievement] Init: Local crow kills = %d (Steam sync)\n", GetCount());
+    }
+
+    virtual void ForceSteamSync()
+    {
+        if (steamapicontext && steamapicontext->SteamUserStats())
+        {
+            steamapicontext->SteamUserStats()->StoreStats();
+            Msg("[Achievement] ForceSteamSync executed for %s\n", GetName());
+        }
+    }
+};
+
+// =======================================================
+// Manhack (Crow) Kill Achievement Macro
+// =======================================================
+#define DECLARE_MANHACK_KILL_ACHIEVEMENT(CLASSNAME, ID, SHORTNAME, GOAL) \
+class CLASSNAME : public CManhackKillAchievement \
+{ \
+public: \
+    void Init() override \
+    { \
+        SetFlags(ACH_SAVE_GLOBAL); \
+        SetGoal(GOAL); \
+        SetCount(manhack_kills.GetInt()); \
+        Msg("[Achievement] Init: Local crow kills = %d/%d (" SHORTNAME ")\n", GetCount(), GetGoal()); \
+    } \
+}; \
+DECLARE_ACHIEVEMENT(CLASSNAME, ID, SHORTNAME, 5)
+
+
+// =======================================================
+// Manhack (Crow) Kill Achievements
+// =======================================================
+
+// 6 crows
+DECLARE_MANHACK_KILL_ACHIEVEMENT(CAchievementModZopKills,
+    ACHIEVEMENT_MOD_GOT_ZOP_KILLS, "MOD_GOT_ZOP_KILLS", 6);
+
+// 33 crows
+DECLARE_MANHACK_KILL_ACHIEVEMENT(CAchievementModZopKills2,
+    ACHIEVEMENT_MOD_GOT_ZOP_KILLS2, "MOD_GOT_ZOP_KILLS2", 33);
+
+// 66 crows
+DECLARE_MANHACK_KILL_ACHIEVEMENT(CAchievementModZopKills3,
+    ACHIEVEMENT_MOD_GOT_ZOP_KILLS3, "MOD_GOT_ZOP_KILLS3", 66);
+
+// 222 crows
+DECLARE_MANHACK_KILL_ACHIEVEMENT(CAchievementModZopKills4,
+    ACHIEVEMENT_MOD_GOT_ZOP_KILLS4, "MOD_GOT_ZOP_KILLS4", 222);
+
+// 444 crows
+DECLARE_MANHACK_KILL_ACHIEVEMENT(CAchievementModZopKills5,
+    ACHIEVEMENT_MOD_GOT_ZOP_KILLS5, "MOD_GOT_ZOP_KILLS5", 444);
+
+// 666 crows
+DECLARE_MANHACK_KILL_ACHIEVEMENT(CAchievementModZopKills6,
+    ACHIEVEMENT_MOD_GOT_ZOP_KILLS6, "MOD_GOT_ZOP_KILLS6", 666);
+
+// 1666 crows
+DECLARE_MANHACK_KILL_ACHIEVEMENT(CAchievementModZopKills7,
+    ACHIEVEMENT_MOD_GOT_ZOP_KILLS7, "MOD_GOT_ZOP_KILLS7", 1666);
+
+// 2666 crows
+DECLARE_MANHACK_KILL_ACHIEVEMENT(CAchievementModZopKills8,
+    ACHIEVEMENT_MOD_GOT_ZOP_KILLS8, "MOD_GOT_ZOP_KILLS8", 2666);
+
 
 // Storyline hop the fence into junk yard achivement
 DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_HIT_TRIGGER, "MOD_HIT_TRIGGER", 5);
@@ -474,6 +622,30 @@ void __MsgFunc_ZombieKilled(bf_read& msg)
             pZombieAchievement->HandleZombieKill();
         }
     }
+}
+
+// =======================================================
+// Client-side crow (manhack) kill increment handler
+// =======================================================
+CON_COMMAND_F(manhack_kill_increment, "Increment crow (manhack) kill achievement progress", FCVAR_CLIENTCMD_CAN_EXECUTE)
+{
+    // Walk through all achievements and update any crow-related ones
+    int count = g_AchievementMgrMod.GetAchievementCount();
+    for (int i = 0; i < count; ++i)
+    {
+        IAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByIndex(i);
+        if (!pAchievement)
+            continue;
+
+        // Only update our crow (manhack) kill achievements
+        CManhackKillAchievement* pCrowAch = dynamic_cast<CManhackKillAchievement*>(pAchievement);
+        if (pCrowAch)
+        {
+            pCrowAch->HandleManhackKill();
+        }
+    }
+
+    Msg("[Achievement] Crow (manhack) kill increment processed client-side\n");
 }
 
 #endif // GAME_DLL

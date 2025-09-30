@@ -232,6 +232,37 @@ CON_COMMAND(zombie_kill_increment, "Server-side zombie kill increment")
 	Msg("[Server] Could not find player with UserID: %d\n", targetUserID);
 }
 
+// =======================================================
+// Server-side manhack (crow) kill increment
+// =======================================================
+CON_COMMAND(manhack_kill_increment, "Server-side manhack kill increment")
+{
+	if (args.ArgC() < 2)
+	{
+		Msg("[Server] Usage: manhack_kill_increment <userid>\n");
+		return;
+	}
+
+	int targetUserID = Q_atoi(args.Arg(1));
+
+	// Find the specific player by UserID
+	for (int i = 1; i <= gpGlobals->maxClients; i++)
+	{
+		CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
+		if (pPlayer && pPlayer->IsConnected() && pPlayer->GetUserID() == targetUserID)
+		{
+			// Send console command only to the player who killed the manhack
+			engine->ClientCommand(pPlayer->edict(), "manhack_kill_increment\n");
+
+			Msg("[Server] Sent manhack_kill_increment to player %s (UserID: %d)\n",
+				pPlayer->GetPlayerName(), targetUserID);
+			return;
+		}
+	}
+
+	Msg("[Server] Could not find player with UserID: %d\n", targetUserID);
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Send an achievement unlock usermessage to the specified player
 //-----------------------------------------------------------------------------

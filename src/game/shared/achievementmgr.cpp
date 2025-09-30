@@ -777,10 +777,17 @@ void CAchievementMgr::UploadUserData()
 	if (IsPC())
 	{
 #ifndef NO_STEAM
-		if (steamapicontext->SteamUserStats())
+		if (steamapicontext && steamapicontext->SteamUserStats())
 		{
-			// Upload current Steam client achievements & stats state to Steam.  Will get called back at OnUserStatsStored when complete.
-			// Only values previously set via SteamUserStats() get uploaded
+			// --- CUSTOM: upload crow_kills stat ---
+			ConVarRef manhack_kills("manhack_kills");
+			if (manhack_kills.IsValid())
+			{
+				steamapicontext->SteamUserStats()->SetStat("crow_kills", manhack_kills.GetInt());
+				Msg("[Achievements] UploadUserData: crow_kills uploaded = %d\n", manhack_kills.GetInt());
+			}
+
+			// Upload all stats/achievements to Steam
 			steamapicontext->SteamUserStats()->StoreStats();
 			m_bSteamDataDirty = false;
 		}
@@ -1086,13 +1093,12 @@ void CAchievementMgr::UpdateAchievement(int iAchievementID, int nData)
 #ifndef NO_STEAM
 		if (steamapicontext->SteamUserStats())
 		{
-			// sync progress to Steam
+			// sync progress to Steam if this achievement stores progress
 			if (pAchievement->StoreProgressInSteam())
 			{
 				bool bRet = steamapicontext->SteamUserStats()->IndicateAchievementProgress(
 					pAchievement->GetName(), pAchievement->GetCount(), pAchievement->GetGoal());
 
-				// NEW DEBUG LINE
 				Msg("[Achievements] UpdateAchievement: IndicateAchievementProgress('%s') returned %s (count=%d / goal=%d)\n",
 					pAchievement->GetName(), bRet ? "TRUE" : "FALSE", pAchievement->GetCount(), pAchievement->GetGoal());
 
@@ -1106,6 +1112,15 @@ void CAchievementMgr::UpdateAchievement(int iAchievementID, int nData)
 				{
 					Warning("[Achievements] UpdateAchievement: StoreStats() FAILED\n");
 				}
+			}
+
+			// --- CUSTOM: keep crow_kills Steam stat in sync ---
+			if (Q_stristr(pAchievement->GetName(), "ACH_MANHACK_KILLS") != nullptr)
+			{
+				int newVal = pAchievement->GetCount();
+				steamapicontext->SteamUserStats()->SetStat("crow_kills", newVal);
+				m_bSteamDataDirty = true; // mark for StoreStats
+				Msg("[Achievements] UpdateAchievement: crow_kills updated = %d\n", newVal);
 			}
 		}
 #endif
@@ -2009,7 +2024,35 @@ void CAchievementMgr::UpdateStateFromSteam_Internal()
 #ifndef NO_STEAM
 	if (!steamapicontext || !steamapicontext->SteamUserStats())
 		return;
+	// --- CUSTOM: sync manhack_kills counter from Steam's "crow_kills" stat ---
+	int32 manhackKills = 0;
+	if (steamapicontext->SteamUserStats()->GetStat("crow_kills", &manhackKills))
+	{
+		Msg("[Achievements] UpdateStateFromSteam_Internal: crow_kills stat synced, value = %d\n", manhackKills);
 
+		// Push this into our manhack achievements
+		FOR_EACH_MAP(m_mapAchievement, j)
+		{
+			CBaseAchievement* pAch = m_mapAchievement[j];
+
+			// We only update achievements that listen for manhack kills
+			if (Q_stristr(pAch->GetName(), "ACH_MANHACK_KILLS") != nullptr)
+			{
+				pAch->SetCount(manhackKills);
+				if (manhackKills >= pAch->GetGoal() && !pAch->IsAchieved())
+				{
+					pAch->SetAchieved(true);
+					Msg("[Achievements] crow_kills: auto-unlocked '%s' (goal=%d)\n",
+						pAch->GetName(), pAch->GetGoal());
+				}
+			}
+		}
+	}
+	else
+	{
+		Warning("[Achievements] UpdateStateFromSteam_Internal: failed to fetch crow_kills stat\n");
+	}
+	// --- END CUSTOM ---
 	// Debug print at entry
 	Msg("[Achievements] UpdateStateFromSteam_Internal: syncing %d achievements from Steam...\n",
 		m_mapAchievement.Count());

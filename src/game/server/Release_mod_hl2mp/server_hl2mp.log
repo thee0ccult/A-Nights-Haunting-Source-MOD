@@ -24,8 +24,8 @@
   weapon_m249.cpp
   weapon_m3pump.cpp
   weapon_m4a1.cpp
-  weapon_mp5.cpp
   weapon_p228.cpp
+  weapon_mp5.cpp
   weapon_patriot.cpp
   weapon_pickaxe.cpp
   weapon_pipe.cpp
