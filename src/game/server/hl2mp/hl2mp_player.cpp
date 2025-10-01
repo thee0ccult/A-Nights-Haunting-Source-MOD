@@ -1304,7 +1304,8 @@ void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
 		CHL2MP_Player* pKiller = ToHL2MPPlayer(pAttacker);
 		if (pKiller && pKiller != this) // prevent suicides
 		{
-			engine->ServerCommand("player_kill_increment\n");
+			// Send only to the killer’s client, not the entire server
+			engine->ClientCommand(pKiller->edict(), "player_kill_increment\n");
 		}
 	}
 
