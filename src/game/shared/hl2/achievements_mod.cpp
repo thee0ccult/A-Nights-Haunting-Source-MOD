@@ -53,7 +53,7 @@ void __MsgFunc_ZombieKilled(bf_read& msg);
 #define ACHIEVEMENT_MOD_FIRING_SQUAD 37
 #define ACHIEVEMENT_MOD_AIM_SMALL 38
 #define ACHIEVEMENT_MOD_DUMPSTER_DIVER 39
-#define ACHIEVEMENT_MOD_POP_WEASEL 40
+#define ACHIEVEMENT_MOD_GOT_COP_KILLS7 40
 #define ACHIEVEMENT_MOD_STORY_BEGINS 41
 #define ACHIEVEMENT_MOD_BODY_BAG 42
 #define ACHIEVEMENT_MOD_REPEAT_OFFENDER 43
@@ -193,6 +193,10 @@ DECLARE_ZOMBIE_KILL_ACHIEVEMENT(CAchievementModCopKills5,
 // 6 zombies
 DECLARE_ZOMBIE_KILL_ACHIEVEMENT(CAchievementModCopKills6,
     ACHIEVEMENT_MOD_GOT_COP_KILLS6, "MOD_GOT_COP_KILLS6", 6);
+
+// 69 zombies
+DECLARE_ZOMBIE_KILL_ACHIEVEMENT(CAchievementModCopKills7,
+    ACHIEVEMENT_MOD_GOT_COP_KILLS7, "MOD_GOT_COP_KILLS7", 69);
 
 // Achievement class for crow kills (backed by Steam stat "crow_kills")
 // =======================================================
@@ -780,7 +784,8 @@ CON_COMMAND(zombie_kill_increment, "Increment zombie kill count for all zombie k
         "MOD_GOT_COP_KILLS3",
         "MOD_GOT_COP_KILLS4",
         "MOD_GOT_COP_KILLS5",
-        "MOD_GOT_COP_KILLS6"
+        "MOD_GOT_COP_KILLS6",
+        "MOD_GOT_COP_KILLS7"
     };
 
     Msg("[Console] Incrementing zombie kill across all zombie achievements...\n");
@@ -826,7 +831,8 @@ CON_COMMAND(zombie_kill_debug, "Debug all zombie kill achievements and Steam sta
         "MOD_GOT_COP_KILLS3",
         "MOD_GOT_COP_KILLS4",
         "MOD_GOT_COP_KILLS5",
-        "MOD_GOT_COP_KILLS6"
+        "MOD_GOT_COP_KILLS6",
+        "MOD_GOT_COP_KILLS7"
     };
 
     Msg("[Debug] ===== Zombie Kill Achievements =====\n");
@@ -890,7 +896,8 @@ CON_COMMAND(zombie_kill_sync, "Force sync all zombie kill achievements with Stea
         "MOD_GOT_COP_KILLS3",
         "MOD_GOT_COP_KILLS4",
         "MOD_GOT_COP_KILLS5",
-        "MOD_GOT_COP_KILLS6"
+        "MOD_GOT_COP_KILLS6",
+        "MOD_GOT_COP_KILLS7"
     };
 
     Msg("[Console] Forcing Steam sync on all zombie kill achievements...\n");
@@ -935,7 +942,8 @@ void __MsgFunc_ZombieKilled(bf_read& msg)
         "MOD_GOT_COP_KILLS3",
         "MOD_GOT_COP_KILLS4",
         "MOD_GOT_COP_KILLS5",
-        "MOD_GOT_COP_KILLS6"
+        "MOD_GOT_COP_KILLS6",
+        "MOD_GOT_COP_KILLS7"
     };
 
     for (int i = 0; i < ARRAYSIZE(zombieAchievements); i++)
