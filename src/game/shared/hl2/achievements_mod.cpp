@@ -9,6 +9,7 @@
 #include "tier1/bitbuf.h"  // Add this
 #include "saverestore.h"        // Add this
 #include "saverestoretypes.h"   // Add this
+#include <ctime> // <-- ADD THIS for holiday achievements
 
 CAchievementMgr g_AchievementMgrMod; // Global achievement mgr for mod
 
@@ -98,7 +99,8 @@ void __MsgFunc_ZombieKilled(bf_read& msg);
 #define ACHIEVEMENT_MOD_GOT_BOP_KILLS8 82
 #define ACHIEVEMENT_MOD_GOT_BOP_KILLS9 83
 #define ACHIEVEMENT_MOD_TRAINING_DAY 84
-
+#define ACHIEVEMENT_MOD_PUMPKIN_SMASHER 85
+#define ACHIEVEMENT_MOD_HAPPY_HALLOWICKED 86
 
 // (stored across sessions via FCVAR_ARCHIVE)
 //Zombie Kills
@@ -635,6 +637,85 @@ DECLARE_PLAYER_KILL_ACHIEVEMENT(CAchievementModBopKills9,
     ACHIEVEMENT_MOD_GOT_BOP_KILLS9, "MOD_GOT_BOP_KILLS9", 6666);
 
 
+//-----------------------------------------------------------------------------
+// Purpose: Unlocks automatically every year on October 25th (Steam UTC)
+//-----------------------------------------------------------------------------
+class CAchievementModHappyHallowicked : public CBaseAchievement
+{
+public:
+    void Init() override
+    {
+        SetFlags(ACH_SAVE_GLOBAL);
+        SetGoal(1);
+        SetCount(0); // Source SDK 2013 uses SetCount instead of SetProgress
+        SetHideUntilAchieved(false);
+
+        Msg("[Achievement Init] Happy Hallowicked initialized - checking Steam UTC date soon.\n");
+
+        // Schedule first check after 10 seconds
+        CAchievementMgr* pMgr = dynamic_cast<CAchievementMgr*>(engine->GetAchievementMgr());
+        if (pMgr)
+            pMgr->SetAchievementThink(this, gpGlobals->curtime + 10.0f);
+    }
+
+    void Think() override
+    {
+        int month = -1, day = -1;
+        bool bUsedFallback = false;
+
+#ifndef NO_STEAM
+        if (steamapicontext && steamapicontext->SteamUtils())
+        {
+            uint32 unixTime = steamapicontext->SteamUtils()->GetServerRealTime();
+            time_t now = static_cast<time_t>(unixTime);
+            struct tm gmTime = { 0 };
+
+#if defined(_WIN32)
+            gmtime_s(&gmTime, &now);
+#else
+            gmtime_r(&now, &gmTime);
+#endif
+
+            month = gmTime.tm_mon + 1;
+            day = gmTime.tm_mday;
+        }
+        else
+#endif
+        {
+            // Steam API not available — fallback to local system time
+            time_t now = time(nullptr);
+            struct tm localTime = { 0 };
+#if defined(_WIN32)
+            localtime_s(&localTime, &now);
+#else
+            localtime_r(&now, &localTime);
+#endif
+            month = localTime.tm_mon + 1;
+            day = localTime.tm_mday;
+            bUsedFallback = true;
+        }
+
+        if (month == 10 && day == 31)
+        {
+            if (!IsAchieved())
+            {
+                AwardAchievement();
+                if (bUsedFallback)
+                    Msg("[Achievement] Unlocked: Happy Hallowicked (Local System Date Fallback)\n");
+                else
+                    Msg("[Achievement] Unlocked: Happy Hallowicked (Steam UTC Date)\n");
+            }
+        }
+
+        // Recheck every 6 hours
+        CAchievementMgr* pMgr = dynamic_cast<CAchievementMgr*>(engine->GetAchievementMgr());
+        if (pMgr)
+            pMgr->SetAchievementThink(this, gpGlobals->curtime + (60 * 60 * 6));
+    }
+};
+DECLARE_ACHIEVEMENT(CAchievementModHappyHallowicked, ACHIEVEMENT_MOD_HAPPY_HALLOWICKED, "MOD_HAPPY_HALLOWICKED", 5)
+
+
 // Storyline hop the fence into junk yard achivement
 DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_HIT_TRIGGER, "MOD_HIT_TRIGGER", 5);
 
@@ -709,6 +790,9 @@ DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_TEAM_DEATHMATCH, "MOD_TEAM_DEATHMA
 
 // deadend drive crane achievement
 DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_HELLO_OPERATOR, "MOD_HELLO_OPERATOR", 5);
+
+// deadend drive crane achievement
+DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_PUMPKIN_SMASHER, "MOD_PUMPKIN_SMASHER", 5);
 
 // slumington subway battery achievement
 DECLARE_MAP_EVENT_ACHIEVEMENT(ACHIEVEMENT_MOD_CONTROL_GAINER, "MOD_CONTROL_GAINER", 5);
