@@ -279,8 +279,8 @@
   precache_register.cpp
   predictableid.cpp
   predicted_viewmodel.cpp
-  prediction.cpp
   predictioncopy.cpp
+  prediction.cpp
   props_shared.cpp
   proxyentity.cpp
   ProxyHealth.cpp
