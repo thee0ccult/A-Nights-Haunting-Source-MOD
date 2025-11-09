@@ -2000,6 +2000,9 @@
     <ClInclude Include="vgui_soundscape_maker.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\shared\hl2\leaderboard_sync.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="mp3player.cpp">
@@ -3674,6 +3677,9 @@
       <Filter>Source Files\HL2MP\Weapons</Filter>
     </ClCompile>
     <ClCompile Include="vgui_soundscape_maker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\shared\hl2\leaderboard_sync.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

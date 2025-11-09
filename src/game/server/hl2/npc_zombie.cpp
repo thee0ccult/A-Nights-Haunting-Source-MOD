@@ -17,7 +17,7 @@
 #include "soundenvelope.h"
 #include "engine/IEngineSound.h"
 #include "ammodef.h"
-
+#include "basecombatcharacter.h"
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -148,7 +148,9 @@ public:
 	void FootscuffSound( bool fRightFoot );
 
 	const char *GetMoanSound( int nSound );
-	
+	void TraceAttack(const CTakeDamageInfo& info, const Vector& vecDir, trace_t* ptr, CDmgAccumulator* pAccumulator) override;
+	void SpawnDelayedFloorBloodThink();
+	Vector m_vLastBloodImpactPos;
 public:
 	DEFINE_CUSTOM_AI;
 
@@ -225,6 +227,7 @@ BEGIN_DATADESC( CZombie )
 	DEFINE_EMBEDDED( m_DurationDoorBash ),
 	DEFINE_EMBEDDED( m_NextTimeToStartDoorBash ),
 	DEFINE_FIELD( m_vPositionCharged, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD(m_vLastBloodImpactPos, FIELD_POSITION_VECTOR),
 
 END_DATADESC()
 
@@ -962,7 +965,58 @@ void CZombie::BuildScheduleTestBits( void )
 	}
 }
 
-	
+// ---------------------------------------------------------------------
+// Helper think to spawn delayed floor blood
+// ---------------------------------------------------------------------
+// Helper think to spawn delayed floor blood
+void CZombie::SpawnDelayedFloorBloodThink()
+{
+	if (!this->IsAlive())
+		return;
+
+	trace_t floorTrace;
+	Vector origin = m_vLastBloodImpactPos;
+	UTIL_TraceLine(origin, origin + Vector(0, 0, -64), MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &floorTrace);
+
+	if (floorTrace.DidHitWorld())
+	{
+		UTIL_BloodDecalTrace(&floorTrace, this->BloodColor());
+		UTIL_BloodImpact(floorTrace.endpos, Vector(0, 0, 1), this->BloodColor(), random->RandomInt(2, 4));
+	}
+}
+
+void CZombie::TraceAttack(const CTakeDamageInfo& info, const Vector& vecDir, trace_t* ptr, CDmgAccumulator* pAccumulator)
+{
+	// Base zombie processing (headshots, scaling, etc.)
+	BaseClass::TraceAttack(info, vecDir, ptr, pAccumulator);
+
+	// Only for bullets
+	if (!(info.GetDamageType() & DMG_BULLET))
+		return;
+
+	Vector hitPos = ptr->endpos;
+	Vector dir = vecDir;
+	Vector bloodDir = -dir;
+
+	// Save hit position for delayed floor splatter
+	m_vLastBloodImpactPos = hitPos;
+
+	// --- Instant blood spray on walls ---
+	UTIL_BloodImpact(hitPos, bloodDir, BloodColor(), random->RandomInt(1, 3));
+
+	for (int i = 0; i < 3; i++)
+	{
+		Vector offset = hitPos;
+		offset.x += random->RandomFloat(-5, 5);
+		offset.y += random->RandomFloat(-5, 5);
+		offset.z += random->RandomFloat(-2, 5);
+		UTIL_BloodImpact(offset, bloodDir + RandomVector(-0.2f, 0.2f), BloodColor(), random->RandomInt(1, 2));
+	}
+
+	// --- Schedule floor blood one second later ---
+	SetContextThink(&CZombie::SpawnDelayedFloorBloodThink, gpGlobals->curtime + 0.25f, "ZombieFloorBloodThink");
+}
+
 //=============================================================================
 
 AI_BEGIN_CUSTOM_NPC( npc_zombie, CZombie )

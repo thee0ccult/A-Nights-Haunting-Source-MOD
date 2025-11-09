@@ -10,6 +10,7 @@
 #include "saverestore.h"        // Add this
 #include "saverestoretypes.h"   // Add this
 #include <ctime> // <-- ADD THIS for holiday achievements
+#include "leaderboard_sync.h" // leaderboard handling
 
 CAchievementMgr g_AchievementMgrMod; // Global achievement mgr for mod
 
@@ -149,6 +150,8 @@ public:
                 if (pMgr) pMgr->SetDirty(true);
                 zombie_kills.SetValue(newCount);
             }
+            // NEW: mirror stat to leaderboard
+            g_LeaderboardSync.PushStatToLeaderboard("zombie_kills", "zombie_kills");
             if (newCount >= GetGoal())
             {
                 Msg("[Achievement] %s completed!\n", GetName()); // Use GetName() here
@@ -221,7 +224,7 @@ DECLARE_ZOMBIE_KILL_ACHIEVEMENT(CAchievementModCopKills7,
 
 // Achievement class for crow kills (backed by Steam stat "crow_kills")
 // =======================================================
-// Manhack (Crow) Kill Achievement Base — Steam stat sync
+// Manhack (Crow) Kill Achievement Base ? Steam stat sync
 // =======================================================
 class CManhackKillAchievement : public CBaseAchievement
 {
@@ -244,6 +247,7 @@ public:
 
                 manhack_kills.SetValue(newCount);
             }
+            g_LeaderboardSync.PushStatToLeaderboard("crow_kills", "crow_kills");
 
             if (newCount >= GetGoal())
             {
@@ -381,7 +385,7 @@ public:
                 if (metropolice_kills.IsValid())
                     metropolice_kills.SetValue(newCount);
             }
-
+            g_LeaderboardSync.PushStatToLeaderboard("metropolice_kills", "metropolice_kills");
             if (newCount >= GetGoal())
             {
                 Msg("[Achievement] %s completed!\n", GetName());
@@ -501,6 +505,7 @@ public:
         {
             steamapicontext->SteamUserStats()->SetStat("combines_kills", GetCount());
             steamapicontext->SteamUserStats()->StoreStats();
+            g_LeaderboardSync.PushStatToLeaderboard("combines_kills", "combines_kills");
         }
     }
 
@@ -596,6 +601,7 @@ public:
         {
             steamapicontext->SteamUserStats()->SetStat("player_kills", GetCount());
             steamapicontext->SteamUserStats()->StoreStats();
+            g_LeaderboardSync.PushStatToLeaderboard("player_kills", "player_kills");
         }
     }
 };
@@ -700,7 +706,7 @@ public:
         else
 #endif
         {
-            // Steam API not available — fallback to local system time
+            // Steam API not available ? fallback to local system time
             time_t now = time(nullptr);
             struct tm localTime = { 0 };
 #if defined(_WIN32)
@@ -1136,6 +1142,10 @@ CON_COMMAND_F(manhack_kill_increment, "Increment crow (manhack) kill achievement
     }
 
     Msg("[Achievement] Crow (manhack) kill increment processed client-side\n");
+
+#ifdef CLIENT_DLL
+    g_LeaderboardSync.PushStatToLeaderboard("crow_kills", "crow_kills");
+#endif
 }
 
 // =======================================================
@@ -1159,6 +1169,10 @@ CON_COMMAND_F(metropolice_kill_increment, "Increment MetroPolice (guard) kill ac
     }
 
     Msg("[Achievement] MetroPolice kill increment processed client-side\n");
+
+#ifdef CLIENT_DLL
+    g_LeaderboardSync.PushStatToLeaderboard("metropolice_kills", "metropolice_kills");
+#endif
 }
 
 CON_COMMAND_F(combine_kill_increment, "Increment Combine soldier kill achievements", FCVAR_CLIENTCMD_CAN_EXECUTE)
@@ -1179,6 +1193,10 @@ CON_COMMAND_F(combine_kill_increment, "Increment Combine soldier kill achievemen
     }
 
     Msg("[Achievement] Combine soldier kill increment processed\n");
+
+#ifdef CLIENT_DLL
+    g_LeaderboardSync.PushStatToLeaderboard("combines_kills", "combines_kills");
+#endif
 }
 
 // =======================================================
@@ -1199,7 +1217,7 @@ CON_COMMAND_F(player_kill_increment, "Increment Player kill achievement progress
             CPlayerKillAchievement* pPlayerAch = dynamic_cast<CPlayerKillAchievement*>(pAchievement);
             if (pPlayerAch)
             {
-                // Use our public wrapper (safe — calls IncrementCount internally)
+                // Use our public wrapper (safe ? calls IncrementCount internally)
                 pPlayerAch->HandlePlayerKill();
 
                 int32 newCount = pPlayerAch->GetCount();
@@ -1228,6 +1246,10 @@ CON_COMMAND_F(player_kill_increment, "Increment Player kill achievement progress
     }
 
     Msg("[Achievement] Player kill increment processed client-side\n");
+
+#ifdef CLIENT_DLL
+    g_LeaderboardSync.PushStatToLeaderboard("player_kills", "player_kills");
+#endif
 }
 
 #endif // GAME_DLL

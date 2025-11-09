@@ -37,11 +37,12 @@
   weapon_sledgehammer.cpp
   weapon_ump45.cpp
   achievements_mod.cpp
+  leaderboard_sync.cpp
   bloodoverlayproxy.cpp
   c_message_entity.cpp
   fx_css_weaponfx.cpp
-  hud_tasklist.cpp
   mapload_background.cpp
+  hud_tasklist.cpp
   mp3player.cpp
   cdll_replay.cpp
   replaycamera.cpp
@@ -279,8 +280,8 @@
   precache_register.cpp
   predictableid.cpp
   predicted_viewmodel.cpp
-  predictioncopy.cpp
   prediction.cpp
+  predictioncopy.cpp
   props_shared.cpp
   proxyentity.cpp
   ProxyHealth.cpp

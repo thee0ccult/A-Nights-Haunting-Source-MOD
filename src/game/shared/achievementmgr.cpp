@@ -736,7 +736,7 @@ void CAchievementMgr::DownloadUserData()
 		if (!steamapicontext->SteamUserStats()->RequestCurrentStats())
 		{
 			Warning("[Achievements] DownloadUserData: RequestCurrentStats failed (Steam returned false)\n"); // <<< DEBUG PRINT
-			m_bRequestedCurrentStats = false; // allow retry later if Steam wasn’t ready
+			m_bRequestedCurrentStats = false; // allow retry later if Steam wasn?t ready
 		}
 #endif // NO_STEAM
 	}
@@ -2252,8 +2252,8 @@ void CAchievementMgr::UpdateStateFromSteam_Internal()
 			{
 				DevMsg("ISteamUserStats::GetStat failed to get progress value from Steam for achievement %s\n", pszProgressName);
 			}
-			}
 		}
+	}
 
 	// send an event to anyone else who needs Steam user stat data
 	IGameEvent* event = gameeventmanager->CreateEvent("user_data_downloaded");
@@ -2266,7 +2266,7 @@ void CAchievementMgr::UpdateStateFromSteam_Internal()
 #endif
 	}
 #endif // NO_STEAM
-	}
+}
 
 #ifdef CLIENT_DLL
 

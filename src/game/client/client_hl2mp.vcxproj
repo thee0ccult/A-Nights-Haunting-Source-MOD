@@ -405,6 +405,7 @@ exit 1
     <ClInclude Include="..\shared\hl2mp\weapon_pipewrench.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_pitchfork.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_sledgehammer.h" />
+    <ClInclude Include="..\shared\hl2\leaderboard_sync.h" />
     <ClInclude Include="game_controls\baseviewport.h" />
     <ClInclude Include="game_controls\clientscoreboarddialog.h" />
     <ClInclude Include="game_controls\commandmenu.h" />
@@ -940,6 +941,7 @@ exit 1
     <ClCompile Include="..\shared\hl2mp\weapon_sledgehammer.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_ump45.cpp" />
     <ClCompile Include="..\shared\hl2\achievements_mod.cpp" />
+    <ClCompile Include="..\shared\hl2\leaderboard_sync.cpp" />
     <ClCompile Include="bloodoverlayproxy.cpp" />
     <ClCompile Include="c_message_entity.cpp" />
     <ClCompile Include="fx_css_weaponfx.cpp" />
