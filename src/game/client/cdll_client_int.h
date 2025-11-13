@@ -177,4 +177,24 @@ extern CSteamID GetSteamIDForPlayerIndex( int iPlayerIndex );
 
 #endif
 
+//-----------------------------------------------------------------------------
+// Steam SDK Auth Prototypes
+//-----------------------------------------------------------------------------
+#include "steam/steam_api.h"
+
+void RequestSteamAuthTicket();
+void SendSteamAuthTicket(const uint8* pTicket, uint32 size);
+
+//-----------------------------------------------------------------------------
+// Steam SDK Auth Interface
+#ifndef NO_STEAM
+
+#include "steam/steam_api.h"
+#include <string>   // Add this include for std::string
+
+void RequestSteamAuthTicket();
+void SendSteamAuthTicket(const uint8* pTicket, uint32 size);
+bool VerifySteamTicket(const std::string& steamId, const std::string& ticketHex);
+
+#endif
 #endif // CDLL_CLIENT_INT_H

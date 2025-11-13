@@ -4,6 +4,27 @@
 //
 // $NoKeywords: $
 //===========================================================================//
+//-----------------------------------------------------------------------------
+// Prevent Windows header bloat & macro conflicts before anything else
+//-----------------------------------------------------------------------------
+// Disable Windows CreateEvent macro globally before includes
+#ifdef CreateEvent
+#undef CreateEvent
+#endif
+#ifdef CreateEventA
+#undef CreateEventA
+#endif
+
+#pragma warning(disable : 4005 4603)
+
+// Define these before any includes to prevent redefinition issues
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#define CURL_STATICLIB
+
+#include <thread>
+#include <chrono>
+
 #include "cbase.h"
 #include <crtmemdebug.h>
 #include "vgui_int.h"
@@ -55,6 +76,15 @@
 #include "saverestoretypes.h"
 #include "saverestore.h"
 #include "physics_saverestore.h"
+
+// Ensure Windows CreateEvent macro is undefined *before* including igameevents.h
+#ifdef CreateEvent
+#undef CreateEvent
+#endif
+#ifdef CreateEventA
+#undef CreateEventA
+#endif
+
 #include "igameevents.h"
 #include "datacache/idatacache.h"
 #include "datacache/imdlcache.h"
@@ -174,8 +204,23 @@ CAchievementMgr g_AchievementMgr;
 #include "sixense/in_sixense.h"
 #endif
 
+#include <curl/curl.h>
+#include <sstream>
+#include <iomanip>
+#include <string>
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
+
+// ---- FINAL safeguard: ensure Windows macros don't break IGameEventManager2 ----
+#ifdef CreateEvent
+#undef CreateEvent
+#endif
+#ifdef CreateEventA
+#undef CreateEventA
+#endif
+
+std::string HttpPostJson(const std::string& url, const std::string& jsonPayload);
 
 extern IClientMode *GetClientModeNormal();
 // Add this near the top with other forward declarations
@@ -731,6 +776,8 @@ public:
 	
 	virtual void			ClientAdjustStartSoundParams( struct StartSoundParams_t& params );
 	
+	void CHLClient::SteamAuthTicketResponse(EncryptedAppTicketResponse_t* pResponse, bool bIOFailure);
+
 	// Returns true if the disconnect command has been handled by the client
 	virtual bool DisconnectAttempt( void );
 public:
@@ -1186,39 +1233,157 @@ bool IsNewSDK()
 	return engine->GetProtocolVersion() != 24;
 }
 
+#include <curl/curl.h>
+#include <sstream>
+#include <iomanip>
+#include <string>
+#include <thread>
+#include <chrono>
+
+//-----------------------------------------------------------------------------
+// Helper: Write callback for CURL
+//-----------------------------------------------------------------------------
+static size_t CurlWriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata)
+{
+	std::string* response = static_cast<std::string*>(userdata);
+	size_t total = size * nmemb;
+	response->append(ptr, total);
+	return total;
+}
+
+//-----------------------------------------------------------------------------
+// Helper: Perform HTTP POST with retry & cooldown
+//-----------------------------------------------------------------------------
+static std::string HttpPostJson(const std::string& url, const std::string& jsonPayload)
+{
+	CURL* curl = curl_easy_init();
+	std::string responseData;
+
+	if (!curl)
+	{
+		Warning("[Auth] CURL initialization failed!\n");
+		return "";
+	}
+
+	struct curl_slist* headers = nullptr;
+	headers = curl_slist_append(headers, "Content-Type: application/json");
+
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(curl, CURLOPT_POST, 1L);
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonPayload.c_str());
+	curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)jsonPayload.size());
+	curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlWriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+
+	CURLcode res = curl_easy_perform(curl);
+	if (res != CURLE_OK)
+		Warning("[Auth] CURL failed: %s\n", curl_easy_strerror(res));
+
+	curl_slist_free_all(headers);
+	curl_easy_cleanup(curl);
+
+	return responseData;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Called after client & server DLL are loaded and all systems initialized
 //-----------------------------------------------------------------------------
 void CHLClient::PostInit()
 {
 	IGameSystem::PostInitAllSystems();
+
 	//-----------------------------------------------------------------------------
 	// Purpose: dr.n0 sdk 2013 previous2021 build error trigger
 	//-----------------------------------------------------------------------------
 	if (IsNewSDK())
 	{
 		Error("The previous2021 beta must be selected for Source SDK Base 2013 Multiplayer to play this mod.");
-}//--------------------------------------------------------------------------------
+	}
+
 #ifdef SIXENSE
-	// allow sixnese input to perform post-init operations
+	// allow sixense input to perform post-init operations
 	g_pSixenseInput->PostInit();
 #endif
 
 	g_ClientVirtualReality.StartupComplete();
 
 #ifdef HL1MP_CLIENT_DLL
-	if ( s_cl_load_hl1_content.GetBool() && steamapicontext && steamapicontext->SteamApps() )
+	if (s_cl_load_hl1_content.GetBool() && steamapicontext && steamapicontext->SteamApps())
 	{
-		char szPath[ MAX_PATH*2 ];
-		int ccFolder= steamapicontext->SteamApps()->GetAppInstallDir( 280, szPath, sizeof(szPath) );
-		if ( ccFolder > 0 )
+		char szPath[MAX_PATH * 2];
+		int ccFolder = steamapicontext->SteamApps()->GetAppInstallDir(280, szPath, sizeof(szPath));
+		if (ccFolder > 0)
 		{
-			V_AppendSlash( szPath, sizeof(szPath) );
-			V_strncat( szPath, "hl1", sizeof( szPath ) );
+			V_AppendSlash(szPath, sizeof(szPath));
+			V_strncat(szPath, "hl1", sizeof(szPath));
 
-			g_pFullFileSystem->AddSearchPath( szPath, "HL1" );
-			g_pFullFileSystem->AddSearchPath( szPath, "GAME" );
+			g_pFullFileSystem->AddSearchPath(szPath, "HL1");
+			g_pFullFileSystem->AddSearchPath(szPath, "GAME");
 		}
+}
+#endif
+
+#ifndef NO_STEAM
+	if (SteamAPI_IsSteamRunning())
+	{
+		Msg("[Auth] Steam detected, requesting auth session ticket...\n");
+
+		ISteamUser* steamUser = steamapicontext->SteamUser();
+		ISteamUtils* steamUtils = steamapicontext->SteamUtils();
+
+		if (steamUser && steamUtils)
+		{
+			CSteamID steamID = steamUser->GetSteamID();
+
+			uint8 ticketBuffer[1024];
+			uint32 ticketSize = 0;
+			HAuthTicket authTicket = steamUser->GetAuthSessionTicket(ticketBuffer, sizeof(ticketBuffer), &ticketSize);
+
+			if (authTicket == k_HAuthTicketInvalid || ticketSize == 0)
+			{
+				Warning("[Auth] Failed to get auth session ticket!\n");
+			}
+			else
+			{
+				Msg("[Auth] Received Steam auth session ticket (%u bytes)\n", ticketSize);
+
+				std::ostringstream ticketHex;
+				for (uint32 i = 0; i < ticketSize; ++i)
+				{
+					ticketHex << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(ticketBuffer[i]);
+				}
+
+				std::string jsonPayload = std::string("{\"steamid\":\"") +
+					std::to_string(steamID.ConvertToUint64()) +
+					"\",\"appid\":3418380,\"ticket\":\"" + ticketHex.str() + "\"}";
+
+				Msg("[Auth Debug] Sending JSON: %s\n", jsonPayload.c_str());
+
+				std::string url = "http://drn0.site.nfoservers.com/hub/drn0/steam/auth/verify_ticket.php";
+				std::string response = HttpPostJson(url, jsonPayload);
+
+				Msg("[Auth] Server reply: %s\n", response.c_str());
+
+				if (response.find("\"ok\":true") != std::string::npos)
+				{
+					Msg("[Auth] Steam ticket validated successfully.\n");
+				}
+				else
+				{
+					Warning("[Auth] Steam ticket validation failed.\n");
+				}
+			}
+		}
+		else
+		{
+			Warning("[Auth] Steam API context invalid.\n");
+		}
+	}
+	else
+	{
+		Warning("[Auth] Steam not running, skipping SDK Auth.\n");
 	}
 #endif
 }

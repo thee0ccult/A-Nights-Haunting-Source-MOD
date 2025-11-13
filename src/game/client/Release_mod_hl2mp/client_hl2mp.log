@@ -41,8 +41,8 @@
   bloodoverlayproxy.cpp
   c_message_entity.cpp
   fx_css_weaponfx.cpp
-  mapload_background.cpp
   hud_tasklist.cpp
+  mapload_background.cpp
   mp3player.cpp
   cdll_replay.cpp
   replaycamera.cpp
@@ -152,7 +152,26 @@
   camomaterialproxy.cpp
   cdll_bounded_cvars.cpp
   cdll_client_int.cpp
+c:\anh\src\game\client\cdll_client_int.cpp(21): warning C4005: 'WIN32_LEAN_AND_MEAN' : macro redefinition
+          command-line arguments :  see previous definition of 'WIN32_LEAN_AND_MEAN'
+c:\anh\src\game\client\cdll_client_int.cpp(22): warning C4005: 'NOMINMAX' : macro redefinition
+          command-line arguments :  see previous definition of 'NOMINMAX'
+c:\anh\src\game\client\cdll_client_int.cpp(23): warning C4005: 'CURL_STATICLIB' : macro redefinition
+          command-line arguments :  see previous definition of 'CURL_STATICLIB'
   cdll_util.cpp
+c:\anh\src\game\client\cdll_client_int.cpp(25): warning C4627: '#include <thread>': skipped when looking for precompiled header use
+          Add directive to 'cbase.h' or rebuild precompiled header
+c:\anh\src\game\client\cdll_client_int.cpp(26): warning C4627: '#include <chrono>': skipped when looking for precompiled header use
+          Add directive to 'cbase.h' or rebuild precompiled header
+c:\anh\src\game\client\cdll_client_int.cpp(21): warning C4603: 'WIN32_LEAN_AND_MEAN' : macro is not defined or definition is different after precompiled header use
+          Add macro to precompiled header instead of defining here
+          c:\anh\src\game\client\cdll_client_int.cpp(28) : use of precompiled header
+c:\anh\src\game\client\cdll_client_int.cpp(22): warning C4603: 'NOMINMAX' : macro is not defined or definition is different after precompiled header use
+          Add macro to precompiled header instead of defining here
+          c:\anh\src\game\client\cdll_client_int.cpp(28) : use of precompiled header
+c:\anh\src\game\client\cdll_client_int.cpp(23): warning C4603: 'CURL_STATICLIB' : macro is not defined or definition is different after precompiled header use
+          Add macro to precompiled header instead of defining here
+          c:\anh\src\game\client\cdll_client_int.cpp(28) : use of precompiled header
   cl_mat_stub.cpp
   classmap.cpp
   client_factorylist.cpp
@@ -187,8 +206,30 @@
   func_ladder.cpp
   functionproxy.cpp
   fx_blood.cpp
+c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winbase.h(59): warning C4005: 'INVALID_HANDLE_VALUE' : macro redefinition (cdll_client_int.cpp)
+          c:\anh\src\common\xbox\xboxstubs.h(98) : see previous definition of 'INVALID_HANDLE_VALUE'
+c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winbase.h(7558): warning C4005: 'GetCommandLine' : macro redefinition (cdll_client_int.cpp)
+          c:\anh\src\public\tier0\protected_things.h(172) : see previous definition of 'GetCommandLine'
   fx_cube.cpp
   fx_explosion.cpp
+c:\program files (x86)\microsoft sdks\windows\v7.1a\include\wincon.h(328): warning C4005: 'ReadConsoleInput' : macro redefinition (cdll_client_int.cpp)
+          c:\anh\src\public\tier0\protected_things.h(238) : see previous definition of 'ReadConsoleInput'
+c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(290): warning C4005: 'RegCreateKey' : macro redefinition (cdll_client_int.cpp)
+          c:\anh\src\public\tier0\protected_things.h(220) : see previous definition of 'RegCreateKey'
+c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(324): warning C4005: 'RegCreateKeyEx' : macro redefinition (cdll_client_int.cpp)
+          c:\anh\src\public\tier0\protected_things.h(214) : see previous definition of 'RegCreateKeyEx'
+c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(636): warning C4005: 'RegOpenKey' : macro redefinition (cdll_client_int.cpp)
+          c:\anh\src\public\tier0\protected_things.h(184) : see previous definition of 'RegOpenKey'
+c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(662): warning C4005: 'RegOpenKeyEx' : macro redefinition (cdll_client_int.cpp)
+          c:\anh\src\public\tier0\protected_things.h(178) : see previous definition of 'RegOpenKeyEx'
+c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(756): warning C4005: 'RegQueryValue' : macro redefinition (cdll_client_int.cpp)
+          c:\anh\src\public\tier0\protected_things.h(208) : see previous definition of 'RegQueryValue'
+c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(813): warning C4005: 'RegQueryValueEx' : macro redefinition (cdll_client_int.cpp)
+          c:\anh\src\public\tier0\protected_things.h(202) : see previous definition of 'RegQueryValueEx'
+c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(929): warning C4005: 'RegSetValue' : macro redefinition (cdll_client_int.cpp)
+          c:\anh\src\public\tier0\protected_things.h(196) : see previous definition of 'RegSetValue'
+c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(958): warning C4005: 'RegSetValueEx' : macro redefinition (cdll_client_int.cpp)
+          c:\anh\src\public\tier0\protected_things.h(190) : see previous definition of 'RegSetValueEx'
   fx_fleck.cpp
   fx_impact.cpp
   fx_interpvalue.cpp
@@ -199,6 +240,7 @@
   fx_trail.cpp
   fx_water.cpp
   gamemovement.cpp
+c:\anh\src\game\client\cdll_client_int.cpp(1258): warning C4211: nonstandard extension used : redefined extern to static
   gamerules.cpp
   gamerules_register.cpp
   GameStats.cpp
@@ -548,6 +590,8 @@
   language.cpp
   memoverride.cpp
   mumble.cpp
+c:\anh\src\game\client\mumble.cpp(8): warning C4005: 'WIN32_LEAN_AND_MEAN' : macro redefinition
+          command-line arguments :  see previous definition of 'WIN32_LEAN_AND_MEAN'
   networkvar.cpp
   posedebugger.cpp
   randoverride.cpp
