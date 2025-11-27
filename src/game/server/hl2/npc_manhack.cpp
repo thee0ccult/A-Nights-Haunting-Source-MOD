@@ -383,8 +383,8 @@ void CNPC_Manhack::Event_Killed( const CTakeDamageInfo &info )
 	}
 
 	// Light
-	CBroadcastRecipientFilter filter;
-	te->DynamicLight( filter, 0.0, &GetAbsOrigin(), 255, 180, 100, 0, 100, 0.1, 0 );
+	//CBroadcastRecipientFilter filter;
+	//te->DynamicLight( filter, 0.0, &GetAbsOrigin(), 255, 180, 100, 0, 100, 0.1, 0 );
 
 	if ( m_nEnginePitch1 < 0 )
 	{
@@ -1631,9 +1631,9 @@ void CNPC_Manhack::Bump( CBaseEntity *pHitEntity, float flInterval, trace_t &tr 
 
 			//DispatchEffect( "ManhackSparks", data );
 
-			CBroadcastRecipientFilter filter;
+			//CBroadcastRecipientFilter filter;
 
-			te->DynamicLight( filter, 0.0, &GetAbsOrigin(), 255, 180, 100, 0, 50, 0.3, 150 );
+			//te->DynamicLight( filter, 0.0, &GetAbsOrigin(), 255, 180, 100, 0, 50, 0.3, 150 );
 			
 			// add some spin, but only if we're not already going fast..
 			Vector vecVelocity;
