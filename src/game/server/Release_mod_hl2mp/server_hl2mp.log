@@ -219,6 +219,8 @@
   grenadethrown.cpp
   guntarget.cpp
   logic_achievement.cpp
+  npc_zombine.cpp
+  vehicle_jeep.cpp
   h_ai.cpp
   h_cycler.cpp
   haptic_msgs.cpp

@@ -1877,6 +1877,9 @@
     <ClInclude Include="hl2\logic_achievement.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="hl2\vehicle_jeep.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gamedll_replay.cpp">
@@ -3708,6 +3711,12 @@
     </ClCompile>
     <ClCompile Include="..\shared\hl2mp\weapon_cigarette.cpp">
       <Filter>Source Files\HL2MP\Weapons</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2\vehicle_jeep.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hl2\npc_zombine.cpp">
+      <Filter>Source Files\HL2 DLL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

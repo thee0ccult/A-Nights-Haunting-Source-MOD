@@ -360,6 +360,7 @@ exit 1
     <ClInclude Include="..\..\public\ihltvdirector.h" />
     <ClInclude Include="..\..\public\vstdlib\IKeyValuesSystem.h" />
     <ClInclude Include="hl2\logic_achievement.h" />
+    <ClInclude Include="hl2\vehicle_jeep.h" />
     <ClInclude Include="ilagcompensationmanager.h" />
     <ClInclude Include="..\..\public\vgui\ILocalize.h" />
     <ClInclude Include="..\..\public\materialsystem\imaterial.h" />
@@ -1115,6 +1116,8 @@ exit 1
     <ClCompile Include="grenadethrown.cpp" />
     <ClCompile Include="guntarget.cpp" />
     <ClCompile Include="hl2\logic_achievement.cpp" />
+    <ClCompile Include="hl2\npc_zombine.cpp" />
+    <ClCompile Include="hl2\vehicle_jeep.cpp" />
     <ClCompile Include="h_ai.cpp" />
     <ClCompile Include="h_cycler.cpp" />
     <ClCompile Include="h_export.cpp">
