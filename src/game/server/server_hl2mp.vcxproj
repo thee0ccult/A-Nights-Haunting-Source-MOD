@@ -891,6 +891,7 @@ exit 1
     <ClCompile Include="..\shared\hl2mp\weapon_pickaxe.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_pipe.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_pipewrench.cpp" />
+    <ClCompile Include="..\shared\hl2mp\weapon_pistolsilenced.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_pitchfork.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_scout.cpp" />
     <ClCompile Include="..\shared\hl2mp\weapon_sg552.cpp" />

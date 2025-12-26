@@ -3682,6 +3682,9 @@
     <ClCompile Include="..\shared\hl2\leaderboard_sync.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\hl2mp\weapon_pistolsilenced.cpp">
+      <Filter>Source Files\HL2MP\Weapons</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

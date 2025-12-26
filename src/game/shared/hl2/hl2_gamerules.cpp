@@ -119,6 +119,10 @@ ConVar	sk_plr_dmg_p228("sk_plr_dmg_p228", "0", FCVAR_REPLICATED);
 ConVar	sk_npc_dmg_p228("sk_npc_dmg_p228", "0", FCVAR_REPLICATED);
 ConVar	sk_max_p228("sk_max_p228", "0", FCVAR_REPLICATED);
 
+ConVar	sk_plr_dmg_pistolsilenced("sk_plr_dmg_pistolsilenced", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_pistolsilenced("sk_npc_dmg_pistolsilenced", "0", FCVAR_REPLICATED);
+ConVar	sk_max_pistolsilenced("sk_max_pistolsilenced", "0", FCVAR_REPLICATED);
+
 ConVar	sk_plr_dmg_glock("sk_plr_dmg_glock", "0", FCVAR_REPLICATED);
 ConVar	sk_npc_dmg_glock("sk_npc_dmg_glock", "0", FCVAR_REPLICATED);
 ConVar	sk_max_glock("sk_max_glock", "0", FCVAR_REPLICATED);

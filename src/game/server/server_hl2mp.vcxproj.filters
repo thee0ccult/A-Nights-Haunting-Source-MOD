@@ -3718,6 +3718,9 @@
     <ClCompile Include="hl2\npc_zombine.cpp">
       <Filter>Source Files\HL2 DLL</Filter>
     </ClCompile>
+    <ClCompile Include="..\shared\hl2mp\weapon_pistolsilenced.cpp">
+      <Filter>Source Files\HL2MP\Weapons</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

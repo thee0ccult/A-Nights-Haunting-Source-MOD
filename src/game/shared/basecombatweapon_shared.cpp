@@ -1012,6 +1012,7 @@ void CC_ToggleIronSights(void)
 		FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_m249") ||
 		FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_mp5") ||
 		FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_p228") ||
+		FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_pistolsilenced") ||
 		//FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_patriot") || adding ironsights scoped weapons cant function this at the moment *hacked out
 		//FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_scout") ||
 		//FClassnameIs(pPlayer->GetActiveWeapon(), "weapon_sg552") ||

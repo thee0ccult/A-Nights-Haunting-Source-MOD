@@ -30,6 +30,7 @@
   weapon_pickaxe.cpp
   weapon_pipe.cpp
   weapon_pipewrench.cpp
+  weapon_pistolsilenced.cpp
   weapon_pitchfork.cpp
   weapon_scout.cpp
   weapon_sg552.cpp

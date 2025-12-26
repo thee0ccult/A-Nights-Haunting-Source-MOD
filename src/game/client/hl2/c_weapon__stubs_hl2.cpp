@@ -34,6 +34,7 @@ STUB_WEAPON_CLASS(weapon_m249, WeaponM249, C_BaseHLCombatWeapon);
 STUB_WEAPON_CLASS( weapon_frag, WeaponFrag, C_BaseHLCombatWeapon );
 STUB_WEAPON_CLASS( weapon_rpg, WeaponRPG, C_BaseHLCombatWeapon );
 STUB_WEAPON_CLASS( weapon_pistol, WeaponPistol, C_BaseHLCombatWeapon );
+STUB_WEAPON_CLASS(weapon_pistolsilenced, WeaponPistolsilenced, C_BaseHLCombatWeapon);
 STUB_WEAPON_CLASS(weapon_p228, WeaponP228, C_BaseHLCombatWeapon);
 STUB_WEAPON_CLASS(weapon_glock, WeaponGlock, C_BaseHLCombatWeapon);
 STUB_WEAPON_CLASS(weapon_fiveseven, WeaponFiveseven, C_BaseHLCombatWeapon);
