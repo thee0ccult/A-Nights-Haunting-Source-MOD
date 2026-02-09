@@ -371,36 +371,64 @@ void RagdollSetupCollisions( ragdoll_t &ragdoll, vcollide_t *pCollide, int model
 	}
 }
 
-void RagdollActivate( ragdoll_t &ragdoll, vcollide_t *pCollide, int modelIndex, bool bForceWake )
+void RagdollActivate(ragdoll_t& ragdoll, vcollide_t* pCollide, int modelIndex, bool bForceWake)
 {
-	RagdollSetupCollisions( ragdoll, pCollide, modelIndex );
-	for ( int i = 0; i < ragdoll.listCount; i++ )
-	{
-		ragdoll.list[i].pObject->SetGameIndex( i );
-		PhysSetGameFlags( ragdoll.list[i].pObject, FVPHYSICS_MULTIOBJECT_ENTITY );
-		// now that the relationships are set, activate the collision system
-		ragdoll.list[i].pObject->EnableCollisions( true );
+	RagdollSetupCollisions(ragdoll, pCollide, modelIndex);
 
-		if ( bForceWake == true )
+	for (int i = 0; i < ragdoll.listCount; i++)
+	{
+		IPhysicsObject* pPhys = ragdoll.list[i].pObject;
+		if (!pPhys)
+			continue;
+
+		pPhys->SetGameIndex(i);
+		PhysSetGameFlags(pPhys, FVPHYSICS_MULTIOBJECT_ENTITY);
+
+		// --- HORROR RAGDOLL DAMPING (SDK 2013 MP SAFE) ---
+		float flLinearDamp = 0.15f;
+		float flAngularDamp = 3.2f;
+
+		// --- HORROR: slow neck release (SDK-safe) ---
+		// Lightest bone gets lower angular damping head droop
+		if (pPhys->GetMass() < 12.0f)
 		{
-			ragdoll.list[i].pObject->Wake();
+			flAngularDamp = 1.4f;
+		}
+
+		pPhys->SetDamping(&flLinearDamp, &flAngularDamp);
+
+
+
+		// Activate collisions
+		pPhys->EnableCollisions(true);
+
+		if (bForceWake)
+		{
+			pPhys->Wake();
+		}
+		else
+		{
+			pPhys->Sleep();
 		}
 	}
-	if ( ragdoll.pGroup )
-	{
-		// NOTE: This also wakes the objects
-		ragdoll.pGroup->Activate();
-		// so if we didn't want that, we'll need to put them back to sleep here
-		if ( !bForceWake )
-		{
-			for ( int i = 0; i < ragdoll.listCount; i++ )
-			{
-				ragdoll.list[i].pObject->Sleep();
-			}
 
+	if (ragdoll.pGroup)
+	{
+		// NOTE: This also wakes objects
+		ragdoll.pGroup->Activate();
+
+		// Restore sleep state if needed
+		if (!bForceWake)
+		{
+			for (int i = 0; i < ragdoll.listCount; i++)
+			{
+				if (ragdoll.list[i].pObject)
+					ragdoll.list[i].pObject->Sleep();
+			}
 		}
 	}
 }
+
 
 
 bool RagdollCreate( ragdoll_t &ragdoll, const ragdollparams_t &params, IPhysicsEnvironment *pPhysEnv )
@@ -418,6 +446,39 @@ bool RagdollCreate( ragdoll_t &ragdoll, const ragdollparams_t &params, IPhysicsE
 	{
 		totalMass += ragdoll.list[i].pObject->GetMass();
 	}
+	// --- HORROR RAGDOLL MASS DISTRIBUTION ---
+// Bias mass toward torso to create heavy collapse
+	for (i = 0; i < ragdoll.listCount; i++)
+	{
+		IPhysicsObject* pPhys = ragdoll.list[i].pObject;
+		if (!pPhys)
+			continue;
+
+		float flMass = pPhys->GetMass();
+		int boneIndex = ragdoll.boneIndex[i];
+
+		if (boneIndex < 0)
+			continue;
+
+		const char* pBoneName = params.pStudioHdr->pBone(boneIndex)->pszName();
+
+		// Spine / pelvis = heavy
+		if (Q_stristr(pBoneName, "spine") || Q_stristr(pBoneName, "pelvis"))
+		{
+			pPhys->SetMass(flMass * 1.6f);
+		}
+		// Head = slightly heavy
+		else if (Q_stristr(pBoneName, "head"))
+		{
+			pPhys->SetMass(flMass * 1.2f);
+		}
+		// Arms / legs = lighter
+		else
+		{
+			pPhys->SetMass(flMass * 0.7f);
+		}
+	}
+
 	totalMass = MAX(totalMass,1);
 
 	// apply force to the model
@@ -450,6 +511,56 @@ bool RagdollCreate( ragdoll_t &ragdoll, const ragdollparams_t &params, IPhysicsE
 			}
 		}
 	}
+
+	// --- HORROR RAGDOLL SETTLING IMPULSE ---
+	// Small downward bias to help bodies settle naturally
+// --- HORROR: final body settling ---
+	for (i = 0; i < ragdoll.listCount; i++)
+	{
+		IPhysicsObject* pPhys = ragdoll.list[i].pObject;
+		if (!pPhys)
+			continue;
+
+		int boneIndex = ragdoll.boneIndex[i];
+		if (boneIndex < 0)
+			continue;
+
+		const char* pBoneName = params.pStudioHdr->pBone(boneIndex)->pszName();
+
+		Vector settle(0.0f, 0.0f, -40.0f);
+
+		// Torso commits hardest
+		if (Q_stristr(pBoneName, "spine") || Q_stristr(pBoneName, "pelvis"))
+		{
+			settle.z = -90.0f;
+		}
+
+		pPhys->ApplyForceCenter(settle);
+	}
+
+
+	// --- HORROR: last-breath micro twitch ---
+// Very small impulse to simulate final nervous response
+	for (i = 0; i < ragdoll.listCount; i++)
+	{
+		IPhysicsObject* pPhys = ragdoll.list[i].pObject;
+		if (!pPhys)
+			continue;
+
+		// Only affect light bones (limbs)
+		float mass = pPhys->GetMass();
+		if (mass < 15.0f)
+		{
+			Vector twitch(
+				RandomFloat(-15.0f, 15.0f),
+				RandomFloat(-15.0f, 15.0f),
+				RandomFloat(5.0f, 20.0f)
+			);
+
+			pPhys->ApplyForceCenter(twitch);
+		}
+	}
+
 
 	return true;
 }

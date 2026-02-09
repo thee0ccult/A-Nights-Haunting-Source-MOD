@@ -75,6 +75,14 @@ ConVar ai_use_visibility_cache( "ai_use_visibility_cache", "1" );
 #define ShouldUseVisibilityCache() true
 #endif
 
+// Horror ragdoll force tuning
+#define HORROR_RAGDOLL_FORCE_MAX     1200.0f
+#define HORROR_RAGDOLL_GUN_SCALE     0.55f
+#define HORROR_RAGDOLL_MELEE_SCALE  0.85f
+#define HORROR_RAGDOLL_GENERIC_SCALE 0.6f
+
+
+
 BEGIN_DATADESC( CBaseCombatCharacter )
 
 #ifdef INVASION_DLL
@@ -1527,7 +1535,33 @@ bool CBaseCombatCharacter::BecomeRagdoll( const CTakeDamageInfo &info, const Vec
 
 	//Fix up the force applied to server side ragdolls. This fixes magnets not affecting them.
 	CTakeDamageInfo newinfo = info;
-	newinfo.SetDamageForce( forceVector );
+
+	// --- Horror ragdoll force shaping ---
+	Vector vecForce = forceVector;
+
+	// Clamp extreme forces (prevents flying corpses)
+	float flMag = vecForce.Length();
+	if (flMag > HORROR_RAGDOLL_FORCE_MAX)
+	{
+		vecForce *= (HORROR_RAGDOLL_FORCE_MAX / flMag);
+	}
+
+	// Weapon-aware scaling
+	if (info.GetDamageType() & DMG_BULLET)
+	{
+		vecForce *= HORROR_RAGDOLL_GUN_SCALE;
+	}
+	else if (info.GetDamageType() & (DMG_CLUB | DMG_SLASH))
+	{
+		vecForce *= HORROR_RAGDOLL_MELEE_SCALE;
+	}
+	else
+	{
+		vecForce *= HORROR_RAGDOLL_GENERIC_SCALE;
+	}
+
+	newinfo.SetDamageForce(vecForce);
+
 
 #ifdef HL2_EPISODIC
 	// Burning corpses are server-side in episodic, if we're in darkness mode
