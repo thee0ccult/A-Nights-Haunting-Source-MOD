@@ -12,6 +12,7 @@
 #include "physics_saverestore.h"
 #include "datacache/imdlcache.h"
 #include "activitylist.h"
+#include "tier1/convar.h"
 
 // NVNT start extra includes
 #include "haptics/haptic_utils.h"
@@ -77,6 +78,12 @@ ConVar viewmodel_adjust_yaw("viewmodel_adjust_yaw", "0", FCVAR_REPLICATED);
 ConVar viewmodel_adjust_roll("viewmodel_adjust_roll", "0", FCVAR_REPLICATED);
 ConVar viewmodel_adjust_fov("viewmodel_adjust_fov", "0", FCVAR_REPLICATED, "Note: this feature is not available during any kind of zoom", vm_adjust_fov_callback);
 ConVar viewmodel_adjust_enabled("viewmodel_adjust_enabled", "0", FCVAR_REPLICATED | FCVAR_CHEAT, "enabled viewmodel adjusting", vm_adjust_enable_callback);
+ConVar sv_use_pickup(
+	"sv_use_pickup",
+	"1",
+	FCVAR_REPLICATED | FCVAR_NOTIFY,
+	"Require +use key to pick up weapons and items"
+);
 
 CBaseCombatWeapon::CBaseCombatWeapon()
 {
@@ -855,9 +862,41 @@ void CBaseCombatWeapon::DefaultTouch( CBaseEntity *pOther )
 		return;
 
 	// if it's not a player, ignore
-	CBasePlayer *pPlayer = ToBasePlayer(pOther);
-	if ( !pPlayer )
+	CBasePlayer* pPlayer = ToBasePlayer(pOther);
+	if (!pPlayer)
 		return;
+
+	if (sv_use_pickup.GetBool())
+	{
+		// Only gate weapons that are true world pickups
+		if (HasSpawnFlags(SF_NORESPAWN))
+		{
+			// Given weapons (spawn loadout) must NEVER be gated
+		}
+		else
+		{
+			if (!pPlayer->IsPressingUse())
+				return;
+
+			trace_t tr;
+			Vector vecStart = pPlayer->EyePosition();
+			Vector vecEnd = vecStart + pPlayer->EyeDirection3D() * 96.0f;
+
+			UTIL_TraceLine(
+				vecStart,
+				vecEnd,
+				MASK_SOLID,
+				pPlayer,
+				COLLISION_GROUP_NONE,
+				&tr
+			);
+
+			if (tr.m_pEnt != this)
+				return;
+		}
+	}
+
+
 
 	if( UTIL_ItemCanBeTouchedByPlayer(this, pPlayer) )
 	{

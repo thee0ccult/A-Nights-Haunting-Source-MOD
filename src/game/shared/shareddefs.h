@@ -26,6 +26,7 @@
 #endif
 #define ANIMATION_CYCLE_MINFRAC		(1.0f / (1<<ANIMATION_CYCLE_BITS))
 
+
 // Each mod defines these for itself.
 class CViewVectors
 {

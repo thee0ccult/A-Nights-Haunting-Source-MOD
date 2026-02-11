@@ -13,6 +13,10 @@
 #include "iservervehicle.h"
 #include "physics_saverestore.h"
 #include "world.h"
+#include "in_buttons.h"
+#include "shareddefs.h"
+#include "tier1/convar.h"
+
 
 #ifdef HL2MP
 #include "hl2mp_gamerules.h"
@@ -22,6 +26,8 @@
 #include "tier0/memdbgon.h"
 
 #define ITEM_PICKUP_BOX_BLOAT		24
+
+extern ConVar sv_use_pickup;
 
 class CWorldItem : public CBaseAnimating
 {
@@ -410,6 +416,34 @@ void CItem::ItemTouch( CBaseEntity *pOther )
 		return;
 
 	CBasePlayer *pPlayer = (CBasePlayer *)pOther;
+
+	// Require +use key for item pickup
+	if (sv_use_pickup.GetBool())
+	{
+		// Must be holding +use
+		if (sv_use_pickup.GetBool() && !(pPlayer->m_nButtons & IN_USE))
+			return;
+
+
+		// Must be looking directly at this item
+		trace_t tr;
+		Vector vecStart = pPlayer->EyePosition();
+		Vector vecEnd = vecStart + pPlayer->EyeDirection3D() * 96.0f;
+
+		UTIL_TraceLine(
+			vecStart,
+			vecEnd,
+			MASK_SOLID,
+			pPlayer,
+			COLLISION_GROUP_NONE,
+			&tr
+		);
+
+		if (tr.m_pEnt != this)
+			return;
+	}
+
+
 
 	// Must be a valid pickup scenario (no blocking). Though this is a more expensive
 	// check than some that follow, this has to be first Obecause it's the only one

@@ -1873,6 +1873,12 @@ void CBasePlayer::Event_Dying( const CTakeDamageInfo& info )
 	BaseClass::Event_Dying( info );
 }
 
+bool CBasePlayer::IsPressingUse()
+{
+	return (m_nButtons & IN_USE) != 0;
+}
+
+
 
 // Set the activity based on an event or current state
 void CBasePlayer::SetAnimation( PLAYER_ANIM playerAnim )
