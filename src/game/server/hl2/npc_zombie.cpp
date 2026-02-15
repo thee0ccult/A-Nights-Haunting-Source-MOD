@@ -18,6 +18,8 @@
 #include "engine/IEngineSound.h"
 #include "ammodef.h"
 #include "basecombatcharacter.h"
+
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -162,6 +164,7 @@ private:
 	CHandle< CBaseDoor > m_hBlockingDoor;
 	float				 m_flDoorBashYaw;
 	int                  m_iSkin;
+	int m_iMaterialSkin;
 
 	CRandSimTimer 		 m_DurationDoorBash;
 	CSimTimer 	  		 m_NextTimeToStartDoorBash;
@@ -224,6 +227,7 @@ BEGIN_DATADESC( CZombie )
 	DEFINE_FIELD( m_hBlockingDoor, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_flDoorBashYaw, FIELD_FLOAT ),
 	DEFINE_KEYFIELD(m_iSkin, FIELD_INTEGER, "skin"),
+	DEFINE_KEYFIELD(m_iMaterialSkin, FIELD_INTEGER, "materialskin"),
 	DEFINE_EMBEDDED( m_DurationDoorBash ),
 	DEFINE_EMBEDDED( m_NextTimeToStartDoorBash ),
 	DEFINE_FIELD( m_vPositionCharged, FIELD_POSITION_VECTOR ),
@@ -303,6 +307,8 @@ void CZombie::Spawn( void )
 	//GetNavigator()->SetRememberStaleNodes( false );
 
 	BaseClass::Spawn();
+
+	SetZombieModel();
 
 	m_flNextMoanSound = gpGlobals->curtime + random->RandomFloat( 1.0, 4.0 );
 }
@@ -489,83 +495,89 @@ const char *CZombie::GetTorsoModel( void )
 
 //---------------------------------------------------------
 //---------------------------------------------------------
-void CZombie::SetZombieModel( void )
+void CZombie::SetZombieModel(void)
 {
 	Hull_t lastHull = GetHullType();
 
-	if ( m_fIsTorso )
+	if (m_fIsTorso)
 	{
-		SetModel( "models/zombie/classic_torso.mdl" );
-		SetHullType( HULL_TINY );
+		SetModel("models/zombie/classic_torso.mdl");
+		SetHullType(HULL_TINY);
 	}
-	if (!m_fIsTorso && m_iSkin == 0)
+	else
 	{
-		SetModel("models/zombie/classic.mdl");
+		static const char* pszModels[] =
+		{
+			"models/zombie/classic.mdl",
+			"models/zombie/classic2.mdl",
+			"models/zombie/classic3.mdl",
+			"models/zombie/classic4.mdl",
+			"models/zombie/classic5.mdl",
+			"models/zombie/classic6.mdl",
+			"models/zombie/classic7.mdl",
+			"models/zombie/classic8.mdl",
+			"models/zombie/classic9.mdl",
+			"models/zombie/classic10.mdl"
+		};
+
+		int modelCount = ARRAYSIZE(pszModels);
+		int selectedIndex;
+
+		if (m_iSkin == -1)
+		{
+			selectedIndex = random->RandomInt(0, modelCount - 1);
+		}
+		else
+		{
+			selectedIndex = clamp(m_iSkin, 0, modelCount - 1);
+		}
+
+		SetModel(pszModels[selectedIndex]);
 		SetHullType(HULL_HUMAN);
-	}
-	else if (!m_fIsTorso && m_iSkin == 1)
-	{
-		SetModel("models/zombie/classic2.mdl");
-		SetHullType(HULL_HUMAN);
-	}
-	else if (!m_fIsTorso && m_iSkin == 2)
-	{
-		SetModel("models/zombie/classic3.mdl");
-		SetHullType(HULL_HUMAN);
-	}
-	else if (!m_fIsTorso && m_iSkin == 3)
-	{
-		SetModel("models/zombie/classic4.mdl");
-		SetHullType(HULL_HUMAN);
-	}
-	else if (!m_fIsTorso && m_iSkin == 4)
-	{
-		SetModel("models/zombie/classic5.mdl");
-		SetHullType(HULL_HUMAN);
-	}
-	else if (!m_fIsTorso && m_iSkin == 5)
-	{
-		SetModel("models/zombie/classic6.mdl");
-		SetHullType(HULL_HUMAN);
-	}
-	else if (!m_fIsTorso && m_iSkin == 6)
-	{
-		SetModel("models/zombie/classic7.mdl");
-		SetHullType(HULL_HUMAN);
-	}
-	else if (!m_fIsTorso && m_iSkin == 7)
-	{
-		SetModel("models/zombie/classic8.mdl");
-		SetHullType(HULL_HUMAN);
-	}
-	else if (!m_fIsTorso && m_iSkin == 8)
-	{
-		SetModel("models/zombie/classic9.mdl");
-		SetHullType(HULL_HUMAN);
-	}
-	else if (!m_fIsTorso && m_iSkin == 9)
-	{
-		SetModel("models/zombie/classic10.mdl");
-		SetHullType(HULL_HUMAN);
+
+		// ----- MATERIAL SKIN RANDOMIZATION -----
+
+		int totalSkins = 1;
+
+		CStudioHdr* pStudioHdr = GetModelPtr();
+
+		if (pStudioHdr)
+		{
+			totalSkins = pStudioHdr->numskinfamilies();
+		}
+
+		int selectedMaterialSkin;
+
+		if (m_iMaterialSkin == -1)
+		{
+			selectedMaterialSkin = random->RandomInt(0, totalSkins - 1);
+		}
+		else
+		{
+			selectedMaterialSkin = clamp(m_iMaterialSkin, 0, totalSkins - 1);
+		}
+
+		m_nSkin = selectedMaterialSkin;
+
+
 	}
 
-	SetBodygroup( ZOMBIE_BODYGROUP_HEADCRAB, !m_fIsHeadless );
+	SetBodygroup(ZOMBIE_BODYGROUP_HEADCRAB, !m_fIsHeadless);
 
-	SetHullSizeNormal( true );
+	SetHullSizeNormal(true);
 	SetDefaultEyeOffset();
-	SetActivity( ACT_IDLE );
+	SetActivity(ACT_IDLE);
 
-	// hull changed size, notify vphysics
-	// UNDONE: Solve this generally, systematically so other
-	// NPCs can change size
-	if ( lastHull != GetHullType() )
+	if (lastHull != GetHullType())
 	{
-		if ( VPhysicsGetObject() )
+		if (VPhysicsGetObject())
 		{
 			SetupVPhysicsHull();
 		}
 	}
 }
+
+
 
 //---------------------------------------------------------
 // Classic zombie only uses moan sound if on fire.

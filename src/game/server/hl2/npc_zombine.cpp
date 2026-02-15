@@ -168,6 +168,8 @@ private:
 	float   m_flGrenadePullTime;
 	
 	int		m_iGrenadeCount;
+	int m_iSkin;
+	int m_iMaterialSkin;
 
 	EHANDLE	m_hGrenade;
 
@@ -185,6 +187,8 @@ BEGIN_DATADESC( CNPC_Zombine )
 	DEFINE_FIELD( m_hGrenade, FIELD_EHANDLE ),
 	DEFINE_FIELD( m_flGrenadePullTime, FIELD_TIME ),
 	DEFINE_FIELD( m_iGrenadeCount, FIELD_INTEGER ),
+	DEFINE_KEYFIELD(m_iSkin, FIELD_INTEGER, "skin"),
+	DEFINE_KEYFIELD(m_iMaterialSkin, FIELD_INTEGER, "materialskin"),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"StartSprint", InputStartSprint ),
 	DEFINE_INPUTFUNC( FIELD_VOID,	"PullGrenade", InputPullGrenade ),
 END_DATADESC()
@@ -217,6 +221,7 @@ void CNPC_Zombine::Spawn( void )
 	CapabilitiesClear();
 
 	BaseClass::Spawn();
+	SetZombieModel();
 
 	m_flSprintTime = 0.0f;
 	m_flSprintRestTime = 0.0f;
@@ -233,7 +238,16 @@ void CNPC_Zombine::Precache( void )
 {
 	BaseClass::Precache();
 
-	PrecacheModel( "models/zombie/zombie_soldier.mdl" );
+	PrecacheModel("models/zombie/zombie_soldier.mdl");
+	PrecacheModel("models/zombie/zombie_soldier2.mdl");
+	PrecacheModel("models/zombie/zombie_soldier3.mdl");
+	PrecacheModel("models/zombie/zombie_soldier4.mdl");
+	PrecacheModel("models/zombie/zombie_soldier5.mdl");
+	PrecacheModel("models/zombie/zombie_soldier6.mdl");
+	PrecacheModel("models/zombie/zombie_soldier7.mdl");
+	PrecacheModel("models/zombie/zombie_soldier8.mdl");
+	PrecacheModel("models/zombie/zombie_soldier9.mdl");
+
 
 	PrecacheScriptSound( "Zombie.FootstepRight" );
 	PrecacheScriptSound( "Zombie.FootstepLeft" );
@@ -252,17 +266,77 @@ void CNPC_Zombine::Precache( void )
 	PrecacheScriptSound( "Zombie.Attack" );
 }
 
-void CNPC_Zombine::SetZombieModel( void )
+void CNPC_Zombine::SetZombieModel(void)
 {
-	SetModel( "models/zombie/zombie_soldier.mdl" );
-	SetHullType( HULL_HUMAN );
+	Hull_t lastHull = GetHullType();
 
-	SetBodygroup( ZOMBIE_BODYGROUP_HEADCRAB, !m_fIsHeadless );
+	static const char* pszModels[] =
+	{
+		"models/zombie/zombie_soldier.mdl",
+		"models/zombie/zombie_soldier2.mdl",
+		"models/zombie/zombie_soldier3.mdl",
+		"models/zombie/zombie_soldier4.mdl",
+		"models/zombie/zombie_soldier5.mdl",
+		"models/zombie/zombie_soldier6.mdl",
+		"models/zombie/zombie_soldier7.mdl",
+		"models/zombie/zombie_soldier8.mdl",
+		"models/zombie/zombie_soldier9.mdl"
+	};
 
-	SetHullSizeNormal( true );
+	int modelCount = ARRAYSIZE(pszModels);
+	int selectedIndex;
+
+	if (m_iSkin == -1)
+	{
+		selectedIndex = random->RandomInt(0, modelCount - 1);
+	}
+	else
+	{
+		selectedIndex = clamp(m_iSkin, 0, modelCount - 1);
+	}
+
+	SetModel(pszModels[selectedIndex]);
+	SetHullType(HULL_HUMAN);
+
+	// ----- MATERIAL SKIN RANDOMIZATION -----
+
+	int totalSkins = 1;
+
+	CStudioHdr* pStudioHdr = GetModelPtr();
+
+	if (pStudioHdr)
+	{
+		totalSkins = pStudioHdr->numskinfamilies();
+	}
+
+	int selectedMaterialSkin;
+
+	if (m_iMaterialSkin == -1)
+	{
+		selectedMaterialSkin = random->RandomInt(0, totalSkins - 1);
+	}
+	else
+	{
+		selectedMaterialSkin = clamp(m_iMaterialSkin, 0, totalSkins - 1);
+	}
+
+	m_nSkin = selectedMaterialSkin;
+
+	SetBodygroup(ZOMBIE_BODYGROUP_HEADCRAB, !m_fIsHeadless);
+
+	SetHullSizeNormal(true);
 	SetDefaultEyeOffset();
-	SetActivity( ACT_IDLE );
+	SetActivity(ACT_IDLE);
+
+	if (lastHull != GetHullType())
+	{
+		if (VPhysicsGetObject())
+		{
+			SetupVPhysicsHull();
+		}
+	}
 }
+
 
 void CNPC_Zombine::PrescheduleThink( void )
 {

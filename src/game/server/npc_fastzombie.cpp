@@ -331,6 +331,8 @@ private:
 	bool	m_fJustJumped;
 	float	m_flJumpStartAltitude;
 	float	m_flTimeUpdateSound;
+	int m_iSkin;
+	int m_iMaterialSkin;
 
 	CSoundPatch* m_pLayer2; // used for climbing ladders, and when jumping (pre apex)
 
@@ -356,6 +358,8 @@ DEFINE_FIELD(m_flNextMeleeAttack, FIELD_TIME),
 DEFINE_FIELD(m_fJustJumped, FIELD_BOOLEAN),
 DEFINE_FIELD(m_flJumpStartAltitude, FIELD_FLOAT),
 DEFINE_FIELD(m_flTimeUpdateSound, FIELD_TIME),
+DEFINE_KEYFIELD(m_iSkin, FIELD_INTEGER, "skin"),
+DEFINE_KEYFIELD(m_iMaterialSkin, FIELD_INTEGER, "materialskin"),
 
 // Function Pointers
 DEFINE_ENTITYFUNC(LeapAttackTouch),
@@ -389,6 +393,15 @@ static const char* s_pLegsModel = "models/gibs/fast_zombie_legs.mdl";
 void CFastZombie::Precache(void)
 {
 	PrecacheModel("models/zombie/fast.mdl");
+	PrecacheModel("models/zombie/fast2.mdl");
+	PrecacheModel("models/zombie/fast3.mdl");
+	PrecacheModel("models/zombie/fast4.mdl");
+	PrecacheModel("models/zombie/fast5.mdl");
+	PrecacheModel("models/zombie/fast6.mdl");
+	PrecacheModel("models/zombie/fast7.mdl");
+	PrecacheModel("models/zombie/fast8.mdl");
+	PrecacheModel("models/zombie/fast9.mdl");
+
 #ifdef HL2_EPISODIC
 	PrecacheModel("models/zombie/Fast_torso.mdl");
 	PrecacheScriptSound("NPC_FastZombie.CarEnter1");
@@ -759,8 +772,57 @@ void CFastZombie::SetZombieModel(void)
 	}
 	else
 	{
-		SetModel("models/zombie/fast.mdl");
+		static const char* pszModels[] =
+		{
+			"models/zombie/fast.mdl",
+			"models/zombie/fast2.mdl",
+			"models/zombie/fast3.mdl",
+			"models/zombie/fast4.mdl",
+			"models/zombie/fast5.mdl",
+			"models/zombie/fast6.mdl",
+			"models/zombie/fast7.mdl",
+			"models/zombie/fast8.mdl",
+			"models/zombie/fast9.mdl"
+		};
+
+		int modelCount = ARRAYSIZE(pszModels);
+		int selectedIndex;
+
+		if (m_iSkin == -1)
+		{
+			selectedIndex = random->RandomInt(0, modelCount - 1);
+		}
+		else
+		{
+			selectedIndex = clamp(m_iSkin, 0, modelCount - 1);
+		}
+
+		SetModel(pszModels[selectedIndex]);
 		SetHullType(HULL_HUMAN);
+
+		// ----- MATERIAL SKIN RANDOMIZATION -----
+
+		int totalSkins = 1;
+
+		CStudioHdr* pStudioHdr = GetModelPtr();
+
+		if (pStudioHdr)
+		{
+			totalSkins = pStudioHdr->numskinfamilies();
+		}
+
+		int selectedMaterialSkin;
+
+		if (m_iMaterialSkin == -1)
+		{
+			selectedMaterialSkin = random->RandomInt(0, totalSkins - 1);
+		}
+		else
+		{
+			selectedMaterialSkin = clamp(m_iMaterialSkin, 0, totalSkins - 1);
+		}
+
+		m_nSkin = selectedMaterialSkin;
 	}
 
 	SetBodygroup(ZOMBIE_BODYGROUP_HEADCRAB, !m_fIsHeadless);
@@ -769,9 +831,6 @@ void CFastZombie::SetZombieModel(void)
 	SetDefaultEyeOffset();
 	SetActivity(ACT_IDLE);
 
-	// hull changed size, notify vphysics
-	// UNDONE: Solve this generally, systematically so other
-	// NPCs can change size
 	if (lastHull != GetHullType())
 	{
 		if (VPhysicsGetObject())
@@ -780,6 +839,7 @@ void CFastZombie::SetZombieModel(void)
 		}
 	}
 }
+
 
 
 //-----------------------------------------------------------------------------
