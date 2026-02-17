@@ -875,8 +875,9 @@ void CBaseCombatWeapon::DefaultTouch( CBaseEntity *pOther )
 		}
 		else
 		{
-			if (!pPlayer->IsPressingUse())
+			if (!(pPlayer->m_afButtonPressed & IN_USE))
 				return;
+
 
 			trace_t tr;
 			Vector vecStart = pPlayer->EyePosition();

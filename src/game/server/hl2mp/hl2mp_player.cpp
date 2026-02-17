@@ -29,6 +29,14 @@
 int g_iLastCitizenModel = 0;
 int g_iLastCombineModel = 0;
 
+ConVar sv_weapon_slot_limit(
+	"sv_weapon_slot_limit",
+	"0",
+	FCVAR_REPLICATED | FCVAR_NOTIFY,
+	"Limit players to one weapon per slot (Bioshock-style)."
+);
+
+
 CBaseEntity	 *g_pLastCombineSpawn = NULL;
 CBaseEntity	 *g_pLastRebelSpawn = NULL;
 extern CBaseEntity				*g_pLastSpawn;
@@ -229,43 +237,18 @@ void CHL2MP_Player::GiveAllItems( void )
 	
 }
 
-void CHL2MP_Player::GiveDefaultItems( void )
+void CHL2MP_Player::GiveDefaultItems()
 {
-	//EquipSuit();//weapon spawn hack - drN0
+	CBaseCombatWeapon* pPhys = (CBaseCombatWeapon*)GiveNamedItem("weapon_physcannon");
 
-	//CBasePlayer::GiveAmmo( 255,	"Pistol");//weapon spawn hack - drN0
-	//CBasePlayer::GiveAmmo( 45,	"SMG1");//weapon spawn hack - drN0
-	//CBasePlayer::GiveAmmo( 1,	"grenade" );//weapon spawn hack - drN0
-	//CBasePlayer::GiveAmmo( 6,	"Buckshot");//weapon spawn hack - drN0
-	//CBasePlayer::GiveAmmo( 6,	"357" );//weapon spawn hack - drN0
-
-	if ( GetPlayerModelType() == PLAYER_SOUNDS_METROPOLICE || GetPlayerModelType() == PLAYER_SOUNDS_COMBINESOLDIER )
+	if (pPhys)
 	{
-		GiveNamedItem( "weapon_physcannon" );//weapon STUNSTICK//weapon spawn hack - drN0
-	}
-	else if ( GetPlayerModelType() == PLAYER_SOUNDS_CITIZEN )
-	{
-		GiveNamedItem( "weapon_physcannon" );//weapon CROWBAR//weapon spawn hack - drN0
-	}
-	
-	//GiveNamedItem( "weapon_pistol" );//weapon spawn hack - drN0
-	//GiveNamedItem( "weapon_smg1" );//weapon spawn hack - drN0
-	//GiveNamedItem( "weapon_frag" );//weapon spawn hack - drN0
-	GiveNamedItem( "weapon_physcannon" );
-
-	const char *szDefaultWeaponName = engine->GetClientConVarValue( engine->IndexOfEdict( edict() ), "cl_defaultweapon" );
-
-	CBaseCombatWeapon *pDefaultWeapon = Weapon_OwnsThisType( szDefaultWeaponName );
-
-	if ( pDefaultWeapon )
-	{
-		Weapon_Switch( pDefaultWeapon );
-	}
-	else
-	{
-		Weapon_Switch( Weapon_OwnsThisType( "weapon_physcannon" ) );
+		Weapon_Equip(pPhys);
+		Weapon_Switch(pPhys);
 	}
 }
+
+
 
 void CHL2MP_Player::PickDefaultSpawnTeam( void )
 {
@@ -328,36 +311,30 @@ void CHL2MP_Player::Spawn(void)
 	PickDefaultSpawnTeam();
 
 	BaseClass::Spawn();
-	
-	if ( !IsObserver() )
+
+	if (!IsObserver())
 	{
 		pl.deadflag = false;
-		RemoveSolidFlags( FSOLID_NOT_SOLID );
+		RemoveSolidFlags(FSOLID_NOT_SOLID);
+		RemoveEffects(EF_NODRAW);
 
-		RemoveEffects( EF_NODRAW );
-		
 		GiveDefaultItems();
 	}
 
-	SetNumAnimOverlays( 3 );
+	SetNumAnimOverlays(3);
 	ResetAnimation();
 
 	m_nRenderFX = kRenderNormal;
-
 	m_Local.m_iHideHUD = 0;
-	
-	AddFlag(FL_ONGROUND); // set the player on the ground at the start of the round.
+
+	AddFlag(FL_ONGROUND);
 
 	m_impactEnergyScale = HL2MPPLAYER_PHYSDAMAGE_SCALE;
 
-	if ( HL2MPRules()->IsIntermission() )
-	{
-		AddFlag( FL_FROZEN );
-	}
+	if (HL2MPRules()->IsIntermission())
+		AddFlag(FL_FROZEN);
 	else
-	{
-		RemoveFlag( FL_FROZEN );
-	}
+		RemoveFlag(FL_FROZEN);
 
 	m_iSpawnInterpCounter = (m_iSpawnInterpCounter + 1) % 8;
 
@@ -367,6 +344,7 @@ void CHL2MP_Player::Spawn(void)
 
 	m_bReady = false;
 }
+
 
 void CHL2MP_Player::PickupObject( CBaseEntity *pObject, bool bLimitMassAndSize )
 {
@@ -890,6 +868,20 @@ bool CHL2MP_Player::BumpWeapon( CBaseCombatWeapon *pWeapon )
 	// Can I have this weapon type?
 	if ( !IsAllowedToPickupWeapons() )
 		return false;
+	// Require +use only for weapons physically lying in the world
+	if (m_lifeState == LIFE_ALIVE)
+	{
+		// Only block weapons that are in the world and have physics
+		if (!pWeapon->GetOwner() &&
+			pWeapon->VPhysicsGetObject() != NULL &&
+			!(m_afButtonPressed & IN_USE))
+		{
+			return false;
+		}
+	}
+
+
+
 
 	if ( pOwner || !Weapon_CanUse( pWeapon ) || !g_pGameRules->CanHavePlayerItem( this, pWeapon ) )
 	{
@@ -925,9 +917,28 @@ bool CHL2MP_Player::BumpWeapon( CBaseCombatWeapon *pWeapon )
 	}
 
 	pWeapon->CheckRespawn();
-	Weapon_Equip( pWeapon );
+
+	if (sv_weapon_slot_limit.GetBool())
+	{
+		int slot = pWeapon->GetSlot();
+
+		// Only restrict real weapon slots (ignore invalid)
+		if (slot >= 0 && slot < MAX_WEAPON_SLOTS)
+		{
+			CBaseCombatWeapon* pExisting = Weapon_GetSlot(slot);
+
+			if (pExisting && pExisting != pWeapon)
+			{
+				Weapon_DropSlot(slot);
+			}
+		}
+	}
+
+	Weapon_Equip(pWeapon);
+	Weapon_Switch(pWeapon); // ensures safe swap
 
 	return true;
+
 }
 
 void CHL2MP_Player::ChangeTeam( int iTeam )
@@ -1653,14 +1664,12 @@ void CHL2MP_Player::State_PreThink_OBSERVER_MODE()
 
 void CHL2MP_Player::State_Enter_ACTIVE()
 {
-	SetMoveType( MOVETYPE_WALK );
-	
-	// md 8/15/07 - They'll get set back to solid when they actually respawn. If we set them solid now and mp_forcerespawn
-	// is false, then they'll be spectating but blocking live players from moving.
-	// RemoveSolidFlags( FSOLID_NOT_SOLID );
-	
+	SetMoveType(MOVETYPE_WALK);
 	m_Local.m_iHideHUD = 0;
+
 }
+
+
 
 
 void CHL2MP_Player::State_PreThink_ACTIVE()

@@ -204,8 +204,8 @@
   game.cpp
   game_ui.cpp
   gameinterface.cpp
-  gamemovement.cpp
   gamerules.cpp
+  gamemovement.cpp
   gamerules_register.cpp
   GameStats.cpp
   gamestringpool.cpp

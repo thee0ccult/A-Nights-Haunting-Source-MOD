@@ -81,6 +81,7 @@ public:
 	void FlashlightTurnOff( void );
 	void	PrecacheFootStepSounds( void );
 	bool	ValidatePlayerModel( const char *pModel );
+	void ActivateDefaultWeapon();
 
 	QAngle GetAnimEyeAngles( void ) { return m_angEyeAngles.Get(); }
 
