@@ -104,6 +104,8 @@ public:
 	virtual float FlWeaponTryRespawn( CBaseCombatWeapon *pWeapon );
 	virtual Vector VecWeaponRespawnSpot( CBaseCombatWeapon *pWeapon );
 	virtual int WeaponShouldRespawn( CBaseCombatWeapon *pWeapon );
+	virtual int ItemShouldRespawn(CItem* pItem);
+
 	virtual void Think( void );
 	virtual void CreateStandardEntities( void );
 	virtual void ClientSettingsChanged( CBasePlayer *pPlayer );

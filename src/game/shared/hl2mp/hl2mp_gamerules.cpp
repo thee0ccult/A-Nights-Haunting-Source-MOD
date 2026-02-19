@@ -45,6 +45,12 @@ extern bool FindInList( const char **pStrings, const char *pToFind );
 ConVar sv_hl2mp_weapon_respawn_time( "sv_hl2mp_weapon_respawn_time", "20", FCVAR_GAMEDLL | FCVAR_NOTIFY );
 ConVar sv_hl2mp_item_respawn_time( "sv_hl2mp_item_respawn_time", "30", FCVAR_GAMEDLL | FCVAR_NOTIFY );
 ConVar sv_report_client_settings("sv_report_client_settings", "0", FCVAR_GAMEDLL | FCVAR_NOTIFY );
+ConVar sv_items_respawn(
+	"sv_items_respawn",
+	"1",
+	FCVAR_GAMEDLL | FCVAR_NOTIFY,
+	"Enable/disable respawning of map-placed weapons and items (1 = enabled, 0 = disabled)"
+);
 
 extern ConVar mp_chattime;
 
@@ -624,17 +630,42 @@ bool CHL2MPRules::CanHavePlayerItem( CBasePlayer *pPlayer, CBaseCombatWeapon *pI
 // WeaponShouldRespawn - any conditions inhibiting the
 // respawning of this weapon?
 //=========================================================
-int CHL2MPRules::WeaponShouldRespawn( CBaseCombatWeapon *pWeapon )
+int CHL2MPRules::WeaponShouldRespawn(CBaseCombatWeapon* pWeapon)
 {
 #ifndef CLIENT_DLL
-	if ( pWeapon->HasSpawnFlags( SF_NORESPAWN ) )
+
+	// Respect map NORESPAWN flag first
+	if (pWeapon->HasSpawnFlags(SF_NORESPAWN))
+	{
+		return GR_WEAPON_RESPAWN_NO;
+}
+
+	// Our global control
+	if (!sv_items_respawn.GetBool())
 	{
 		return GR_WEAPON_RESPAWN_NO;
 	}
+
 #endif
 
 	return GR_WEAPON_RESPAWN_YES;
 }
+
+int CHL2MPRules::ItemShouldRespawn(CItem* pItem)
+{
+#ifndef CLIENT_DLL
+
+	// Global control
+	if (!sv_items_respawn.GetBool())
+	{
+		return GR_ITEM_RESPAWN_NO;
+	}
+
+#endif
+
+	return GR_ITEM_RESPAWN_YES;
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: Player has just left the game
