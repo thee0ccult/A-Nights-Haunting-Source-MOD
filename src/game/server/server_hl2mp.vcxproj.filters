@@ -3721,6 +3721,9 @@
     <ClCompile Include="..\shared\hl2mp\weapon_pistolsilenced.cpp">
       <Filter>Source Files\HL2MP\Weapons</Filter>
     </ClCompile>
+    <ClCompile Include="item_ammo_cache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>

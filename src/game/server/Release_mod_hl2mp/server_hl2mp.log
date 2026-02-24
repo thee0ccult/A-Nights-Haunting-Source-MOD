@@ -234,6 +234,7 @@
   info_camera_link.cpp
   info_overlay_accessor.cpp
   intermission.cpp
+  item_ammo_cache.cpp
   item_world.cpp
   lightglow.cpp
   lights.cpp
