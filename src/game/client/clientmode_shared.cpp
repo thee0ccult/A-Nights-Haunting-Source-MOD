@@ -37,6 +37,8 @@
 #include "hud_vote.h"
 #include "ienginevgui.h"
 #include "sourcevr/isourcevirtualreality.h"
+#include "weapon_locker_panel.h"
+
 #if defined( _X360 )
 #include "xbox/xbox_console.h"
 #endif
@@ -83,6 +85,9 @@ static vgui::HContext s_hVGuiContext = DEFAULT_VGUI_CONTEXT;
 // See interface.h/.cpp for specifics: basically this ensures that we actually Sys_UnloadModule the dll and that we don't call Sys_LoadModule 
 // over and over again.
 static CDllDemandLoader g_GameUI("GameUI");
+
+//locker
+static CWeaponLockerPanel* g_pWeaponLockerPanel = nullptr;
 
 ConVar cl_drawhud( "cl_drawhud", "1", FCVAR_CHEAT, "Enable the rendering of the hud" );
 ConVar hud_takesshots( "hud_takesshots", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Auto-save a scoreboard screenshot at the end of a map." );
@@ -338,7 +343,19 @@ void	ClientModeShared::ComputeVguiResConditions( KeyValues *pkvConditions )
 	}
 }
 
+static void __MsgFunc_WeaponLocker_Open(bf_read& msg)
+{
+	int entIndex = msg.ReadShort();
 
+	char scriptFile[256];
+	msg.ReadString(scriptFile, sizeof(scriptFile));
+
+	if (!g_pWeaponLockerPanel)
+		g_pWeaponLockerPanel = new CWeaponLockerPanel();
+
+	g_pWeaponLockerPanel->LoadFromScript(scriptFile);
+	g_pWeaponLockerPanel->Open(entIndex);
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -394,6 +411,7 @@ void ClientModeShared::Init()
 
 	HOOK_MESSAGE( VGUIMenu );
 	HOOK_MESSAGE( Rumble );
+	HOOK_MESSAGE(WeaponLocker_Open);
 	// Fenix: Custom background loading screens - Injects the custom panel at the loading screen
 	CreateInterfaceFn gameUIFactory = g_GameUI.GetFactory();
 	if (gameUIFactory)

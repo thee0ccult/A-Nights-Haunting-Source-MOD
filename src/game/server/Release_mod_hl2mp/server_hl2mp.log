@@ -235,6 +235,7 @@
   info_overlay_accessor.cpp
   intermission.cpp
   item_ammo_cache.cpp
+  item_weapon_locker.cpp
   item_world.cpp
   lightglow.cpp
   lights.cpp

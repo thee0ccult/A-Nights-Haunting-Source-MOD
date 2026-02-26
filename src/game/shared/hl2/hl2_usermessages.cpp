@@ -50,6 +50,7 @@ void RegisterUserMessages( void )
 	usermessages->Register("ShowScope", 1); // show the sniper scope
 	usermessages->Register("KeypadHandler", -1); //Keypad
 	usermessages->Register("TaskList", -1); //show the tasklist
+	usermessages->Register("WeaponLocker_Open", -1);
 
 #ifndef _X360
 	// NVNT register haptic user messages

@@ -1880,6 +1880,7 @@
     <ClInclude Include="hl2\vehicle_jeep.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\shared\item_weapon_locker_shared.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="gamedll_replay.cpp">
@@ -3722,6 +3723,9 @@
       <Filter>Source Files\HL2MP\Weapons</Filter>
     </ClCompile>
     <ClCompile Include="item_ammo_cache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="item_weapon_locker.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

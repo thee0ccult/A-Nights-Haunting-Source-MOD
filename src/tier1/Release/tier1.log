@@ -17,8 +17,8 @@
   kvpacker.cpp
   lzmaDecoder.cpp
   mempool.cpp
-  memstack.cpp
   NetAdr.cpp
+  memstack.cpp
   newbitbuf.cpp
   rangecheckedvar.cpp
   reliabletimer.cpp

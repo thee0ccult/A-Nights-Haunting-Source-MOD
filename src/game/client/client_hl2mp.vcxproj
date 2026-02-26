@@ -406,6 +406,7 @@ exit 1
     <ClInclude Include="..\shared\hl2mp\weapon_pitchfork.h" />
     <ClInclude Include="..\shared\hl2mp\weapon_sledgehammer.h" />
     <ClInclude Include="..\shared\hl2\leaderboard_sync.h" />
+    <ClInclude Include="..\shared\item_weapon_locker_shared.h" />
     <ClInclude Include="game_controls\baseviewport.h" />
     <ClInclude Include="game_controls\clientscoreboarddialog.h" />
     <ClInclude Include="game_controls\commandmenu.h" />
@@ -619,6 +620,7 @@ exit 1
     <ClInclude Include="viewangleanim.h" />
     <ClInclude Include="ViewConeImage.h" />
     <ClInclude Include="viewrender.h" />
+    <ClInclude Include="weapon_locker_panel.h" />
     <ClInclude Include="weapon_selection.h" />
     <ClInclude Include="weapons_resource.h" />
     <ClInclude Include="mp3player.h" />
@@ -1389,6 +1391,7 @@ exit 1
     <ClCompile Include="warp_overlay.cpp" />
     <ClCompile Include="WaterLODMaterialProxy.cpp" />
     <ClCompile Include="..\..\game\shared\weapon_parse.cpp" />
+    <ClCompile Include="weapon_locker_panel.cpp" />
     <ClCompile Include="weapon_selection.cpp" />
     <ClCompile Include="weapons_resource.cpp" />
     <ClCompile Include="WorldDimsProxy.cpp" />

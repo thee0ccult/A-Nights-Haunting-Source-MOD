@@ -2003,6 +2003,8 @@
     <ClInclude Include="..\shared\hl2\leaderboard_sync.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\shared\item_weapon_locker_shared.h" />
+    <ClInclude Include="weapon_locker_panel.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="mp3player.cpp">
@@ -3684,6 +3686,9 @@
     </ClCompile>
     <ClCompile Include="..\shared\hl2mp\weapon_pistolsilenced.cpp">
       <Filter>Source Files\HL2MP\Weapons</Filter>
+    </ClCompile>
+    <ClCompile Include="weapon_locker_panel.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
