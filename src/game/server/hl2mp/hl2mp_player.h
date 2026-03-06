@@ -126,6 +126,7 @@ public:
 	void State_Enter_OBSERVER_MODE();
 	void State_PreThink_OBSERVER_MODE();
 
+	void DelayedRoundRestartThink();
 
 	virtual bool StartObserverMode( int mode );
 	virtual void StopObserverMode( void );

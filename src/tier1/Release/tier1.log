@@ -7,8 +7,8 @@
   checksum_md5.cpp
   checksum_sha1.cpp
   commandbuffer.cpp
-  convar.cpp
   datamanager.cpp
+  convar.cpp
   diff.cpp
   generichash.cpp
   ilocalize.cpp
@@ -17,8 +17,8 @@
   kvpacker.cpp
   lzmaDecoder.cpp
   mempool.cpp
-  NetAdr.cpp
   memstack.cpp
+  NetAdr.cpp
   newbitbuf.cpp
   rangecheckedvar.cpp
   reliabletimer.cpp

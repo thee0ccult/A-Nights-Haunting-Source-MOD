@@ -139,6 +139,14 @@ ConVar	sk_plr_dmg_smg1			( "sk_plr_dmg_smg1","0", FCVAR_REPLICATED );
 ConVar	sk_npc_dmg_smg1			( "sk_npc_dmg_smg1","0", FCVAR_REPLICATED);
 ConVar	sk_max_smg1				( "sk_max_smg1","0", FCVAR_REPLICATED);
 
+ConVar	sk_plr_dmg_mp5("sk_plr_dmg_mp5", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_mp5("sk_npc_dmg_mp5", "0", FCVAR_REPLICATED);
+ConVar	sk_max_mp5("sk_max_mp5", "0", FCVAR_REPLICATED);
+
+ConVar	sk_plr_dmg_ump45("sk_plr_dmg_ump45", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_ump45("sk_npc_dmg_ump45", "0", FCVAR_REPLICATED);
+ConVar	sk_max_ump45("sk_max_ump45", "0", FCVAR_REPLICATED);
+
 ConVar	sk_plr_dmg_ak47("sk_plr_dmg_ak47", "0", FCVAR_REPLICATED);
 ConVar	sk_npc_dmg_ak47("sk_npc_dmg_ak47", "0", FCVAR_REPLICATED);
 ConVar	sk_max_ak47("sk_max_ak47", "0", FCVAR_REPLICATED);
@@ -217,6 +225,10 @@ ConVar	sk_max_striderbuster	( "sk_max_striderbuster", "3", FCVAR_REPLICATED);
 ConVar	sk_plr_dmg_smg1_grenade	( "sk_plr_dmg_smg1_grenade","0", FCVAR_REPLICATED);
 ConVar	sk_npc_dmg_smg1_grenade	( "sk_npc_dmg_smg1_grenade","0", FCVAR_REPLICATED);
 ConVar	sk_max_smg1_grenade		( "sk_max_smg1_grenade","0", FCVAR_REPLICATED );
+
+ConVar	sk_plr_dmg_mp5_grenade("sk_plr_dmg_mp5_grenade", "0", FCVAR_REPLICATED);
+ConVar	sk_npc_dmg_mp5_grenade("sk_npc_dmg_mp5_grenade", "0", FCVAR_REPLICATED);
+ConVar	sk_max_mp5_grenade("sk_max_mp5_grenade", "0", FCVAR_REPLICATED);
 
 ConVar	sk_plr_dmg_ump45_grenade("sk_plr_dmg_ump45_grenade", "0", FCVAR_REPLICATED);
 ConVar	sk_npc_dmg_ump45_grenade("sk_npc_dmg_ump45_grenade", "0", FCVAR_REPLICATED);

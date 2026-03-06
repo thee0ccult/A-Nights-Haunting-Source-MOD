@@ -52,6 +52,20 @@ ConVar sv_items_respawn(
 	"Enable/disable respawning of map-placed weapons and items (1 = enabled, 0 = disabled)"
 );
 
+ConVar sv_round_restart(
+	"sv_round_restart",
+	"0",
+	FCVAR_GAMEDLL | FCVAR_NOTIFY,
+	"Restart the round when a player dies."
+);
+
+ConVar sv_round_restart_delay(
+	"sv_round_restart_delay",
+	"5",
+	FCVAR_GAMEDLL | FCVAR_NOTIFY,
+	"Delay before restarting the round after death."
+);
+
 extern ConVar mp_chattime;
 
 extern CBaseEntity	 *g_pLastCombineSpawn;
@@ -208,6 +222,8 @@ CHL2MPRules::CHL2MPRules()
 	m_flIntermissionEndTime = 0.0f;
 	m_flGameStartTime = 0;
 
+	m_flMapRestartTime = 0.0f;
+
 	m_hRespawnableItemsAndWeapons.RemoveAll();
 	m_tmNextPeriodicThink = 0;
 	m_flRestartGameTime = 0;
@@ -289,12 +305,30 @@ bool CHL2MPRules::IsIntermission( void )
 	return false;
 }
 
-void CHL2MPRules::PlayerKilled( CBasePlayer *pVictim, const CTakeDamageInfo &info )
+void CHL2MPRules::PlayerKilled(CBasePlayer* pVictim, const CTakeDamageInfo& info)
 {
 #ifndef CLIENT_DLL
-	if ( IsIntermission() )
+
+	if (IsIntermission())
 		return;
-	BaseClass::PlayerKilled( pVictim, info );
+
+	BaseClass::PlayerKilled(pVictim, info);
+
+	// =========================================
+	// Round Restart System
+	// =========================================
+	if (sv_round_restart.GetBool())
+	{
+		if (m_flMapRestartTime <= 0.0f)
+		{
+			float delay = sv_round_restart_delay.GetFloat();
+
+			DevMsg("[ROUND RESTART] Player died. Map restarting in %.2f seconds\n", delay);
+
+			m_flMapRestartTime = gpGlobals->curtime + delay;
+		}
+}
+
 #endif
 }
 
@@ -305,6 +339,19 @@ void CHL2MPRules::Think( void )
 #ifndef CLIENT_DLL
 	
 	CGameRules::Think();
+
+	// Single-player style map restart
+	if (m_flMapRestartTime > 0.0f && gpGlobals->curtime >= m_flMapRestartTime)
+	{
+		const char* currentMap = STRING(gpGlobals->mapname);
+
+		DevMsg("[ROUND RESTART] Reloading map: %s\n", currentMap);
+
+		engine->ChangeLevel(currentMap, NULL);
+
+		m_flMapRestartTime = 0.0f;
+		return;
+	}
 
 	if ( g_fGameOver )   // someone else quit the game already
 	{

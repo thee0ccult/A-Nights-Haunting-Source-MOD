@@ -36,7 +36,6 @@ ConVar sv_weapon_slot_limit(
 	"Limit players to one weapon per slot (Bioshock-style)."
 );
 
-
 CBaseEntity	 *g_pLastCombineSpawn = NULL;
 CBaseEntity	 *g_pLastRebelSpawn = NULL;
 extern CBaseEntity				*g_pLastSpawn;
@@ -1270,6 +1269,15 @@ void CHL2MP_Player::DetonateTripmines( void )
 
 	// Play sound for pressing the detonator
 	EmitSound( "Weapon_SLAM.SatchelDetonate" );
+}
+
+void CHL2MP_Player::DelayedRoundRestartThink()
+{
+	const char* currentMap = STRING(gpGlobals->mapname);
+
+	DevMsg("[ROUND RESTART] Executing delayed restart: %s\n", currentMap);
+
+	engine->ChangeLevel(currentMap, NULL);
 }
 
 void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
