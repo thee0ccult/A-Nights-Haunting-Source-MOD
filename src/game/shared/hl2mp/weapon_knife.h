@@ -44,7 +44,7 @@ public:
 
 	float		GetRange( void );
 	float		GetFireRate( void );
-
+	virtual void PrimaryAttack(); //zombie
 	void		AddViewKick( void );
 	float		GetDamageForActivity( Activity hitActivity );
 	void		SecondaryAttack( void )	{	return;	}

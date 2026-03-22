@@ -14,6 +14,10 @@
 #include "iviewrender_beams.h"			// flashlight beam
 #include "r_efx.h"
 #include "dlight.h"
+#include "materialsystem/imaterial.h"
+#include "materialsystem/imesh.h"
+#include "materialsystem/imaterialsystem.h"
+#include "materialsystem/imaterialvar.h"
 
 // Don't alias here
 #if defined( CHL2MP_Player )
@@ -65,6 +69,7 @@ C_HL2MP_Player::C_HL2MP_Player() : m_PlayerAnimState(this), m_iv_angEyeAngles("C
 C_HL2MP_Player::~C_HL2MP_Player(void)
 {
 	ReleaseFlashlight();
+
 }
 
 int C_HL2MP_Player::GetIDTarget() const
@@ -270,10 +275,40 @@ void C_HL2MP_Player::ClientThink(void)
 //-----------------------------------------------------------------------------
 int C_HL2MP_Player::DrawModel(int flags)
 {
-	if (!m_bReadyToDraw)
-		return 0;
+	modelrender->ForcedMaterialOverride(NULL);
 
-	return BaseClass::DrawModel(flags);
+	if (GetTeamNumber() == TEAM_ZOMBIE)
+	{
+		const float cloak = GetCloakFactor();
+
+		if (cloak > 0.01f)
+		{
+			IMaterial* pCloakMaterial = materials->FindMaterial(
+				"models/humans/male/group03/citizen_sheet_cloak",
+				TEXTURE_GROUP_MODEL,
+				false
+			);
+
+			if (pCloakMaterial && !pCloakMaterial->IsErrorMaterial())
+			{
+				bool bFound = false;
+				IMaterialVar* pVar = pCloakMaterial->FindVar("$cloakfactor", &bFound, false);
+				if (pVar && bFound)
+				{
+					pVar->SetFloatValue(cloak);
+				}
+
+				modelrender->ForcedMaterialOverride(pCloakMaterial);
+				const int ret = BaseClass::DrawModel(flags);
+				modelrender->ForcedMaterialOverride(NULL);
+				return ret;
+			}
+		}
+	}
+
+	const int ret = BaseClass::DrawModel(flags);
+	modelrender->ForcedMaterialOverride(NULL);
+	return ret;
 }
 
 //-----------------------------------------------------------------------------
@@ -282,6 +317,12 @@ int C_HL2MP_Player::DrawModel(int flags)
 bool C_HL2MP_Player::ShouldReceiveProjectedTextures(int flags)
 {
 	Assert(flags & SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK);
+
+	// BLOCK FLASHLIGHT / PROJECTED LIGHT WHEN CLOAKED
+	if (GetTeamNumber() == TEAM_ZOMBIE && GetCloakFactor() > 0.1f)
+	{
+		return false;
+	}
 
 	if (IsEffectActive(EF_NODRAW))
 		return false;
@@ -444,6 +485,12 @@ void C_HL2MP_Player::AddEntity(void)
 
 ShadowType_t C_HL2MP_Player::ShadowCastType(void)
 {
+	// KILL SHADOWS WHEN CLOAKED
+	if (GetTeamNumber() == TEAM_ZOMBIE && GetCloakFactor() > 0.1f)
+	{
+		return SHADOWS_NONE;
+	}
+
 	if (!IsVisible())
 		return SHADOWS_NONE;
 
@@ -485,6 +532,8 @@ void C_HL2MP_Player::NotifyShouldTransmit(ShouldTransmitState_t state)
 {
 	if (state == SHOULDTRANSMIT_END)
 	{
+		modelrender->ForcedMaterialOverride(NULL);
+
 		if (m_pFlashlightBeam != NULL)
 		{
 			ReleaseFlashlight();
@@ -942,6 +991,8 @@ void C_HL2MPRagdoll::CreateHL2MPRagdoll(void)
 
 void C_HL2MPRagdoll::OnDataChanged(DataUpdateType_t type)
 {
+	modelrender->ForcedMaterialOverride(NULL);
+
 	BaseClass::OnDataChanged(type);
 
 	if (type == DATA_UPDATE_CREATED)
@@ -965,23 +1016,31 @@ void C_HL2MPRagdoll::UpdateOnRemove(void)
 //-----------------------------------------------------------------------------
 // Purpose: clear out any face/eye values stored in the material system
 //-----------------------------------------------------------------------------
-void C_HL2MPRagdoll::SetupWeights(const matrix3x4_t* pBoneToWorld, int nFlexWeightCount, float* pFlexWeights, float* pFlexDelayedWeights)
+void C_HL2MPRagdoll::SetupWeights(
+	const matrix3x4_t* pBoneToWorld,
+	int nFlexWeightCount,
+	float* pFlexWeights,
+	float* pFlexDelayedWeights)
 {
-	BaseClass::SetupWeights(pBoneToWorld, nFlexWeightCount, pFlexWeights, pFlexDelayedWeights);
+	C_HL2MP_Player* pPlayer = dynamic_cast<C_HL2MP_Player*>(m_hPlayer.Get());
 
-	static float destweight[128];
-	static bool bIsInited = false;
-
-	CStudioHdr* hdr = GetModelPtr();
-	if (!hdr)
-		return;
-
-	int nFlexDescCount = hdr->numflexdesc();
-	if (nFlexDescCount)
+	// Never let base facial / eyeball code run for zombie ragdolls either.
+	if (pPlayer && pPlayer->GetTeamNumber() == TEAM_ZOMBIE)
 	{
-		Assert(!pFlexDelayedWeights);
-		memset(pFlexWeights, 0, nFlexWeightCount * sizeof(float));
+		if (pFlexWeights && nFlexWeightCount > 0)
+		{
+			Q_memset(pFlexWeights, 0, nFlexWeightCount * sizeof(float));
+		}
+
+		if (pFlexDelayedWeights && nFlexWeightCount > 0)
+		{
+			Q_memset(pFlexDelayedWeights, 0, nFlexWeightCount * sizeof(float));
+		}
+
+		return;
 	}
+
+	BaseClass::SetupWeights(pBoneToWorld, nFlexWeightCount, pFlexWeights, pFlexDelayedWeights);
 
 	if (m_iEyeAttachment > 0)
 	{
@@ -1002,4 +1061,61 @@ void C_HL2MP_Player::PostThink(void)
 
 	// Store the eye angles pitch so the client can compute its animation state correctly.
 	m_angEyeAngles = EyeAngles();
+}
+
+// ======================================================
+// RAGDOLL SHADOW FIX (REQUIRED)
+// ======================================================
+
+ShadowType_t C_HL2MPRagdoll::ShadowCastType(void)
+{
+	// kill shadows completely (prevents cloak ghost shadow)
+	return SHADOWS_NONE;
+}
+
+bool C_HL2MPRagdoll::ShouldReceiveProjectedTextures(int flags)
+{
+	// no flashlight / projected shadows
+	return false;
+}
+
+void C_HL2MP_Player::UpdateOnRemove(void)
+{
+	modelrender->ForcedMaterialOverride(NULL);
+
+	m_viewtarget = vec3_origin;
+	m_blinktoggle = false;
+
+	ReleaseFlashlight();
+
+	BaseClass::UpdateOnRemove();
+}
+
+void C_HL2MP_Player::SetupWeights(
+	const matrix3x4_t* pBoneToWorld,
+	int nFlexWeightCount,
+	float* pFlexWeights,
+	float* pFlexDelayedWeights)
+{
+	// Zombie uses citizen head/eye materials.
+	// Never let base facial / eyeball code run for zombie.
+	if (GetTeamNumber() == TEAM_ZOMBIE)
+	{
+		if (pFlexWeights && nFlexWeightCount > 0)
+		{
+			Q_memset(pFlexWeights, 0, nFlexWeightCount * sizeof(float));
+		}
+
+		if (pFlexDelayedWeights && nFlexWeightCount > 0)
+		{
+			Q_memset(pFlexDelayedWeights, 0, nFlexWeightCount * sizeof(float));
+		}
+
+		m_viewtarget = vec3_origin;
+		m_blinktoggle = false;
+
+		return;
+	}
+
+	BaseClass::SetupWeights(pBoneToWorld, nFlexWeightCount, pFlexWeights, pFlexDelayedWeights);
 }

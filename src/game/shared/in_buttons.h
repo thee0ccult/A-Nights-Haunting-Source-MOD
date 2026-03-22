@@ -37,6 +37,7 @@
 #define IN_GRENADE1		(1 << 23)	// grenade 1
 #define IN_GRENADE2		(1 << 24)	// grenade 2
 #define	IN_ATTACK3		(1 << 25)
-#define IN_DROP	(1 << 26) // Weapon drop system.
+#define IN_DROP			(1 << 26) // Weapon drop system.
+#define IN_FLY			(1 << 27) // fly system.
 
 #endif // IN_BUTTONS_H

@@ -145,7 +145,7 @@ static  kbutton_t   in_grenade1;
 static  kbutton_t   in_grenade2;
 static	kbutton_t	in_attack3;
 kbutton_t	in_ducktoggle;
-
+static kbutton_t in_fly;
 /*
 ===========
 IN_CenterView_f
@@ -486,6 +486,8 @@ void IN_ZoomDown( const CCommand &args ) {KeyDown(&in_zoom, args[1] );}
 void IN_ZoomUp( const CCommand &args ) {KeyUp(&in_zoom, args[1] );}
 void IN_DropUp(const CCommand& args) { KeyUp(&in_drop, args[1]); } /*weapon drop*/
 void IN_DropDown(const CCommand& args) { KeyDown(&in_drop, args[1]); }/*weapon drop*/
+void IN_FlyDown(const CCommand& args) { KeyDown(&in_fly, args[1]); } // flies swarm
+void IN_FlyUp(const CCommand& args) { KeyUp(&in_fly, args[1]); } //flies swarm
 void IN_Grenade1Up( const CCommand &args ) { KeyUp( &in_grenade1, args[1] ); }
 void IN_Grenade1Down( const CCommand &args ) { KeyDown( &in_grenade1, args[1] ); }
 void IN_Grenade2Up( const CCommand &args ) { KeyUp( &in_grenade2, args[1] ); }
@@ -1473,6 +1475,7 @@ int CInput::GetButtonBits( int bResetState )
 	CalcButtonBits( bits, IN_GRENADE2, s_ClearInputState, &in_grenade2, bResetState );
 	CalcButtonBits( bits, IN_ATTACK3, s_ClearInputState, &in_attack3, bResetState );
 	CalcButtonBits(bits, IN_DROP, s_ClearInputState, &in_drop, bResetState);
+	CalcButtonBits(bits, IN_FLY, s_ClearInputState, &in_fly, bResetState);
 
 	if ( KeyState(&in_ducktoggle) )
 	{
@@ -1632,6 +1635,8 @@ static ConCommand startattack3("+attack3", IN_Attack3Down);
 static ConCommand endattack3("-attack3", IN_Attack3Up);
 static ConCommand enddrop("-drop", IN_DropUp);
 static ConCommand startdrop("+drop", IN_DropDown);
+static ConCommand startfly("+fly", IN_FlyDown);
+static ConCommand endfly("-fly", IN_FlyUp);
 
 #ifdef TF_CLIENT_DLL
 static ConCommand toggle_duck( "toggle_duck", IN_DuckToggle );

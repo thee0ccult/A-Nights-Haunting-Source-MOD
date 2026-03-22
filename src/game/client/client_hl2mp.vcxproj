@@ -946,6 +946,7 @@ exit 1
     <ClCompile Include="..\shared\hl2\achievements_mod.cpp" />
     <ClCompile Include="..\shared\hl2\leaderboard_sync.cpp" />
     <ClCompile Include="bloodoverlayproxy.cpp" />
+    <ClCompile Include="cloakproxy.cpp" />
     <ClCompile Include="c_message_entity.cpp" />
     <ClCompile Include="fx_css_weaponfx.cpp" />
     <ClCompile Include="hl2mp\ui\hud_tasklist.cpp" />

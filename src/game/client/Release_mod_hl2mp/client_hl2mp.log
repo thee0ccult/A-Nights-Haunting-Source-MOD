@@ -40,6 +40,7 @@
   achievements_mod.cpp
   leaderboard_sync.cpp
   bloodoverlayproxy.cpp
+  cloakproxy.cpp
   c_message_entity.cpp
   fx_css_weaponfx.cpp
   hud_tasklist.cpp
@@ -163,8 +164,6 @@ c:\anh\src\game\client\cdll_client_int.cpp(25): warning C4627: '#include <thread
           Add directive to 'cbase.h' or rebuild precompiled header
 c:\anh\src\game\client\cdll_client_int.cpp(26): warning C4627: '#include <chrono>': skipped when looking for precompiled header use
           Add directive to 'cbase.h' or rebuild precompiled header
-  cdll_util.cpp
-  cl_mat_stub.cpp
 c:\anh\src\game\client\cdll_client_int.cpp(21): warning C4603: 'WIN32_LEAN_AND_MEAN' : macro is not defined or definition is different after precompiled header use
           Add macro to precompiled header instead of defining here
           c:\anh\src\game\client\cdll_client_int.cpp(28) : use of precompiled header
@@ -174,6 +173,8 @@ c:\anh\src\game\client\cdll_client_int.cpp(22): warning C4603: 'NOMINMAX' : macr
 c:\anh\src\game\client\cdll_client_int.cpp(23): warning C4603: 'CURL_STATICLIB' : macro is not defined or definition is different after precompiled header use
           Add macro to precompiled header instead of defining here
           c:\anh\src\game\client\cdll_client_int.cpp(28) : use of precompiled header
+  cdll_util.cpp
+  cl_mat_stub.cpp
   classmap.cpp
   client_factorylist.cpp
   client_thinklist.cpp
@@ -208,12 +209,10 @@ c:\anh\src\game\client\cdll_client_int.cpp(23): warning C4603: 'CURL_STATICLIB' 
   functionproxy.cpp
   fx_blood.cpp
   fx_cube.cpp
-  fx_explosion.cpp
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winbase.h(59): warning C4005: 'INVALID_HANDLE_VALUE' : macro redefinition (cdll_client_int.cpp)
           c:\anh\src\common\xbox\xboxstubs.h(98) : see previous definition of 'INVALID_HANDLE_VALUE'
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winbase.h(7558): warning C4005: 'GetCommandLine' : macro redefinition (cdll_client_int.cpp)
           c:\anh\src\public\tier0\protected_things.h(172) : see previous definition of 'GetCommandLine'
-  fx_fleck.cpp
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\wincon.h(328): warning C4005: 'ReadConsoleInput' : macro redefinition (cdll_client_int.cpp)
           c:\anh\src\public\tier0\protected_things.h(238) : see previous definition of 'ReadConsoleInput'
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(290): warning C4005: 'RegCreateKey' : macro redefinition (cdll_client_int.cpp)
@@ -232,6 +231,8 @@ c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(929): warni
           c:\anh\src\public\tier0\protected_things.h(196) : see previous definition of 'RegSetValue'
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(958): warning C4005: 'RegSetValueEx' : macro redefinition (cdll_client_int.cpp)
           c:\anh\src\public\tier0\protected_things.h(190) : see previous definition of 'RegSetValueEx'
+  fx_explosion.cpp
+  fx_fleck.cpp
   fx_impact.cpp
   fx_interpvalue.cpp
   fx_quad.cpp
@@ -242,9 +243,9 @@ c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(958): warni
   fx_water.cpp
   gamemovement.cpp
   gamerules.cpp
+c:\anh\src\game\client\cdll_client_int.cpp(1258): warning C4211: nonstandard extension used : redefined extern to static
   gamerules_register.cpp
   GameStats.cpp
-c:\anh\src\game\client\cdll_client_int.cpp(1258): warning C4211: nonstandard extension used : redefined extern to static
   gamestringpool.cpp
   gametrace_client.cpp
   gamevars_shared.cpp

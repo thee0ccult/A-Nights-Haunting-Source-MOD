@@ -19,6 +19,7 @@ class CHL2MP_Player;
 #include "hl2mp_player_shared.h"
 #include "hl2mp_gamerules.h"
 #include "utldict.h"
+#include "utlvector.h"
 
 //=============================================================================
 // >> HL2MP_Player
@@ -131,6 +132,21 @@ public:
 	virtual bool StartObserverMode( int mode );
 	virtual void StopObserverMode( void );
 
+	virtual float MaxSpeed() const;
+
+	float m_flAttackAnimEndTime;
+	bool  m_bZombieLeapActive;
+	bool m_bWallClimbing;
+	Vector m_vecClimbNormal;
+	float m_flNextCrowSound;
+
+	EHANDLE m_hFlyAnchor;
+	CUtlVector<EHANDLE> m_hFlyParticles;
+
+	void StartFlyParticle();
+	void StopFlyParticle();
+	void UpdateFlyParticle();
+	void UpdateZombieCloak();
 
 	Vector m_vecTotalBulletForce;	//Accumulator for bullet force in a single frame
 
@@ -152,6 +168,9 @@ private:
 
 	float m_flNextModelChangeTime;
 	float m_flNextTeamChangeTime;
+
+	float m_flNextLeapTime; // zombie leap cooldown
+	bool m_bFlyMode;
 
 	float m_flSlamProtectTime;	
 

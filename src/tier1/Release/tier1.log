@@ -7,8 +7,8 @@
   checksum_md5.cpp
   checksum_sha1.cpp
   commandbuffer.cpp
-  datamanager.cpp
   convar.cpp
+  datamanager.cpp
   diff.cpp
   generichash.cpp
   ilocalize.cpp

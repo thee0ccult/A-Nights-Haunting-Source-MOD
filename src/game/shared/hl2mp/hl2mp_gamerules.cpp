@@ -70,6 +70,8 @@ extern ConVar mp_chattime;
 
 extern CBaseEntity	 *g_pLastCombineSpawn;
 extern CBaseEntity	 *g_pLastRebelSpawn;
+extern CBaseEntity* g_pLastZombieSpawn;
+extern CBaseEntity* g_pLastSpawn;
 
 #define WEAPON_MAX_DISTANCE_FROM_SPAWN 64
 
@@ -136,6 +138,7 @@ static const char *s_PreserveEnts[] =
 	"info_player_deathmatch",
 	"info_player_combine",
 	"info_player_rebel",
+	"info_player_zombie",
 	"info_map_parameters",
 	"keyframe_rope",
 	"move_rope",
@@ -202,6 +205,7 @@ char *sTeamNames[] =
 	"Spectator",
 	"Combine",
 	"Rebels",
+	"Zombies",
 };
 
 CHL2MPRules::CHL2MPRules()
@@ -264,6 +268,8 @@ void CHL2MPRules::CreateStandardEntities( void )
 
 	g_pLastCombineSpawn = NULL;
 	g_pLastRebelSpawn = NULL;
+	g_pLastZombieSpawn = NULL;
+	g_pLastSpawn = NULL;
 
 #ifdef DBGFLAG_ASSERT
 	CBaseEntity *pEnt = 
@@ -377,27 +383,28 @@ void CHL2MPRules::Think( void )
 		return;
 	}
 
-	if ( flFragLimit )
+	if (flFragLimit)
 	{
-		if( IsTeamplay() == true )
+		if (IsTeamplay() == true)
 		{
-			CTeam *pCombine = g_Teams[TEAM_COMBINE];
-			CTeam *pRebels = g_Teams[TEAM_REBELS];
-
-			if ( pCombine->GetScore() >= flFragLimit || pRebels->GetScore() >= flFragLimit )
+			for (int i = TEAM_COMBINE; i <= TEAM_ZOMBIE; i++)
 			{
-				GoToIntermission();
-				return;
+				CTeam* pTeam = g_Teams[i];
+
+				if (pTeam && pTeam->GetScore() >= flFragLimit)
+				{
+					GoToIntermission();
+					return;
+				}
 			}
 		}
 		else
 		{
-			// check if any player is over the frag limit
-			for ( int i = 1; i <= gpGlobals->maxClients; i++ )
+			for (int i = 1; i <= gpGlobals->maxClients; i++)
 			{
-				CBasePlayer *pPlayer = UTIL_PlayerByIndex( i );
+				CBasePlayer* pPlayer = UTIL_PlayerByIndex(i);
 
-				if ( pPlayer && pPlayer->FragCount() >= flFragLimit )
+				if (pPlayer && pPlayer->FragCount() >= flFragLimit)
 				{
 					GoToIntermission();
 					return;
@@ -731,7 +738,10 @@ void CHL2MPRules::ClientDisconnected( edict_t *pClient )
 			pPlayer->GetTeam()->RemovePlayer( pPlayer );
 		}
 	}
-
+	g_pLastCombineSpawn = NULL;
+	g_pLastRebelSpawn = NULL;
+	g_pLastZombieSpawn = NULL;
+	g_pLastSpawn = NULL;
 	BaseClass::ClientDisconnected( pClient );
 
 #endif
@@ -1132,17 +1142,13 @@ void CHL2MPRules::RestartGame()
 
 	// Respawn entities (glass, doors, etc..)
 
-	CTeam *pRebels = GetGlobalTeam( TEAM_REBELS );
-	CTeam *pCombine = GetGlobalTeam( TEAM_COMBINE );
-
-	if ( pRebels )
+	for (int i = TEAM_COMBINE; i <= TEAM_ZOMBIE; i++)
 	{
-		pRebels->SetScore( 0 );
-	}
-
-	if ( pCombine )
-	{
-		pCombine->SetScore( 0 );
+		CTeam* pTeam = GetGlobalTeam(i);
+		if (pTeam)
+		{
+			pTeam->SetScore(0);
+		}
 	}
 
 	m_flIntermissionEndTime = 0;
@@ -1165,7 +1171,10 @@ void CHL2MPRules::CleanUpMap()
 {
 	// Recreate all the map entities from the map data (preserving their indices),
 	// then remove everything else except the players.
-
+	g_pLastCombineSpawn = NULL;
+	g_pLastRebelSpawn = NULL;
+	g_pLastZombieSpawn = NULL;
+	g_pLastSpawn = NULL;
 	// Get rid of all entities except players.
 	CBaseEntity *pCur = gEntList.FirstEnt();
 	while ( pCur )

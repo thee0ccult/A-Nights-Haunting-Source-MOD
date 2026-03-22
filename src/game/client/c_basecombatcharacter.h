@@ -60,6 +60,12 @@ public:
 	virtual bool IsLineOfSightClear( CBaseEntity *entity, LineOfSightCheckType checkType = IGNORE_NOTHING ) const;// strictly LOS check with no other considerations
 	virtual bool IsLineOfSightClear( const Vector &pos, LineOfSightCheckType checkType = IGNORE_NOTHING, CBaseEntity *entityToIgnore = NULL ) const;
 
+	// -- clock settings
+	int   GetCloakStatus(void) { return m_intCloakStatus; }
+	float GetCloakFactor(void) { return m_floatCloakFactor; }
+
+	int   m_intCloakStatus;
+	float m_floatCloakFactor;
 
 	// -----------------------
 	// Ammo

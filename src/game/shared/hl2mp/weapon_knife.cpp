@@ -14,7 +14,7 @@
 #include "in_buttons.h"
 #include "vstdlib/random.h"
 #include "npcevent.h"
-
+#include "baseplayer_shared.h"
 #if defined( CLIENT_DLL )
 	#include "c_hl2mp_player.h"
 #else
@@ -73,6 +73,52 @@ IMPLEMENT_ACTTABLE(CWeaponKnife);
 //-----------------------------------------------------------------------------
 CWeaponKnife::CWeaponKnife( void )
 {
+}
+
+void CWeaponKnife::PrimaryAttack()
+{
+	CBasePlayer* pOwner = ToBasePlayer(GetOwner());
+	if (!pOwner)
+		return;
+
+	// Always play animation (both client + server)
+	pOwner->SetAnimation(PLAYER_ATTACK1);
+
+#ifndef CLIENT_DLL
+
+	// SERVER SIDE DAMAGE ONLY
+	Vector forward;
+	pOwner->EyeVectors(&forward);
+
+	Vector start = pOwner->Weapon_ShootPosition();
+	Vector end = start + forward * GetRange();
+
+	trace_t tr;
+	UTIL_TraceHull(start, end,
+		Vector(-16, -16, -16),
+		Vector(16, 16, 16),
+		MASK_SHOT_HULL,
+		pOwner,
+		COLLISION_GROUP_NONE,
+		&tr);
+
+	if (tr.m_pEnt)
+	{
+		CTakeDamageInfo info(this, pOwner, GetDamageForActivity(GetActivity()), DMG_CLUB);
+		tr.m_pEnt->TakeDamage(info);
+
+		WeaponSound(MELEE_HIT);
+	}
+	else
+	{
+		WeaponSound(MELEE_MISS);
+	}
+
+#endif
+
+	AddViewKick();
+
+	m_flNextPrimaryAttack = gpGlobals->curtime + GetFireRate();
 }
 
 //-----------------------------------------------------------------------------

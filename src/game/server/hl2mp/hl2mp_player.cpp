@@ -20,6 +20,10 @@
 #include "grenade_satchel.h"
 #include "eventqueue.h"
 #include "gamestats.h"
+#include "te_effect_dispatch.h"
+#include "particle_parse.h"
+#include "utlvector.h"
+#include "baseentity.h"
 
 #include "engine/IEngineSound.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
@@ -38,6 +42,8 @@ ConVar sv_weapon_slot_limit(
 
 CBaseEntity	 *g_pLastCombineSpawn = NULL;
 CBaseEntity	 *g_pLastRebelSpawn = NULL;
+CBaseEntity* g_pLastZombieSpawn = NULL; //zombie
+
 extern CBaseEntity				*g_pLastSpawn;
 
 #define HL2MP_COMMAND_MAX_RATE 0.3
@@ -48,6 +54,7 @@ LINK_ENTITY_TO_CLASS( player, CHL2MP_Player );
 
 LINK_ENTITY_TO_CLASS( info_player_combine, CPointEntity );
 LINK_ENTITY_TO_CLASS( info_player_rebel, CPointEntity );
+LINK_ENTITY_TO_CLASS(info_player_zombie, CPointEntity); //zombie
 
 IMPLEMENT_SERVERCLASS_ST(CHL2MP_Player, DT_HL2MP_Player)
 	SendPropAngle( SENDINFO_VECTORELEM(m_angEyeAngles, 0), 11, SPROP_CHANGES_OFTEN ),
@@ -116,6 +123,12 @@ CHL2MP_Player::CHL2MP_Player() : m_PlayerAnimState( this )
 	m_flNextModelChangeTime = 0.0f;
 	m_flNextTeamChangeTime = 0.0f;
 
+	m_flNextLeapTime = 0.0f; //zombie leap
+	m_bZombieLeapActive = false;// zombie leap
+	m_flNextCrowSound = 0.0f;
+	m_bFlyMode = false;
+	m_hFlyAnchor = NULL;
+
 	m_iSpawnInterpCounter = 0;
 
     m_bEnterObserver = false;
@@ -131,41 +144,83 @@ CHL2MP_Player::~CHL2MP_Player( void )
 
 }
 
-void CHL2MP_Player::UpdateOnRemove( void )
+void CHL2MP_Player::UpdateOnRemove(void)
 {
-	if ( m_hRagdoll )
+	variant_t emptyVariant;
+
+	StopFlyParticle();
+
+	for (int i = 0; i < m_hFlyParticles.Count(); ++i)
 	{
-		UTIL_RemoveImmediate( m_hRagdoll );
+		CBaseEntity* pEnt = m_hFlyParticles[i].Get();
+		if (!pEnt)
+			continue;
+
+		pEnt->AcceptInput("Kill", this, this, emptyVariant, 0);
+		UTIL_Remove(pEnt);
+	}
+
+	m_hFlyParticles.RemoveAll();
+
+	if (m_hFlyAnchor)
+	{
+		CBaseEntity* pAnchor = m_hFlyAnchor.Get();
+		if (pAnchor)
+		{
+			pAnchor->AcceptInput("KillHierarchy", this, this, emptyVariant, 0);
+			pAnchor->AcceptInput("Kill", this, this, emptyVariant, 0);
+			UTIL_Remove(pAnchor);
+		}
+
+		m_hFlyAnchor = NULL;
+	}
+
+	if (m_hRagdoll)
+	{
+		UTIL_RemoveImmediate(m_hRagdoll);
 		m_hRagdoll = NULL;
 	}
 
 	BaseClass::UpdateOnRemove();
 }
 
-void CHL2MP_Player::Precache( void )
+void CHL2MP_Player::Precache(void)
 {
 	BaseClass::Precache();
 
-	PrecacheModel ( "sprites/glow01.vmt" );
+	PrecacheParticleSystem("flies_large");
 
-	//Precache Citizen models
-	int nHeads = ARRAYSIZE( g_ppszRandomCitizenModels );
-	int i;	
+	PrecacheModel("sprites/glow01.vmt");
 
-	for ( i = 0; i < nHeads; ++i )
-	   	 PrecacheModel( g_ppszRandomCitizenModels[i] );
+	// Zombie model
+	PrecacheModel("models2/humans/group03/male_07.mdl");
 
-	//Precache Combine Models
-	nHeads = ARRAYSIZE( g_ppszRandomCombineModels );
+	// Crow leap model
+	PrecacheModel("models/crow.mdl");
 
-	for ( i = 0; i < nHeads; ++i )
-	   	 PrecacheModel( g_ppszRandomCombineModels[i] );
+	// Zombie sounds
+	PrecacheScriptSound("NPC_FastZombie.LeapAttack");
+
+	PrecacheScriptSound("NPC_Crow.Alert");
+
+	// Precache Citizen models
+	int nHeads = ARRAYSIZE(g_ppszRandomCitizenModels);
+	int i;
+
+	for (i = 0; i < nHeads; ++i)
+		PrecacheModel(g_ppszRandomCitizenModels[i]);
+
+	// Precache Combine Models
+	nHeads = ARRAYSIZE(g_ppszRandomCombineModels);
+
+	for (i = 0; i < nHeads; ++i)
+		PrecacheModel(g_ppszRandomCombineModels[i]);
 
 	PrecacheFootStepSounds();
 
-	PrecacheScriptSound( "NPC_MetroPolice.Die" );
-	PrecacheScriptSound( "NPC_CombineS.Die" );
-	PrecacheScriptSound( "NPC_Citizen.die" );
+	PrecacheScriptSound("NPC_MetroPolice.Die");
+	PrecacheScriptSound("NPC_CombineS.Die");
+	PrecacheScriptSound("NPC_Citizen.die");
 }
 
 void CHL2MP_Player::GiveAllItems( void )
@@ -238,6 +293,29 @@ void CHL2MP_Player::GiveAllItems( void )
 
 void CHL2MP_Player::GiveDefaultItems()
 {
+	// ZOMBIE LOADOUT
+	if (GetTeamNumber() == TEAM_ZOMBIE)
+	{
+		// DO NOT remove items here
+		// Engine already cleaned inventory on spawn
+
+		CBaseCombatWeapon* pKnife = (CBaseCombatWeapon*)GiveNamedItem("weapon_knife");
+		if (pKnife)
+		{
+			Weapon_Equip(pKnife);
+			Weapon_Switch(pKnife);
+		}
+
+		CBaseCombatWeapon* pPhys = (CBaseCombatWeapon*)GiveNamedItem("weapon_physcannon");
+		if (pPhys)
+		{
+			Weapon_Equip(pPhys);
+		}
+
+		return;
+	}
+
+	// NORMAL PLAYERS
 	CBaseCombatWeapon* pPhys = (CBaseCombatWeapon*)GiveNamedItem("weapon_physcannon");
 
 	if (pPhys)
@@ -342,6 +420,24 @@ void CHL2MP_Player::Spawn(void)
 	SetPlayerUnderwater(false);
 
 	m_bReady = false;
+	m_bFlyMode = false;
+	StopFlyParticle();
+	StopParticleEffects(this);
+	RemoveEffects(EF_NODRAW);
+	SetRenderMode(kRenderNormal);
+	SetRenderColor(255, 255, 255, 255);
+	SetCloakStatus(0);
+	SetCloakFactor(0.0f);
+	// ZOMBIE SETUP
+	if (GetTeamNumber() == TEAM_ZOMBIE)
+	{
+		m_bZombieLeapActive = false;
+		SetModel("models2/humans/group03/male_07.mdl");
+		SetupPlayerSoundsByModel("models2/humans/group03/male_07.mdl");
+
+		SetHealth(200);
+		SetMaxHealth(200);
+	}
 }
 
 
@@ -376,127 +472,143 @@ bool CHL2MP_Player::ValidatePlayerModel( const char *pModel )
 	return false;
 }
 
-void CHL2MP_Player::SetPlayerTeamModel( void )
+void CHL2MP_Player::SetPlayerTeamModel(void)
 {
-	const char *szModelName = NULL;
-	szModelName = engine->GetClientConVarValue( engine->IndexOfEdict( edict() ), "cl_playermodel" );
+	const char* szModelName = NULL;
+	szModelName = engine->GetClientConVarValue(engine->IndexOfEdict(edict()), "cl_playermodel");
 
-	int modelIndex = modelinfo->GetModelIndex( szModelName );
+	int modelIndex = modelinfo->GetModelIndex(szModelName);
 
-	if ( modelIndex == -1 || ValidatePlayerModel( szModelName ) == false )
+	if (GetTeamNumber() == TEAM_ZOMBIE)
 	{
-		szModelName = "models2/Combine_Soldier.mdl";
-		m_iModelType = TEAM_COMBINE;
-
-		char szReturnString[512];
-
-		Q_snprintf( szReturnString, sizeof (szReturnString ), "cl_playermodel %s\n", szModelName );
-		engine->ClientCommand ( edict(), szReturnString );
+		szModelName = "models2/humans/group03/male_07.mdl";
+		m_iModelType = TEAM_ZOMBIE;
 	}
-
-	if ( GetTeamNumber() == TEAM_COMBINE )
+	else
 	{
-		if ( Q_stristr( szModelName, "models2/human") )
+		if (modelIndex == -1 || ValidatePlayerModel(szModelName) == false)
 		{
-			int nHeads = ARRAYSIZE( g_ppszRandomCombineModels );
-		
-			g_iLastCombineModel = ( g_iLastCombineModel + 1 ) % nHeads;
-			szModelName = g_ppszRandomCombineModels[g_iLastCombineModel];
+			szModelName = "models2/Combine_Soldier.mdl";
+			m_iModelType = TEAM_COMBINE;
+
+			char szReturnString[512];
+
+			Q_snprintf(szReturnString, sizeof(szReturnString), "cl_playermodel %s\n", szModelName);
+			engine->ClientCommand(edict(), szReturnString);
 		}
 
-		m_iModelType = TEAM_COMBINE;
-	}
-	else if ( GetTeamNumber() == TEAM_REBELS )
-	{
-		if ( !Q_stristr( szModelName, "models2/human") )
+		if (GetTeamNumber() == TEAM_COMBINE)
 		{
-			int nHeads = ARRAYSIZE( g_ppszRandomCitizenModels );
+			if (Q_stristr(szModelName, "models2/human"))
+			{
+				int nHeads = ARRAYSIZE(g_ppszRandomCombineModels);
 
-			g_iLastCitizenModel = ( g_iLastCitizenModel + 1 ) % nHeads;
-			szModelName = g_ppszRandomCitizenModels[g_iLastCitizenModel];
+				g_iLastCombineModel = (g_iLastCombineModel + 1) % nHeads;
+				szModelName = g_ppszRandomCombineModels[g_iLastCombineModel];
+			}
+
+			m_iModelType = TEAM_COMBINE;
 		}
+		else if (GetTeamNumber() == TEAM_REBELS)
+		{
+			if (!Q_stristr(szModelName, "models2/human"))
+			{
+				int nHeads = ARRAYSIZE(g_ppszRandomCitizenModels);
 
-		m_iModelType = TEAM_REBELS;
+				g_iLastCitizenModel = (g_iLastCitizenModel + 1) % nHeads;
+				szModelName = g_ppszRandomCitizenModels[g_iLastCitizenModel];
+			}
+
+			m_iModelType = TEAM_REBELS;
+		}
 	}
-	
-	SetModel( szModelName );
-	SetupPlayerSoundsByModel( szModelName );
+
+	SetModel(szModelName);
+	SetupPlayerSoundsByModel(szModelName);
 
 	m_flNextModelChangeTime = gpGlobals->curtime + MODEL_CHANGE_INTERVAL;
 }
 
-void CHL2MP_Player::SetPlayerModel( void )
+void CHL2MP_Player::SetPlayerModel(void)
 {
-	const char *szModelName = NULL;
-	const char *pszCurrentModelName = modelinfo->GetModelName( GetModel());
+	const char* szModelName = NULL;
+	const char* pszCurrentModelName = modelinfo->GetModelName(GetModel());
 
-	szModelName = engine->GetClientConVarValue( engine->IndexOfEdict( edict() ), "cl_playermodel" );
+	szModelName = engine->GetClientConVarValue(engine->IndexOfEdict(edict()), "cl_playermodel");
 
-	if ( ValidatePlayerModel( szModelName ) == false )
+	if (GetTeamNumber() == TEAM_ZOMBIE)
 	{
-		char szReturnString[512];
-
-		if ( ValidatePlayerModel( pszCurrentModelName ) == false )
-		{
-			pszCurrentModelName = "models2/Combine_Soldier.mdl";
-		}
-
-		Q_snprintf( szReturnString, sizeof (szReturnString ), "cl_playermodel %s\n", pszCurrentModelName );
-		engine->ClientCommand ( edict(), szReturnString );
-
-		szModelName = pszCurrentModelName;
-	}
-
-	if ( GetTeamNumber() == TEAM_COMBINE )
-	{
-		int nHeads = ARRAYSIZE( g_ppszRandomCombineModels );
-		
-		g_iLastCombineModel = ( g_iLastCombineModel + 1 ) % nHeads;
-		szModelName = g_ppszRandomCombineModels[g_iLastCombineModel];
-
-		m_iModelType = TEAM_COMBINE;
-	}
-	else if ( GetTeamNumber() == TEAM_REBELS )
-	{
-		int nHeads = ARRAYSIZE( g_ppszRandomCitizenModels );
-
-		g_iLastCitizenModel = ( g_iLastCitizenModel + 1 ) % nHeads;
-		szModelName = g_ppszRandomCitizenModels[g_iLastCitizenModel];
-
-		m_iModelType = TEAM_REBELS;
+		szModelName = "models2/humans/group03/male_07.mdl";
+		m_iModelType = TEAM_ZOMBIE;
 	}
 	else
 	{
-		if ( Q_strlen( szModelName ) == 0 ) 
+		if (ValidatePlayerModel(szModelName) == false)
 		{
-			szModelName = g_ppszRandomCitizenModels[0];
+			char szReturnString[512];
+
+			if (ValidatePlayerModel(pszCurrentModelName) == false)
+			{
+				pszCurrentModelName = "models2/Combine_Soldier.mdl";
+			}
+
+			Q_snprintf(szReturnString, sizeof(szReturnString), "cl_playermodel %s\n", pszCurrentModelName);
+			engine->ClientCommand(edict(), szReturnString);
+
+			szModelName = pszCurrentModelName;
 		}
 
-		if ( Q_stristr( szModelName, "models2/human") )
+		if (GetTeamNumber() == TEAM_COMBINE)
 		{
+			int nHeads = ARRAYSIZE(g_ppszRandomCombineModels);
+
+			g_iLastCombineModel = (g_iLastCombineModel + 1) % nHeads;
+			szModelName = g_ppszRandomCombineModels[g_iLastCombineModel];
+
+			m_iModelType = TEAM_COMBINE;
+		}
+		else if (GetTeamNumber() == TEAM_REBELS)
+		{
+			int nHeads = ARRAYSIZE(g_ppszRandomCitizenModels);
+
+			g_iLastCitizenModel = (g_iLastCitizenModel + 1) % nHeads;
+			szModelName = g_ppszRandomCitizenModels[g_iLastCitizenModel];
+
 			m_iModelType = TEAM_REBELS;
 		}
 		else
 		{
+			if (Q_strlen(szModelName) == 0)
+			{
+				szModelName = g_ppszRandomCitizenModels[0];
+			}
+
+			if (Q_stristr(szModelName, "models2/human"))
+			{
+				m_iModelType = TEAM_REBELS;
+			}
+			else
+			{
+				m_iModelType = TEAM_COMBINE;
+			}
+		}
+
+		int modelIndex = modelinfo->GetModelIndex(szModelName);
+
+		if (modelIndex == -1)
+		{
+			szModelName = "models2/Combine_Soldier.mdl";
 			m_iModelType = TEAM_COMBINE;
+
+			char szReturnString[512];
+
+			Q_snprintf(szReturnString, sizeof(szReturnString), "cl_playermodel %s\n", szModelName);
+			engine->ClientCommand(edict(), szReturnString);
 		}
 	}
 
-	int modelIndex = modelinfo->GetModelIndex( szModelName );
-
-	if ( modelIndex == -1 )
-	{
-		szModelName = "models2/Combine_Soldier.mdl";
-		m_iModelType = TEAM_COMBINE;
-
-		char szReturnString[512];
-
-		Q_snprintf( szReturnString, sizeof (szReturnString ), "cl_playermodel %s\n", szModelName );
-		engine->ClientCommand ( edict(), szReturnString );
-	}
-
-	SetModel( szModelName );
-	SetupPlayerSoundsByModel( szModelName );
+	SetModel(szModelName);
+	SetupPlayerSoundsByModel(szModelName);
 
 	m_flNextModelChangeTime = gpGlobals->curtime + MODEL_CHANGE_INTERVAL;
 }
@@ -546,45 +658,444 @@ bool CHL2MP_Player::Weapon_Switch( CBaseCombatWeapon *pWeapon, int viewmodelinde
 	return bRet;
 }
 
-void CHL2MP_Player::PreThink( void )
+void CHL2MP_Player::UpdateZombieCloak()
+{
+	// only zombies can cloak
+	if (GetTeamNumber() != TEAM_ZOMBIE)
+	{
+		SetCloakStatus(0);
+		SetCloakFactor(0.0f);
+		return;
+	}
+
+	// m_bFlyMode = cloak requested
+	if (m_bFlyMode)
+	{
+		// start / continue cloaking
+		if (GetCloakStatus() == 0 || GetCloakStatus() == 1)
+		{
+			SetCloakStatus(3); // cloaking
+		}
+	}
+	else
+	{
+		// start / continue uncloaking
+		if (GetCloakStatus() == 2 || GetCloakStatus() == 3)
+		{
+			SetCloakStatus(1); // uncloaking
+		}
+	}
+
+	// advance cloak factor
+	if (!engine->IsPaused())
+	{
+		if (GetCloakStatus() == 3) // cloaking
+		{
+			float flNew = GetCloakFactor() + 0.02f;
+
+			// players should not go full 1.0, keep some silhouette
+			if (flNew >= 0.975f)
+			{
+				flNew = 0.975f;
+				SetCloakStatus(2); // fully cloaked
+			}
+
+			SetCloakFactor(flNew);
+		}
+		else if (GetCloakStatus() == 1) // uncloaking
+		{
+			float flNew = GetCloakFactor() - 0.02f;
+
+			if (flNew <= 0.0f)
+			{
+				flNew = 0.0f;
+				SetCloakStatus(0); // fully visible
+			}
+
+			SetCloakFactor(flNew);
+		}
+		else if (GetCloakStatus() == 0)
+		{
+			SetCloakFactor(0.0f);
+		}
+		else if (GetCloakStatus() == 2)
+		{
+			// fully cloaked - do nothing
+		}
+	}
+
+	// =======================================
+	// HARD SHADOW DISABLE (FIX)
+	// =======================================
+	if (GetTeamNumber() != TEAM_ZOMBIE)
+	{
+		RemoveEffects(EF_NOSHADOW);
+		RemoveEffects(EF_NORECEIVESHADOW);
+		return;
+	}
+
+	if (GetCloakFactor() > 0.1f)
+	{
+		AddEffects(EF_NOSHADOW);
+		AddEffects(EF_NORECEIVESHADOW);
+	}
+	else
+	{
+		RemoveEffects(EF_NOSHADOW);
+		RemoveEffects(EF_NORECEIVESHADOW);
+		RemoveEffects(EF_NODRAW); // safety restore
+	}
+}
+
+void CHL2MP_Player::StartFlyParticle()
+{
+	if (GetTeamNumber() != TEAM_ZOMBIE)
+		return;
+
+	static const Vector offsets[] =
+	{
+		Vector(0, 0, 40),
+		Vector(20, 0, 45),
+		Vector(-20, 0, 45),
+		Vector(0, 20, 35),
+		Vector(0, -20, 35)
+	};
+
+	variant_t emptyVariant;
+
+	// Create anchor once
+	if (!m_hFlyAnchor)
+	{
+		CBaseEntity* pAnchor = CreateEntityByName("info_target");
+		if (!pAnchor)
+			return;
+
+		DispatchSpawn(pAnchor);
+		pAnchor->AddEffects(EF_NODRAW);
+		pAnchor->SetParent(this);
+		pAnchor->SetLocalOrigin(vec3_origin);
+		pAnchor->SetLocalAngles(vec3_angle);
+
+		m_hFlyAnchor = pAnchor;
+	}
+	else
+	{
+		CBaseEntity* pAnchor = m_hFlyAnchor.Get();
+		if (pAnchor)
+		{
+			pAnchor->SetParent(this);
+			pAnchor->SetLocalOrigin(vec3_origin);
+			pAnchor->SetLocalAngles(vec3_angle);
+		}
+	}
+
+	if (m_hFlyParticles.Count() == 0)
+	{
+		CBaseEntity* pAnchor = m_hFlyAnchor.Get();
+		if (!pAnchor)
+			return;
+
+		for (int i = 0; i < ARRAYSIZE(offsets); ++i)
+		{
+			CBaseEntity* pEnt = CreateEntityByName("info_particle_system");
+			if (!pEnt)
+				continue;
+
+			pEnt->KeyValue("effect_name", "flies_large");
+			pEnt->KeyValue("start_active", "0");
+
+			DispatchSpawn(pEnt);
+
+			pEnt->SetParent(pAnchor);
+			pEnt->SetLocalOrigin(offsets[i]);
+			pEnt->SetLocalAngles(vec3_angle);
+			pEnt->Activate();
+			pEnt->RemoveEffects(EF_NODRAW);
+
+			m_hFlyParticles.AddToTail(pEnt);
+		}
+	}
+
+	for (int i = 0; i < m_hFlyParticles.Count(); ++i)
+	{
+		CBaseEntity* pEnt = m_hFlyParticles[i].Get();
+		if (!pEnt)
+			continue;
+
+		pEnt->RemoveEffects(EF_NODRAW);
+		pEnt->AcceptInput("Start", this, this, emptyVariant, 0);
+	}
+}
+
+void CHL2MP_Player::StopFlyParticle()
+{
+	variant_t emptyVariant;
+
+	for (int i = 0; i < m_hFlyParticles.Count(); ++i)
+	{
+		CBaseEntity* pEnt = m_hFlyParticles[i].Get();
+		if (!pEnt)
+			continue;
+
+		pEnt->AcceptInput("Stop", this, this, emptyVariant, 0);
+		StopParticleEffects(pEnt);
+		pEnt->AddEffects(EF_NODRAW);   // hide entity too
+	}
+
+	// keep anchor alive, but stop it following if you want
+	if (m_hFlyAnchor)
+	{
+		CBaseEntity* pAnchor = m_hFlyAnchor.Get();
+		if (pAnchor)
+		{
+			pAnchor->SetParent(this);
+			pAnchor->SetLocalOrigin(vec3_origin);
+			pAnchor->SetLocalAngles(vec3_angle);
+		}
+	}
+
+	StopParticleEffects(this);
+}
+
+void CHL2MP_Player::PreThink(void)
 {
 	QAngle vOldAngles = GetLocalAngles();
-	QAngle vTempAngles = GetLocalAngles();
 
-	vTempAngles = EyeAngles();
-
-	if ( vTempAngles[PITCH] > 180.0f )
+	QAngle vTempAngles = EyeAngles();
+	if (vTempAngles[PITCH] > 180.0f)
 	{
 		vTempAngles[PITCH] -= 360.0f;
 	}
-
-	SetLocalAngles( vTempAngles );
+	SetLocalAngles(vTempAngles);
 
 	BaseClass::PreThink();
 	State_PreThink();
+	UpdateZombieCloak();
 
-	//Reset bullet force accumulator, only lasts one frame
+	// =========================================================
+	// ZOMBIE CROW LEAP STATE
+	// =========================================================
+	if (GetTeamNumber() == TEAM_ZOMBIE)
+	{
+		// End leap when grounded and restore zombie model
+		if (m_bZombieLeapActive && (GetFlags() & FL_ONGROUND))
+		{
+			m_bZombieLeapActive = false;
+			StopFlyParticle();
+			m_bFlyMode = false;
+
+			if (Q_stricmp(STRING(GetModelName()), "models/crow.mdl") == 0)
+			{
+				SetModel("models2/humans/group03/male_07.mdl");
+				SetupPlayerSoundsByModel("models2/humans/group03/male_07.mdl");
+				ResetAnimation();
+			}
+			// Restore weapon + viewmodel
+			CBaseViewModel* vm = GetViewModel(0);
+			if (vm)
+			{
+				vm->RemoveEffects(EF_NODRAW);
+			}
+
+			CBaseCombatWeapon* pWep = GetActiveWeapon();
+			if (pWep)
+			{
+				pWep->RemoveEffects(EF_NODRAW);
+			}
+		}
+
+		// Start leap with ATTACK2
+		if ((m_nButtons & IN_ATTACK2) && gpGlobals->curtime >= m_flNextLeapTime && !m_bZombieLeapActive)
+		{
+			if (m_bFlyMode)
+			{
+				m_bFlyMode = false;
+				StopFlyParticle();
+
+				SetRenderMode(kRenderNormal);
+				SetRenderColor(255, 255, 255, 255);
+
+				CBaseViewModel* vm = GetViewModel(0);
+				if (vm) vm->RemoveEffects(EF_NODRAW);
+
+				CBaseCombatWeapon* pWepRestore = GetActiveWeapon();
+				if (pWepRestore) pWepRestore->RemoveEffects(EF_NODRAW);
+			}
+			Vector forward;
+			AngleVectors(EyeAngles(), &forward);
+
+			Vector velocity = forward * 380.0f + Vector(0, 0, 220.0f);
+			SetAbsVelocity(velocity);
+
+			m_bZombieLeapActive = true;
+			// Hide weapon + viewmodel
+			CBaseViewModel* vm = GetViewModel(0);
+			if (vm)
+			{
+				vm->AddEffects(EF_NODRAW);
+			}
+
+			CBaseCombatWeapon* pWep = GetActiveWeapon();
+			if (pWep)
+			{
+				pWep->AddEffects(EF_NODRAW);
+			}
+			m_flNextLeapTime = gpGlobals->curtime + 3.0f;
+
+			// swap to crow model
+			if (Q_stricmp(STRING(GetModelName()), "models/crow.mdl") != 0)
+			{
+				SetModel("models/crow.mdl");
+				ResetSequence(LookupSequence("Fly01"));
+			}
+
+			int iFlySeq = LookupSequence("Fly01");
+			if (iFlySeq < 0)
+				iFlySeq = LookupSequence("Idle01");
+
+			if (iFlySeq >= 0)
+			{
+				ResetSequence(iFlySeq);
+				SetCycle(0.0f);
+				m_flPlaybackRate = 1.0f;
+			}
+
+			EmitSound("NPC_FastZombie.LeapAttack");
+		}
+
+		// While in crow leap, tapping jump gives lift
+		if (m_bZombieLeapActive && (m_afButtonPressed & IN_JUMP))
+		{
+			Vector vel = GetAbsVelocity();
+
+			// small flap upward boost
+			vel.z += 120.0f;
+
+			// optional cap so it doesn't become infinite rocket flight
+			if (vel.z > 260.0f)
+			{
+				vel.z = 260.0f;
+			}
+
+			SetAbsVelocity(vel);
+		}
+
+		// Optional gentle glide feel while crow is active
+		if (m_bZombieLeapActive)
+		{
+			Vector vel = GetAbsVelocity();
+
+			// soften falling speed a bit so repeated jumps feel like flapping
+			if (vel.z < -200.0f)
+			{
+				vel.z = -200.0f;
+				SetAbsVelocity(vel);
+			}
+			// Crow screech loop
+			if (gpGlobals->curtime >= m_flNextCrowSound)
+			{
+				EmitSound("NPC_Crow.Alert");
+				m_flNextCrowSound = gpGlobals->curtime + 1.5f; // interval
+			}
+		}
+
+		// stop horizontal sliding only when NOT in crow leap
+		if (!m_bZombieLeapActive &&
+			!(m_nButtons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT)))
+		{
+			Vector vel = GetAbsVelocity();
+			vel.x = 0.0f;
+			vel.y = 0.0f;
+			SetAbsVelocity(vel);
+		}
+	}
+
+	// Toggle fly particle mode
+	// =========================================================
+	// NON-ZOMBIE HARD BLOCK
+	// =========================================================
+	if (GetTeamNumber() != TEAM_ZOMBIE)
+	{
+		if (m_bFlyMode || m_bZombieLeapActive)
+		{
+			m_bFlyMode = false;
+			m_bZombieLeapActive = false;
+			StopFlyParticle();
+
+			CBaseViewModel* vm = GetViewModel(0);
+			if (vm) vm->RemoveEffects(EF_NODRAW);
+
+			CBaseCombatWeapon* wep = GetActiveWeapon();
+			if (wep) wep->RemoveEffects(EF_NODRAW);
+
+			if (Q_stricmp(STRING(GetModelName()), "models/crow.mdl") == 0)
+			{
+				SetPlayerTeamModel();
+				ResetAnimation();
+			}
+
+			SetRenderMode(kRenderNormal);
+			SetRenderColor(255, 255, 255, 255);
+		}
+	}
+	else
+	{
+		// Toggle fly particle mode (ZOMBIES ONLY)
+		if ((m_afButtonPressed & IN_FLY) && !m_bZombieLeapActive)
+		{
+			m_bFlyMode = !m_bFlyMode;
+
+			if (m_bFlyMode)
+			{
+				CBaseViewModel* vm = GetViewModel(0);
+				if (vm) vm->AddEffects(EF_NODRAW);
+
+				CBaseCombatWeapon* wep = GetActiveWeapon();
+				if (wep) wep->AddEffects(EF_NODRAW);
+
+				StopFlyParticle();
+				StartFlyParticle();
+			}
+			else
+			{
+				m_bFlyMode = false;
+				StopFlyParticle();
+
+				CBaseViewModel* vm = GetViewModel(0);
+				if (vm) vm->RemoveEffects(EF_NODRAW);
+
+				CBaseCombatWeapon* wep = GetActiveWeapon();
+				if (wep) wep->RemoveEffects(EF_NODRAW);
+
+			}
+		}
+	}
+
+	// hard safety: if fly mode is off, no fly particles are allowed to exist
+	if (GetTeamNumber() != TEAM_ZOMBIE || !m_bFlyMode)
+	{
+		StopFlyParticle();
+	}
+
 	m_vecTotalBulletForce = vec3_origin;
-	SetLocalAngles( vOldAngles );
+	SetLocalAngles(vOldAngles);
 }
 
-void CHL2MP_Player::PostThink( void )
+void CHL2MP_Player::PostThink(void)
 {
 	BaseClass::PostThink();
-	
-	if ( GetFlags() & FL_DUCKING )
+
+	if (GetFlags() & FL_DUCKING)
 	{
-		SetCollisionBounds( VEC_CROUCH_TRACE_MIN, VEC_CROUCH_TRACE_MAX );
+		SetCollisionBounds(VEC_CROUCH_TRACE_MIN, VEC_CROUCH_TRACE_MAX);
 	}
 
 	m_PlayerAnimState.Update();
-
-	// Store the eye angles pitch so the client can compute its animation state correctly.
 	m_angEyeAngles = EyeAngles();
 
 	QAngle angles = GetLocalAngles();
 	angles[PITCH] = 0;
-	SetLocalAngles( angles );
+	SetLocalAngles(angles);
 }
 
 void CHL2MP_Player::PlayerDeathThink()
@@ -691,27 +1202,218 @@ Activity CHL2MP_Player::TranslateTeamActivity( Activity ActToTranslate )
 extern ConVar hl2_normspeed;
 
 // Set the activity based on an event or current state
-void CHL2MP_Player::SetAnimation( PLAYER_ANIM playerAnim )
+void CHL2MP_Player::SetAnimation(PLAYER_ANIM playerAnim)
 {
-	int animDesired;
+	// =========================================================
+	// ZOMBIE ANIMATION HANDLING
+	// =========================================================
+	if (GetTeamNumber() == TEAM_ZOMBIE)
+	{
+		// Prevent interruption of attack animation
+		if (gpGlobals->curtime < m_flAttackAnimEndTime)
+		{
+			return;
+		}
+		float speed2D = GetAbsVelocity().Length2D();
+		bool bOnGround = (GetFlags() & FL_ONGROUND) != 0;
 
+
+		// Attack takes priority
+		if (playerAnim == PLAYER_ATTACK1)
+		{
+			int iAttackSeq = LookupSequence("Melee");
+			if (iAttackSeq < 0)
+				iAttackSeq = LookupSequence("BR2_Attack");
+
+			if (iAttackSeq >= 0)
+			{
+				ResetSequence(iAttackSeq);
+				SetCycle(0);
+				m_flPlaybackRate = 1.0f;
+
+				// LOCK animation
+				m_flAttackAnimEndTime = gpGlobals->curtime + 0.5f;
+
+				return;
+			}
+		}
+
+		if (speed2D < 5.0f && bOnGround && !(GetFlags() & FL_DUCKING))
+		{
+			int iIdle = LookupSequence("idle_angry");
+
+			if (iIdle < 0)
+				iIdle = LookupSequence("idle");
+
+			if (iIdle >= 0)
+			{
+				if (GetSequence() != iIdle)
+				{
+					ResetSequence(iIdle);
+					SetCycle(0);
+				}
+
+				m_flPlaybackRate = 1.0f;
+				return;
+			}
+		}
+
+		// Airborne handling
+		if (!bOnGround)
+		{
+			int iAir = -1;
+
+			// crow leap visual
+			if (m_bZombieLeapActive && Q_stricmp(STRING(GetModelName()), "models/crow.mdl") == 0)
+			{
+				iAir = LookupSequence("Fly01");
+				if (iAir < 0)
+					iAir = LookupSequence("Idle01");
+
+				if (iAir >= 0)
+				{
+					if (GetSequence() != iAir)
+					{
+						ResetSequence(iAir);
+						SetCycle(0);
+					}
+
+					m_flPlaybackRate = 1.0f;
+					return;
+				}
+			}
+			else if (m_bZombieLeapActive)
+			{
+				if (GetAbsVelocity().z > 50.0f)
+					iAir = LookupSequence("jump_holding_jump");
+				else if (GetAbsVelocity().z < -50.0f)
+					iAir = LookupSequence("jump_holding_glide");
+				else
+					iAir = LookupSequence("jump_holding_land");
+			}
+			else
+			{
+				iAir = LookupSequence("jump_gravgun");
+			}
+
+			if (iAir >= 0)
+			{
+				if (GetSequence() != iAir)
+				{
+					ResetSequence(iAir);
+					SetCycle(0);
+				}
+
+				m_flPlaybackRate = 1.0f;
+				return;
+			}
+		}
+
+		// Ground locomotion
+		int iMoveSeq = -1;
+
+		// CROUCHING
+		if (GetFlags() & FL_DUCKING)
+		{
+			if (speed2D > 5.0f)
+			{
+				// crouch movement animation
+				iMoveSeq = LookupSequence("Crouch_walk_all");
+				if (iMoveSeq < 0)
+					iMoveSeq = LookupSequence("crouch_walk_all");
+			}
+			else
+			{
+				// crouch idle animation
+				iMoveSeq = LookupSequence("crouchidlehide");
+				if (iMoveSeq < 0)
+					iMoveSeq = LookupSequence("Crouch_walk_all");
+				if (iMoveSeq < 0)
+					iMoveSeq = LookupSequence("crouch_walk_all");
+				if (iMoveSeq < 0)
+					iMoveSeq = LookupSequence("idle_angry");
+			}
+
+			if (iMoveSeq >= 0)
+			{
+				if (GetSequence() != iMoveSeq)
+				{
+					ResetSequence(iMoveSeq);
+					SetCycle(0);
+				}
+
+				m_flPlaybackRate = 1.0f;
+				return;
+			}
+		}
+		else
+		{
+			// ALT = SPRINT (FAST RUN)
+			if (m_nButtons & IN_WALK)
+			{
+				iMoveSeq = LookupSequence("plaza_walk_all");
+
+				if (iMoveSeq >= 0)
+				{
+					if (GetSequence() != iMoveSeq)
+					{
+						ResetSequence(iMoveSeq);
+						SetCycle(0);
+					}
+
+					m_flPlaybackRate = 0.45f;
+					return;
+				}
+			}
+
+			// SHIFT = WALK (SLOW)
+			if (m_nButtons & IN_SPEED)
+			{
+				iMoveSeq = LookupSequence("run_all_panicked");
+
+				if (iMoveSeq >= 0)
+				{
+					if (GetSequence() != iMoveSeq)
+					{
+						ResetSequence(iMoveSeq);
+						SetCycle(0);
+					}
+
+					m_flPlaybackRate = 1.15f;
+					return;
+				}
+			}
+
+			// DEFAULT = RUN
+			iMoveSeq = LookupSequence("run_all");
+
+			if (iMoveSeq >= 0)
+			{
+				if (GetSequence() != iMoveSeq)
+				{
+					ResetSequence(iMoveSeq);
+					SetCycle(0);
+				}
+
+				m_flPlaybackRate = 0.90f;
+				return;
+			}
+		}
+
+		// Final fallback
+		BaseClass::SetAnimation(playerAnim);
+		return;
+	}
+
+	// =========================================================
+	// NORMAL HL2MP PLAYER ANIMATION HANDLING
+	// =========================================================
+	int animDesired;
 	float speed;
 
 	speed = GetAbsVelocity().Length2D();
 
-	
-	// bool bRunning = true;
-
-	//Revisit!
-/*	if ( ( m_nButtons & ( IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT ) ) )
-	{
-		if ( speed > 1.0f && speed < hl2_normspeed.GetFloat() - 20.0f )
-		{
-			bRunning = false;
-		}
-	}*/
-
-	if ( GetFlags() & ( FL_FROZEN | FL_ATCONTROLS ) )
+	if (GetFlags() & (FL_FROZEN | FL_ATCONTROLS))
 	{
 		speed = 0;
 		playerAnim = PLAYER_IDLE;
@@ -719,57 +1421,47 @@ void CHL2MP_Player::SetAnimation( PLAYER_ANIM playerAnim )
 
 	Activity idealActivity = ACT_HL2MP_RUN;
 
-	// This could stand to be redone. Why is playerAnim abstracted from activity? (sjb)
-	if ( playerAnim == PLAYER_JUMP )
+	if (playerAnim == PLAYER_JUMP)
 	{
 		idealActivity = ACT_HL2MP_JUMP;
 	}
-	else if ( playerAnim == PLAYER_DIE )
+	else if (playerAnim == PLAYER_DIE)
 	{
-		if ( m_lifeState == LIFE_ALIVE )
+		if (m_lifeState == LIFE_ALIVE)
 		{
 			return;
 		}
 	}
-	else if ( playerAnim == PLAYER_ATTACK1 )
+	else if (playerAnim == PLAYER_ATTACK1)
 	{
-		if ( GetActivity( ) == ACT_HOVER	|| 
-			 GetActivity( ) == ACT_SWIM		||
-			 GetActivity( ) == ACT_HOP		||
-			 GetActivity( ) == ACT_LEAP		||
-			 GetActivity( ) == ACT_DIESIMPLE )
+		if (GetActivity() == ACT_HOVER ||
+			GetActivity() == ACT_SWIM ||
+			GetActivity() == ACT_HOP ||
+			GetActivity() == ACT_LEAP ||
+			GetActivity() == ACT_DIESIMPLE)
 		{
-			idealActivity = GetActivity( );
+			idealActivity = GetActivity();
 		}
 		else
 		{
 			idealActivity = ACT_HL2MP_GESTURE_RANGE_ATTACK;
 		}
 	}
-	else if ( playerAnim == PLAYER_RELOAD )
+	else if (playerAnim == PLAYER_RELOAD)
 	{
 		idealActivity = ACT_HL2MP_GESTURE_RELOAD;
 	}
-	else if ( playerAnim == PLAYER_IDLE || playerAnim == PLAYER_WALK )
+	else if (playerAnim == PLAYER_IDLE || playerAnim == PLAYER_WALK)
 	{
-		if ( !( GetFlags() & FL_ONGROUND ) && GetActivity( ) == ACT_HL2MP_JUMP )	// Still jumping
+		if (!(GetFlags() & FL_ONGROUND) && GetActivity() == ACT_HL2MP_JUMP)
 		{
-			idealActivity = GetActivity( );
+			idealActivity = GetActivity();
 		}
-		/*
-		else if ( GetWaterLevel() > 1 )
-		{
-			if ( speed == 0 )
-				idealActivity = ACT_HOVER;
-			else
-				idealActivity = ACT_SWIM;
-		}
-		*/
 		else
 		{
-			if ( GetFlags() & FL_DUCKING )
+			if (GetFlags() & FL_DUCKING)
 			{
-				if ( speed > 0 )
+				if (speed > 0)
 				{
 					idealActivity = ACT_HL2MP_WALK_CROUCH;
 				}
@@ -780,18 +1472,9 @@ void CHL2MP_Player::SetAnimation( PLAYER_ANIM playerAnim )
 			}
 			else
 			{
-				if ( speed > 0 )
+				if (speed > 0)
 				{
-					/*
-					if ( bRunning == false )
-					{
-						idealActivity = ACT_WALK;
-					}
-					else
-					*/
-					{
-						idealActivity = ACT_HL2MP_RUN;
-					}
+					idealActivity = ACT_HL2MP_RUN;
 				}
 				else
 				{
@@ -800,57 +1483,44 @@ void CHL2MP_Player::SetAnimation( PLAYER_ANIM playerAnim )
 			}
 		}
 
-		idealActivity = TranslateTeamActivity( idealActivity );
+		idealActivity = TranslateTeamActivity(idealActivity);
 	}
-	
-	if ( idealActivity == ACT_HL2MP_GESTURE_RANGE_ATTACK )
+
+	if (idealActivity == ACT_HL2MP_GESTURE_RANGE_ATTACK)
 	{
-		RestartGesture( Weapon_TranslateActivity( idealActivity ) );
-
-		// FIXME: this seems a bit wacked
-		Weapon_SetActivity( Weapon_TranslateActivity( ACT_RANGE_ATTACK1 ), 0 );
-
+		RestartGesture(Weapon_TranslateActivity(idealActivity));
+		Weapon_SetActivity(Weapon_TranslateActivity(ACT_RANGE_ATTACK1), 0);
 		return;
 	}
-	else if ( idealActivity == ACT_HL2MP_GESTURE_RELOAD )
+	else if (idealActivity == ACT_HL2MP_GESTURE_RELOAD)
 	{
-		RestartGesture( Weapon_TranslateActivity( idealActivity ) );
+		RestartGesture(Weapon_TranslateActivity(idealActivity));
 		return;
 	}
 	else
 	{
-		SetActivity( idealActivity );
+		SetActivity(idealActivity);
 
-		animDesired = SelectWeightedSequence( Weapon_TranslateActivity ( idealActivity ) );
+		animDesired = SelectWeightedSequence(Weapon_TranslateActivity(idealActivity));
 
 		if (animDesired == -1)
 		{
-			animDesired = SelectWeightedSequence( idealActivity );
+			animDesired = SelectWeightedSequence(idealActivity);
 
-			if ( animDesired == -1 )
+			if (animDesired == -1)
 			{
 				animDesired = 0;
 			}
 		}
-	
-		// Already using the desired animation?
-		if ( GetSequence() == animDesired )
+
+		if (GetSequence() == animDesired)
 			return;
 
-		m_flPlaybackRate = 1.0;
-		ResetSequence( animDesired );
-		SetCycle( 0 );
+		m_flPlaybackRate = 1.0f;
+		ResetSequence(animDesired);
+		SetCycle(0);
 		return;
 	}
-
-	// Already using the desired animation?
-	if ( GetSequence() == animDesired )
-		return;
-
-	//Msg( "Set animation to %d\n", animDesired );
-	// Reset to first frame of desired animation
-	ResetSequence( animDesired );
-	SetCycle( 0 );
 }
 
 
@@ -867,6 +1537,17 @@ bool CHL2MP_Player::BumpWeapon( CBaseCombatWeapon *pWeapon )
 	// Can I have this weapon type?
 	if ( !IsAllowedToPickupWeapons() )
 		return false;
+	// ZOMBIE WEAPON RESTRICTION
+	if (GetTeamNumber() == TEAM_ZOMBIE)
+	{
+		const char* pszClass = pWeapon->GetClassname();
+
+		if (Q_stricmp(pszClass, "weapon_knife") != 0 &&
+			Q_stricmp(pszClass, "weapon_physcannon") != 0)
+		{
+			return false; // block everything else
+		}
+	}
 	// Require +use only for weapons physically lying in the world
 	if (m_lifeState == LIFE_ALIVE)
 	{
@@ -952,6 +1633,51 @@ void CHL2MP_Player::ChangeTeam( int iTeam )
 	}*/
 
 	bool bKill = false;
+
+	// always clear zombie-only abilities before any team change
+	m_bFlyMode = false;
+	m_bZombieLeapActive = false;
+	// FULL CLEANUP (NOT JUST STOP)
+	variant_t emptyVariant;
+
+	// kill particles
+	for (int i = 0; i < m_hFlyParticles.Count(); ++i)
+	{
+		CBaseEntity* pEnt = m_hFlyParticles[i].Get();
+		if (!pEnt)
+			continue;
+
+		pEnt->AcceptInput("Kill", this, this, emptyVariant, 0);
+		UTIL_Remove(pEnt);
+	}
+
+	m_hFlyParticles.RemoveAll();
+
+	// kill anchor
+	if (m_hFlyAnchor)
+	{
+		CBaseEntity* pAnchor = m_hFlyAnchor.Get();
+		if (pAnchor)
+		{
+			pAnchor->AcceptInput("KillHierarchy", this, this, emptyVariant, 0);
+			pAnchor->AcceptInput("Kill", this, this, emptyVariant, 0);
+			UTIL_Remove(pAnchor);
+		}
+
+		m_hFlyAnchor = NULL;
+	}
+
+	CBaseViewModel* vm = GetViewModel(0);
+	if (vm) vm->RemoveEffects(EF_NODRAW);
+
+	CBaseCombatWeapon* wep = GetActiveWeapon();
+	if (wep) wep->RemoveEffects(EF_NODRAW);
+
+	SetRenderMode(kRenderNormal);
+	SetRenderColor(255, 255, 255, 255);
+
+	SetCloakStatus(0);
+	SetCloakFactor(0.0f);
 
 	if ( HL2MPRules()->IsTeamplay() != true && iTeam != TEAM_SPECTATOR )
 	{
@@ -1282,6 +2008,19 @@ void CHL2MP_Player::DelayedRoundRestartThink()
 
 void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
 {
+	// SAFETY: reset crow state on death
+	m_bZombieLeapActive = false;
+	m_bFlyMode = false;
+	StopParticleEffects(this);
+	RemoveEffects(EF_NODRAW);
+	StopFlyParticle();
+
+	if (Q_stricmp(STRING(GetModelName()), "models/crow.mdl") == 0)
+	{
+		SetModel("models2/humans/group03/male_07.mdl");
+		SetupPlayerSoundsByModel("models2/humans/group03/male_07.mdl");
+	}
+
 	//update damage info with our accumulated physics force
 	CTakeDamageInfo subinfo = info;
 	subinfo.SetDamageForce( m_vecTotalBulletForce );
@@ -1333,21 +2072,32 @@ void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
 
 	m_lifeState = LIFE_DEAD;
 
-	RemoveEffects( EF_NODRAW );	// still draw player body
+	m_bZombieLeapActive = false;
+	m_bFlyMode = false;
+	StopParticleEffects(this);
+	RemoveEffects(EF_NODRAW);
+	SetRenderMode(kRenderNormal);
+	SetRenderColor(255, 255, 255, 255);
+	SetCloakStatus(0);
+	SetCloakFactor(0.0f);
 	StopZooming();
 }
 
-int CHL2MP_Player::OnTakeDamage( const CTakeDamageInfo &inputInfo )
+int CHL2MP_Player::OnTakeDamage(const CTakeDamageInfo& inputInfo)
 {
-	//return here if the player is in the respawn grace period vs. slams.
-	if ( gpGlobals->curtime < m_flSlamProtectTime &&  (inputInfo.GetDamageType() == DMG_BLAST ) )
+	// Zombies ignore fall damage
+	if (GetTeamNumber() == TEAM_ZOMBIE && (inputInfo.GetDamageType() & DMG_FALL))
+		return 0;
+
+	// return here if the player is in the respawn grace period vs. slams.
+	if (gpGlobals->curtime < m_flSlamProtectTime && (inputInfo.GetDamageType() == DMG_BLAST))
 		return 0;
 
 	m_vecTotalBulletForce += inputInfo.GetDamageForce();
-	
-	gamestats->Event_PlayerDamage( this, inputInfo );
 
-	return BaseClass::OnTakeDamage( inputInfo );
+	gamestats->Event_PlayerDamage(this, inputInfo);
+
+	return BaseClass::OnTakeDamage(inputInfo);
 }
 
 void CHL2MP_Player::DeathSound( const CTakeDamageInfo &info )
@@ -1400,6 +2150,12 @@ CBaseEntity* CHL2MP_Player::EntSelectSpawnPoint( void )
 		{
 			pSpawnpointName = "info_player_rebel";
 			pLastSpawnPoint = g_pLastRebelSpawn;
+		}
+
+		else if (GetTeamNumber() == TEAM_ZOMBIE)
+		{
+			pSpawnpointName = "info_player_zombie";
+			pLastSpawnPoint = g_pLastZombieSpawn;
 		}
 
 		if ( gEntList.FindEntityByClassname( NULL, pSpawnpointName ) == NULL )
@@ -1471,6 +2227,10 @@ ReturnSpot:
 		else if ( GetTeamNumber() == TEAM_REBELS ) 
 		{
 			g_pLastRebelSpawn = pSpot;
+		}
+		else if (GetTeamNumber() == TEAM_ZOMBIE)
+		{
+			g_pLastZombieSpawn = pSpot;
 		}
 	}
 
@@ -1678,12 +2438,29 @@ void CHL2MP_Player::State_Enter_ACTIVE()
 }
 
 
-
-
 void CHL2MP_Player::State_PreThink_ACTIVE()
 {
 	//we don't really need to do anything here. 
 	//This state_prethink structure came over from CS:S and was doing an assert check that fails the way hl2dm handles death
+}
+
+float CHL2MP_Player::MaxSpeed() const
+{
+	if (GetTeamNumber() == TEAM_ZOMBIE)
+	{
+		// ALT = SPRINT (fastest)
+		if (m_nButtons & IN_WALK)
+			return 560.0f;
+
+		// SHIFT = WALK (slow)
+		if (m_nButtons & IN_SPEED)
+			return 35.0f;
+
+		// DEFAULT RUN
+		return 260.0f;
+	}
+
+	return BaseClass::MaxSpeed();
 }
 
 //-----------------------------------------------------------------------------

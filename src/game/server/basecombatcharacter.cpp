@@ -114,6 +114,10 @@ BEGIN_DATADESC( CBaseCombatCharacter )
 	DEFINE_FIELD( m_bForceServerRagdoll, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bPreventWeaponPickup, FIELD_BOOLEAN ),
 
+	DEFINE_FIELD(m_intCloakStatus, FIELD_INTEGER),
+	DEFINE_FIELD(m_floatCloakFactor, FIELD_FLOAT),
+
+
 	DEFINE_INPUTFUNC( FIELD_VOID, "KilledNPC", InputKilledNPC ),
 
 END_DATADESC()
@@ -190,8 +194,8 @@ void *SendProxy_SendBaseCombatCharacterLocalDataTable( const SendProp *pProp, co
 REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_SendBaseCombatCharacterLocalDataTable );
 
 // Only send active weapon index to local player
-BEGIN_SEND_TABLE_NOBASE( CBaseCombatCharacter, DT_BCCLocalPlayerExclusive )
-	SendPropTime( SENDINFO( m_flNextAttack ) ),
+BEGIN_SEND_TABLE_NOBASE(CBaseCombatCharacter, DT_BCCLocalPlayerExclusive)
+SendPropTime(SENDINFO(m_flNextAttack)),
 END_SEND_TABLE();
 
 //-----------------------------------------------------------------------------
@@ -199,16 +203,21 @@ END_SEND_TABLE();
 //-----------------------------------------------------------------------------
 IMPLEMENT_SERVERCLASS_ST(CBaseCombatCharacter, DT_BaseCombatCharacter)
 #ifdef GLOWS_ENABLE
-	SendPropBool( SENDINFO( m_bGlowEnabled ) ),
-#endif // GLOWS_ENABLE
-	// Data that only gets sent to the local player.
-	SendPropDataTable( "bcc_localdata", 0, &REFERENCE_SEND_TABLE(DT_BCCLocalPlayerExclusive), SendProxy_SendBaseCombatCharacterLocalDataTable ),
+SendPropBool(SENDINFO(m_bGlowEnabled)),
+#endif
 
-	SendPropEHandle( SENDINFO( m_hActiveWeapon ) ),
-	SendPropArray3( SENDINFO_ARRAY3(m_hMyWeapons), SendPropEHandle( SENDINFO_ARRAY(m_hMyWeapons) ) ),
+// ADD THESE HERE
+SendPropInt(SENDINFO(m_intCloakStatus)),
+SendPropFloat(SENDINFO(m_floatCloakFactor)),
+
+// Data that only gets sent to the local player.
+SendPropDataTable("bcc_localdata", 0, &REFERENCE_SEND_TABLE(DT_BCCLocalPlayerExclusive), SendProxy_SendBaseCombatCharacterLocalDataTable),
+
+SendPropEHandle(SENDINFO(m_hActiveWeapon)),
+SendPropArray3(SENDINFO_ARRAY3(m_hMyWeapons), SendPropEHandle(SENDINFO_ARRAY(m_hMyWeapons))),
 
 #ifdef INVASION_DLL
-	SendPropInt( SENDINFO(m_iPowerups), MAX_POWERUPS, SPROP_UNSIGNED ), 
+SendPropInt(SENDINFO(m_iPowerups), MAX_POWERUPS, SPROP_UNSIGNED),
 #endif
 
 END_SEND_TABLE()
@@ -751,6 +760,9 @@ CBaseCombatCharacter::CBaseCombatCharacter( void )
 	m_impactEnergyScale = 1.0f;
 
 	m_bForceServerRagdoll = ai_force_serverside_ragdoll.GetBool();
+
+	m_intCloakStatus = 0;
+	m_floatCloakFactor = 0.0f;
 
 #ifdef GLOWS_ENABLE
 	m_bGlowEnabled.Set( false );

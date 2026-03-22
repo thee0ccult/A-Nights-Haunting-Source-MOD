@@ -407,6 +407,26 @@ public:
 	virtual void OnNavAreaChanged( CNavArea *enteredArea, CNavArea *leftArea ) { }	// invoked (by UpdateLastKnownArea) when we enter a new nav area (or it is reset to NULL)
 	virtual void OnNavAreaRemoved( CNavArea *removedArea );
 
+	// ---------------
+	// zombie cloak
+	// ---------------
+	CNetworkVar(int, m_intCloakStatus);
+	CNetworkVar(float, m_floatCloakFactor);
+
+	int GetCloakStatus(void) { return m_intCloakStatus; }
+	void SetCloakStatus(int cloakstatus)
+	{
+		SetTransmitState(FL_EDICT_ALWAYS);
+		m_intCloakStatus = cloakstatus;
+	}
+
+	float GetCloakFactor(void) { return m_floatCloakFactor; }
+	void SetCloakFactor(float cloakfactor)
+	{
+		SetTransmitState(FL_EDICT_ALWAYS);
+		m_floatCloakFactor = clamp(cloakfactor, 0.0f, 1.0f);
+	}
+
 	// -----------------------
 	// Notification from INextBots.
 	// -----------------------
