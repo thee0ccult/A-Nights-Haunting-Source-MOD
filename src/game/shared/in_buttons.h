@@ -39,5 +39,6 @@
 #define	IN_ATTACK3		(1 << 25)
 #define IN_DROP			(1 << 26) // Weapon drop system.
 #define IN_FLY			(1 << 27) // fly system.
+#define IN_HEALTHVISION (1 << 28) //healthvision
 
 #endif // IN_BUTTONS_H

@@ -18,6 +18,7 @@
 #include "materialsystem/imesh.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imaterialvar.h"
+#include "renderparm.h"
 
 // Don't alias here
 #if defined( CHL2MP_Player )
@@ -32,7 +33,7 @@ RecvPropFloat(RECVINFO(m_angEyeAngles[1])),
 RecvPropEHandle(RECVINFO(m_hRagdoll)),
 RecvPropInt(RECVINFO(m_iSpawnInterpCounter)),
 RecvPropInt(RECVINFO(m_iPlayerSoundType)),
-
+RecvPropBool(RECVINFO(m_bHealthVisionActive)),
 RecvPropBool(RECVINFO(m_fIsWalking)),
 END_RECV_TABLE()
 
@@ -50,6 +51,9 @@ static ConVar cl_fp_ragdoll("cl_fp_ragdoll", "1", FCVAR_ARCHIVE, "Allow first pe
 static ConVar cl_fp_ragdoll_auto("cl_fp_ragdoll_auto", "1", FCVAR_ARCHIVE, "Autoswitch to ragdoll thirdperson-view when necessary");
 
 void SpawnBlood(Vector vecSpot, const Vector& vecDir, int bloodColor, float flDamage);
+
+static IMaterial* GetHealthVisionMaterial();
+static void GetHealthVisionColor(C_HL2MP_Player* pTarget, float& r, float& g, float& b);
 
 C_HL2MP_Player::C_HL2MP_Player() : m_PlayerAnimState(this), m_iv_angEyeAngles("C_HL2MP_Player::m_iv_angEyeAngles")
 {
@@ -179,6 +183,21 @@ CStudioHdr* C_HL2MP_Player::OnNewModel(void)
  */
 void C_HL2MP_Player::UpdateLookAt(void)
 {
+		if (GetTeamNumber() == TEAM_ZOMBIE && GetCloakFactor() > 0.01f)
+		{
+			m_viewtarget = vec3_origin;
+			m_blinktoggle = false;
+			m_flCurrentHeadYaw = 0.0f;
+			m_flCurrentHeadPitch = 0.0f;
+
+			if (m_headYawPoseParam >= 0)
+				SetPoseParameter(m_headYawPoseParam, 0.0f);
+
+			if (m_headPitchPoseParam >= 0)
+				SetPoseParameter(m_headPitchPoseParam, 0.0f);
+
+			return;
+		}
 	// head yaw
 	if (m_headYawPoseParam < 0 || m_headPitchPoseParam < 0)
 		return;
@@ -270,6 +289,72 @@ void C_HL2MP_Player::ClientThink(void)
 	UpdateIDTarget();
 }
 
+bool C_HL2MP_Player::UsesFlexDelayedWeights()
+{
+	// Disable ALL facial / eye systems when cloaked
+	if (GetTeamNumber() == TEAM_ZOMBIE && GetCloakFactor() > 0.01f)
+		return false;
+
+	return BaseClass::UsesFlexDelayedWeights();
+}
+
+static IMaterial* GetZombieEyeMaterial(int index)
+{
+	static bool bInitialized = false;
+	static IMaterial* s_pMaterials[10];
+
+	if (!bInitialized)
+	{
+		const char* pszMats[10] =
+		{
+			"models/humans/male/shared/dark_eyeball_l",
+			"models/humans/male/shared/dark_eyeball_r",
+			"models/humans/male/shared/eyeball_l",
+			"models/humans/male/shared/eyeball_r",
+			"models/humans/male/shared/glint",
+			"models/humans/male/shared/grn_pupil_l",
+			"models/humans/male/shared/grn_pupil_r",
+			"models/humans/male/shared/mouth",
+			"models/humans/male/shared/pupil_l",
+			"models/humans/male/shared/pupil_r"
+		};
+
+		for (int i = 0; i < 10; ++i)
+		{
+			s_pMaterials[i] = materials->FindMaterial(pszMats[i], TEXTURE_GROUP_MODEL, false);
+
+			if (s_pMaterials[i] && s_pMaterials[i]->IsErrorMaterial())
+			{
+				s_pMaterials[i] = NULL;
+			}
+		}
+
+		bInitialized = true;
+	}
+
+	if (index < 0 || index >= 10)
+		return NULL;
+
+	return s_pMaterials[index];
+}
+
+static void SetZombieEyeMaterialCloak(float flCloak)
+{
+	for (int i = 0; i < 10; ++i)
+	{
+		IMaterial* pMat = GetZombieEyeMaterial(i);
+		if (!pMat)
+			continue;
+
+		bool bFound = false;
+		IMaterialVar* pVar = pMat->FindVar("$cloakfactor", &bFound, false);
+		if (pVar && bFound)
+		{
+			pVar->SetFloatValue(flCloak);
+		}
+	}
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
@@ -283,6 +368,9 @@ int C_HL2MP_Player::DrawModel(int flags)
 
 		if (cloak > 0.01f)
 		{
+			// Make sure the eye / pupil / mouth materials also receive the same cloak factor
+			SetZombieEyeMaterialCloak(cloak);
+
 			IMaterial* pCloakMaterial = materials->FindMaterial(
 				"models/humans/male/group03/citizen_sheet_cloak",
 				TEXTURE_GROUP_MODEL,
@@ -298,16 +386,74 @@ int C_HL2MP_Player::DrawModel(int flags)
 					pVar->SetFloatValue(cloak);
 				}
 
+				SetRenderMode(kRenderTransColor);
+				SetRenderColorA((1.0f - cloak) * 200);
+
 				modelrender->ForcedMaterialOverride(pCloakMaterial);
-				const int ret = BaseClass::DrawModel(flags);
+
+				int ret = BaseClass::DrawModel(flags);
+
 				modelrender->ForcedMaterialOverride(NULL);
+
+				// Restore shared eye materials so other players/models don't inherit cloak
+				SetZombieEyeMaterialCloak(0.0f);
+
 				return ret;
 			}
+
+			// Safety restore
+			SetZombieEyeMaterialCloak(0.0f);
+		}
+		else
+		{
+			// Ensure eye materials are normal when not cloaked
+			SetZombieEyeMaterialCloak(0.0f);
 		}
 	}
 
-	const int ret = BaseClass::DrawModel(flags);
+	int ret = BaseClass::DrawModel(flags);
 	modelrender->ForcedMaterialOverride(NULL);
+	C_HL2MP_Player* pLocal = C_HL2MP_Player::GetLocalHL2MPPlayer();
+
+	if (pLocal &&
+		pLocal->IsAlive() &&
+		pLocal->GetTeamNumber() == TEAM_ZOMBIE &&
+		pLocal->m_bHealthVisionActive &&
+		this != pLocal &&
+		this->IsAlive() &&
+		this->GetTeamNumber() != TEAM_ZOMBIE)
+	{
+		IMaterial* mat = GetHealthVisionMaterial();
+
+		if (mat && !mat->IsErrorMaterial())
+		{
+			float r, g, b;
+			GetHealthVisionColor(this, r, g, b);
+
+			float color[3] = { r, g, b };
+			render->SetColorModulation(color);
+			float dist = (GetAbsOrigin() - pLocal->GetAbsOrigin()).Length();
+
+			// tweak these values to taste
+			const float maxDist = 2000.0f;
+			float alpha = 1.0f - (dist / maxDist);
+			alpha = clamp(alpha, 0.1f, 1.0f);
+
+			render->SetBlend(alpha);
+
+			modelrender->ForcedMaterialOverride(mat);
+
+			BaseClass::DrawModel(flags);
+
+			modelrender->ForcedMaterialOverride(NULL);
+
+			float white[3] = { 1.f, 1.f, 1.f };
+			render->SetColorModulation(white);
+
+			// draw normal model on top
+			return BaseClass::DrawModel(flags);
+		}
+	}
 	return ret;
 }
 
@@ -1097,25 +1243,73 @@ void C_HL2MP_Player::SetupWeights(
 	float* pFlexWeights,
 	float* pFlexDelayedWeights)
 {
-	// Zombie uses citizen head/eye materials.
-	// Never let base facial / eyeball code run for zombie.
-	if (GetTeamNumber() == TEAM_ZOMBIE)
+	// =========================
+	// CLOAK: HARD DISABLE FACE
+	// =========================
+	if (GetTeamNumber() == TEAM_ZOMBIE && GetCloakFactor() > 0.01f)
 	{
+		// kill flex weights safely
 		if (pFlexWeights && nFlexWeightCount > 0)
 		{
 			Q_memset(pFlexWeights, 0, nFlexWeightCount * sizeof(float));
 		}
 
+		// kill delayed flex safely
 		if (pFlexDelayedWeights && nFlexWeightCount > 0)
 		{
 			Q_memset(pFlexDelayedWeights, 0, nFlexWeightCount * sizeof(float));
 		}
 
+		// disable eye system completely
+		m_iEyeAttachment = -1;
 		m_viewtarget = vec3_origin;
 		m_blinktoggle = false;
 
 		return;
 	}
 
+	// normal behavior
 	BaseClass::SetupWeights(pBoneToWorld, nFlexWeightCount, pFlexWeights, pFlexDelayedWeights);
+}
+
+static IMaterial* GetHealthVisionMaterial()
+{
+	static IMaterial* s_pMat = NULL;
+
+	if (s_pMat)
+		return s_pMat;
+
+	KeyValues* kv = new KeyValues("VertexLitGeneric");
+	kv->SetString("$basetexture", "vgui/white_additive");
+	kv->SetInt("$model", 1);
+	kv->SetInt("$ignorez", 1); // <<< THROUGH WALLS
+	kv->SetInt("$znearer", 0);
+	kv->SetInt("$selfillum", 1);
+	kv->SetInt("$halflambert", 1);
+	kv->SetInt("$flat", 1);
+
+	s_pMat = materials->CreateMaterial("__nh_healthvision", kv);
+
+	return s_pMat;
+}
+
+static void GetHealthVisionColor(C_HL2MP_Player* pTarget, float& r, float& g, float& b)
+{
+	int hp = MAX(0, pTarget->GetHealth());
+
+	// FIX: HL2MP doesn't reliably use GetMaxHealth()
+	const float frac = clamp((float)hp / 100.0f, 0.0f, 1.0f);
+
+	if (frac > 0.66f)
+	{
+		r = 0.f; g = 1.f; b = 0.f; // GREEN
+	}
+	else if (frac > 0.33f)
+	{
+		r = 1.f; g = 0.5f; b = 0.f; // ORANGE
+	}
+	else
+	{
+		r = 1.f; g = 0.f; b = 0.f; // RED
+	}
 }

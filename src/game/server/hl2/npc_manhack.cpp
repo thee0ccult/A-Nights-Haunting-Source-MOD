@@ -126,6 +126,7 @@ enum ManhackTasks
 
 BEGIN_DATADESC( CNPC_Manhack )
 
+	DEFINE_FIELD(m_hZombieOwner, FIELD_EHANDLE),
 	DEFINE_FIELD( m_vForceVelocity,			FIELD_VECTOR),
 
 	DEFINE_FIELD( m_vTargetBanking,			FIELD_VECTOR),

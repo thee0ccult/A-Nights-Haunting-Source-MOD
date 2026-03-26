@@ -1539,6 +1539,30 @@ void CHL2MPRules::InitDefaultAIRelationships(void)
 	CBaseCombatCharacter::SetDefaultRelationship(CLASS_BULLSQUID,			CLASS_PLAYER_ALLY_VITAL,D_HT, 0);
 	CBaseCombatCharacter::SetDefaultRelationship(CLASS_BULLSQUID,			CLASS_HACKED_ROLLERMINE,D_HT, 0);
 	*/
+
+	// ========================================
+// ZOMBIE PLAYER FACTION
+// ========================================
+
+// Zombie player vs humans
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_ZOMBIE_PLAYER, CLASS_PLAYER, D_HT, 0);
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_PLAYER, CLASS_ZOMBIE_PLAYER, D_HT, 0);
+
+	// Rebel / Combine explicitly
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_ZOMBIE_PLAYER, CLASS_CITIZEN_REBEL, D_HT, 0);
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_ZOMBIE_PLAYER, CLASS_COMBINE, D_HT, 0);
+
+	// Zombie NPCs ignore zombie player
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_ZOMBIE, CLASS_ZOMBIE_PLAYER, D_LI, 0);
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_ZOMBIE_PLAYER, CLASS_ZOMBIE, D_LI, 0);
+
+	// Manhack behavior
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_MANHACK, CLASS_ZOMBIE_PLAYER, D_LI, 0);
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_ZOMBIE_PLAYER, CLASS_MANHACK, D_LI, 0);
+
+	// Manhack attacks humans
+	CBaseCombatCharacter::SetDefaultRelationship(CLASS_MANHACK, CLASS_PLAYER, D_HT, 0);
+
 	// ------------------------------------------------------------
 	//	> CLASS_CITIZEN_PASSIVE
 	// ------------------------------------------------------------

@@ -170,6 +170,7 @@ public:
 		m_iHealth = 0;
 	}
 
+	EHANDLE m_hZombieOwner;
 
 	DEFINE_CUSTOM_AI;
 

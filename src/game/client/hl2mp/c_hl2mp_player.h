@@ -63,6 +63,7 @@ public:
 	virtual const QAngle& EyeAngles(void);
 	virtual void PostThink(void);
 
+	virtual bool UsesFlexDelayedWeights();
 	virtual void SetupWeights(
 		const matrix3x4_t* pBoneToWorld,
 		int nFlexWeightCount,
@@ -86,6 +87,7 @@ public:
 	void StartWalking(void);
 	void StopWalking(void);
 	bool IsWalking(void) { return m_fIsWalking; }
+	bool m_bHealthVisionActive;
 
 private:
 	C_HL2MP_Player(const C_HL2MP_Player&);

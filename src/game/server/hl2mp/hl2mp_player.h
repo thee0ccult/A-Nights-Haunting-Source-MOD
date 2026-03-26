@@ -76,7 +76,11 @@ public:
 	virtual void UpdateOnRemove( void );
 	virtual void DeathSound( const CTakeDamageInfo &info );
 	virtual CBaseEntity* EntSelectSpawnPoint( void );
-		
+	
+	virtual Class_T Classify(void);
+
+	void ThrowZombieManhack();
+
 	int FlashlightIsOn( void );
 	void FlashlightTurnOn( void );
 	void FlashlightTurnOff( void );
@@ -172,6 +176,8 @@ private:
 	float m_flNextLeapTime; // zombie leap cooldown
 	bool m_bFlyMode;
 
+	float m_flNextZombieManhackTime; //crow throw zombie 
+	CNetworkVar(bool, m_bHealthVisionActive);
 	float m_flSlamProtectTime;	
 
 	HL2MPPlayerState m_iPlayerState;

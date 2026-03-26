@@ -24,6 +24,7 @@
 #include "particle_parse.h"
 #include "utlvector.h"
 #include "baseentity.h"
+#include "npc_manhack.h"
 
 #include "engine/IEngineSound.h"
 #include "SoundEmitterSystem/isoundemittersystembase.h"
@@ -63,6 +64,8 @@ IMPLEMENT_SERVERCLASS_ST(CHL2MP_Player, DT_HL2MP_Player)
 	SendPropInt( SENDINFO( m_iSpawnInterpCounter), 4 ),
 	SendPropInt( SENDINFO( m_iPlayerSoundType), 3 ),
 	
+	SendPropBool(SENDINFO(m_bHealthVisionActive)),// health vision zombie
+
 	SendPropExclude( "DT_BaseAnimating", "m_flPoseParameter" ),
 	SendPropExclude( "DT_BaseFlex", "m_viewtarget" ),
 
@@ -127,7 +130,11 @@ CHL2MP_Player::CHL2MP_Player() : m_PlayerAnimState( this )
 	m_bZombieLeapActive = false;// zombie leap
 	m_flNextCrowSound = 0.0f;
 	m_bFlyMode = false;
+	m_flNextZombieManhackTime = 0.0f; //crow throw
+
 	m_hFlyAnchor = NULL;
+
+	m_bHealthVisionActive = false; //health vision
 
 	m_iSpawnInterpCounter = 0;
 
@@ -146,6 +153,9 @@ CHL2MP_Player::~CHL2MP_Player( void )
 
 void CHL2MP_Player::UpdateOnRemove(void)
 {
+
+	m_flNextZombieManhackTime = 0.0f;
+
 	variant_t emptyVariant;
 
 	StopFlyParticle();
@@ -187,8 +197,10 @@ void CHL2MP_Player::UpdateOnRemove(void)
 void CHL2MP_Player::Precache(void)
 {
 	BaseClass::Precache();
-
-	PrecacheParticleSystem("flies_large");
+	// disabled flies particles
+	// PrecacheParticleSystem("flies_large");
+	UTIL_PrecacheOther("npc_manhack"); //crow throw
+	PrecacheScriptSound("NPC_MetroPolice.DeployManhack");
 
 	PrecacheModel("sprites/glow01.vmt");
 
@@ -384,6 +396,8 @@ void CHL2MP_Player::Spawn(void)
 {
 	m_flNextModelChangeTime = 0.0f;
 	m_flNextTeamChangeTime = 0.0f;
+	m_flNextZombieManhackTime = gpGlobals->curtime + 1.0f; //crow throw
+
 
 	PickDefaultSpawnTeam();
 
@@ -418,7 +432,7 @@ void CHL2MP_Player::Spawn(void)
 	m_Local.m_bDucked = false;
 
 	SetPlayerUnderwater(false);
-
+	m_bHealthVisionActive = false; //health vision
 	m_bReady = false;
 	m_bFlyMode = false;
 	StopFlyParticle();
@@ -749,6 +763,7 @@ void CHL2MP_Player::UpdateZombieCloak()
 
 void CHL2MP_Player::StartFlyParticle()
 {
+
 	if (GetTeamNumber() != TEAM_ZOMBIE)
 		return;
 
@@ -1040,35 +1055,56 @@ void CHL2MP_Player::PreThink(void)
 	}
 	else
 	{
-		// Toggle fly particle mode (ZOMBIES ONLY)
+		// Toggle fly particle mode (ZOMBIES ONLY) disabled for now
 		if ((m_afButtonPressed & IN_FLY) && !m_bZombieLeapActive)
 		{
 			m_bFlyMode = !m_bFlyMode;
 
 			if (m_bFlyMode)
 			{
+				// Cloak ON (KEEP THIS)
 				CBaseViewModel* vm = GetViewModel(0);
 				if (vm) vm->AddEffects(EF_NODRAW);
 
 				CBaseCombatWeapon* wep = GetActiveWeapon();
 				if (wep) wep->AddEffects(EF_NODRAW);
 
-				StopFlyParticle();
-				StartFlyParticle();
+				// REMOVE PARTICLES
+				// StopFlyParticle();
+				// StartFlyParticle();
 			}
 			else
 			{
 				m_bFlyMode = false;
-				StopFlyParticle();
 
+				// REMOVE PARTICLES
+				// StopFlyParticle();
+
+				// Restore weapon/viewmodel
 				CBaseViewModel* vm = GetViewModel(0);
 				if (vm) vm->RemoveEffects(EF_NODRAW);
 
 				CBaseCombatWeapon* wep = GetActiveWeapon();
 				if (wep) wep->RemoveEffects(EF_NODRAW);
-
 			}
 		}
+	}
+
+	// ============================
+	// HEALTH VISION (ZOMBIE ONLY)
+	// ============================
+	if (GetTeamNumber() == TEAM_ZOMBIE)
+	{
+		if (m_afButtonPressed & IN_HEALTHVISION)
+		{
+			m_bHealthVisionActive = !m_bHealthVisionActive;
+
+			EmitSound(m_bHealthVisionActive ? "HL2Player.FlashlightOn" : "HL2Player.FlashlightOff");
+		}
+	}
+	else
+	{
+		m_bHealthVisionActive = false;
 	}
 
 	// hard safety: if fly mode is off, no fly particles are allowed to exist
@@ -1637,6 +1673,8 @@ void CHL2MP_Player::ChangeTeam( int iTeam )
 	// always clear zombie-only abilities before any team change
 	m_bFlyMode = false;
 	m_bZombieLeapActive = false;
+	m_flNextZombieManhackTime = 0.0f; //crow throw
+	m_bHealthVisionActive = false; //health vision
 	// FULL CLEANUP (NOT JUST STOP)
 	variant_t emptyVariant;
 
@@ -1764,6 +1802,12 @@ bool CHL2MP_Player::HandleCommand_JoinTeam( int team )
 
 bool CHL2MP_Player::ClientCommand( const CCommand &args )
 {
+	if (FStrEq(args[0], "zombie_manhack"))
+	{
+		ThrowZombieManhack(); // ONLY CALL THIS
+		return true;
+	}
+
 	if ( FStrEq( args[0], "spectate" ) )
 	{
 		if ( ShouldRunRateLimitedCommand( args ) )
@@ -2014,6 +2058,8 @@ void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
 	StopParticleEffects(this);
 	RemoveEffects(EF_NODRAW);
 	StopFlyParticle();
+	m_bHealthVisionActive = false;
+	m_flNextZombieManhackTime = 0.0f; //crow throw
 
 	if (Q_stricmp(STRING(GetModelName()), "models/crow.mdl") == 0)
 	{
@@ -2069,7 +2115,6 @@ void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
 	}
 
 	FlashlightTurnOff();
-
 	m_lifeState = LIFE_DEAD;
 
 	m_bZombieLeapActive = false;
@@ -2085,6 +2130,12 @@ void CHL2MP_Player::Event_Killed( const CTakeDamageInfo &info )
 
 int CHL2MP_Player::OnTakeDamage(const CTakeDamageInfo& inputInfo)
 {
+	// ensure manhack damage works
+	if (inputInfo.GetAttacker() && inputInfo.GetAttacker()->Classify() == CLASS_MANHACK)
+	{
+		// allow full damage
+		return BaseClass::OnTakeDamage(inputInfo);
+	}
 	// Zombies ignore fall damage
 	if (GetTeamNumber() == TEAM_ZOMBIE && (inputInfo.GetDamageType() & DMG_FALL))
 		return 0;
@@ -2461,6 +2512,119 @@ float CHL2MP_Player::MaxSpeed() const
 	}
 
 	return BaseClass::MaxSpeed();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Classify zombie team players separately
+//-----------------------------------------------------------------------------
+Class_T CHL2MP_Player::Classify(void)
+{
+	if (GetTeamNumber() == TEAM_ZOMBIE)
+		return CLASS_ZOMBIE_PLAYER;
+
+	return BaseClass::Classify();
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Spawn and throw a manhack forward
+//-----------------------------------------------------------------------------
+void CHL2MP_Player::ThrowZombieManhack()
+{
+	int liveCount = 0;
+	CBaseEntity* pScan = NULL;
+
+	while ((pScan = gEntList.FindEntityByClassname(pScan, "npc_manhack")) != NULL)
+	{
+		if (pScan->IsMarkedForDeletion())
+			continue;
+
+		if (!pScan->IsAlive())
+			continue;
+
+		CNPC_Manhack* pOwnedManhack = assert_cast<CNPC_Manhack*>(pScan);
+		if (!pOwnedManhack)
+			continue;
+
+		if (pOwnedManhack->m_hZombieOwner == this)
+		{
+			liveCount++;
+		}
+	}
+
+	if (liveCount >= 3)
+	{
+		ClientPrint(this, HUD_PRINTCENTER, "Max Manhacks Reached (3)");
+		EmitSound("Weapon_SMG1.Empty");
+		return;
+	}
+
+	if (!BaseClass::IsAlive())
+		return;
+
+	if (GetTeamNumber() != TEAM_ZOMBIE)
+		return;
+
+	if (gpGlobals->curtime < m_flNextZombieManhackTime)
+		return;
+
+	if (m_bZombieLeapActive)
+		return;
+
+	Vector forward;
+	AngleVectors(QAngle(0, EyeAngles().y, 0), &forward);
+
+	Vector vecSrc = EyePosition() + forward * 40.0f + Vector(0, 0, -6.0f);
+	QAngle angSpawn(0, EyeAngles().y, 0);
+
+	trace_t tr;
+	UTIL_TraceHull(
+		EyePosition(),
+		vecSrc,
+		Vector(-16, -16, -16),
+		Vector(16, 16, 16),
+		MASK_SOLID,
+		this,
+		COLLISION_GROUP_NONE,
+		&tr
+	);
+
+	vecSrc = tr.endpos;
+
+	CBaseEntity* pEnt = CreateEntityByName("npc_manhack");
+	if (!pEnt)
+		return;
+
+	pEnt->SetAbsOrigin(vecSrc);
+	pEnt->SetAbsAngles(angSpawn);
+
+	DispatchSpawn(pEnt);
+	pEnt->Activate();
+
+	CNPC_Manhack* pManhack = assert_cast<CNPC_Manhack*>(pEnt);
+	if (pManhack)
+	{
+		pManhack->SetHealth(30);
+		pManhack->SetMaxHealth(30);
+		pManhack->StartEngine(false);
+		pManhack->Wake();
+
+		pManhack->m_hZombieOwner = this;
+
+		pManhack->SetSolid(SOLID_BBOX);
+		pManhack->SetCollisionGroup(COLLISION_GROUP_NPC);
+		pManhack->SetHullSizeNormal();
+		pManhack->SetBloodColor(BLOOD_COLOR_MECH);
+		pManhack->m_takedamage = DAMAGE_YES;
+		pManhack->RemoveSolidFlags(FSOLID_NOT_SOLID);
+	}
+
+	Vector vecVel = forward * 250.0f + Vector(0, 0, 80.0f);
+	pEnt->SetAbsVelocity(vecVel);
+
+	EmitSound("NPC_MetroPolice.DeployManhack");
+
+	m_flNextZombieManhackTime = gpGlobals->curtime + 8.0f;
 }
 
 //-----------------------------------------------------------------------------
