@@ -138,7 +138,6 @@ public:
 
 	virtual float MaxSpeed() const;
 
-	float m_flAttackAnimEndTime;
 	bool  m_bZombieLeapActive;
 	bool m_bWallClimbing;
 	Vector m_vecClimbNormal;

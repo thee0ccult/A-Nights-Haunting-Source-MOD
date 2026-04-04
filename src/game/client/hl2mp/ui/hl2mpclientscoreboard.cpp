@@ -25,15 +25,16 @@
 
 using namespace vgui;
 
-#define TEAM_MAXCOUNT			5
+#define TEAM_MAXCOUNT			6
 
 // id's of sections used in the scoreboard
 enum EScoreboardSections
 {
 	SCORESECTION_COMBINE = 1,
 	SCORESECTION_REBELS = 2,
-	SCORESECTION_FREEFORALL = 3,
-	SCORESECTION_SPECTATOR = 4
+	SCORESECTION_ZOMBIE = 3,
+	SCORESECTION_FREEFORALL = 4,
+	SCORESECTION_SPECTATOR = 5
 };
 
 const int NumSegments = 7;
@@ -332,11 +333,11 @@ void CHL2MPClientScoreBoardDialog::InitScoreboardSections()
 	// fill out the structure of the scoreboard
 	AddHeader();
 
-	if ( HL2MPRules()->IsTeamplay() )
+	if (HL2MPRules()->IsTeamplay())
 	{
-		// add the team sections
-		AddSection( TYPE_TEAM, TEAM_COMBINE );
-		AddSection( TYPE_TEAM, TEAM_REBELS );
+		AddSection(TYPE_TEAM, TEAM_COMBINE);
+		AddSection(TYPE_TEAM, TEAM_REBELS);
+		AddSection(TYPE_TEAM, TEAM_ZOMBIE);
 	}
 	else
 	{
@@ -493,20 +494,25 @@ void CHL2MPClientScoreBoardDialog::AddSection(int teamType, int teamNumber)
 	}
 }
 
-int CHL2MPClientScoreBoardDialog::GetSectionFromTeamNumber( int teamNumber )
+int CHL2MPClientScoreBoardDialog::GetSectionFromTeamNumber(int teamNumber)
 {
-	switch ( teamNumber )
+	switch (teamNumber)
 	{
 	case TEAM_COMBINE:
 		return SCORESECTION_COMBINE;
+
 	case TEAM_REBELS:
 		return SCORESECTION_REBELS;
+
+	case TEAM_ZOMBIE:
+		return SCORESECTION_ZOMBIE;
+
 	case TEAM_SPECTATOR:
 		return SCORESECTION_SPECTATOR;
+
 	default:
 		return SCORESECTION_FREEFORALL;
 	}
-	return SCORESECTION_FREEFORALL;
 }
 
 //-----------------------------------------------------------------------------

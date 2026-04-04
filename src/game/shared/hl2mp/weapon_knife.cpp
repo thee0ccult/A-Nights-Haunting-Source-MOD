@@ -14,12 +14,12 @@
 #include "in_buttons.h"
 #include "vstdlib/random.h"
 #include "npcevent.h"
-#include "baseplayer_shared.h"
+
 #if defined( CLIENT_DLL )
-	#include "c_hl2mp_player.h"
+#include "c_hl2mp_player.h"
 #else
-	#include "hl2mp_player.h"
-	#include "ai_basenpc.h"
+#include "hl2mp_player.h"
+#include "ai_basenpc.h"
 #endif
 
 
@@ -31,19 +31,19 @@
 
 
 //-----------------------------------------------------------------------------
-// CWeaponShovel
+// CWeaponKnife
 //-----------------------------------------------------------------------------
 
-IMPLEMENT_NETWORKCLASS_ALIASED( WeaponKnife, DT_WeaponKnife)
+IMPLEMENT_NETWORKCLASS_ALIASED(WeaponKnife, DT_WeaponKnife)
 
-BEGIN_NETWORK_TABLE( CWeaponKnife, DT_WeaponKnife)
+BEGIN_NETWORK_TABLE(CWeaponKnife, DT_WeaponKnife)
 END_NETWORK_TABLE()
 
-BEGIN_PREDICTION_DATA( CWeaponKnife)
+BEGIN_PREDICTION_DATA(CWeaponKnife)
 END_PREDICTION_DATA()
 
-LINK_ENTITY_TO_CLASS( weapon_knife, CWeaponKnife);
-PRECACHE_WEAPON_REGISTER( weapon_knife);
+LINK_ENTITY_TO_CLASS(weapon_knife, CWeaponKnife);
+PRECACHE_WEAPON_REGISTER(weapon_knife);
 
 #ifndef CLIENT_DLL
 
@@ -61,7 +61,6 @@ acttable_t	CWeaponKnife::m_acttable[] =
 	{ ACT_MELEE_ATTACK1, ACT_MELEE_ATTACK_SWING, true },
 	{ ACT_IDLE, ACT_IDLE_ANGRY_MELEE, false },
 	{ ACT_IDLE_ANGRY, ACT_IDLE_ANGRY_MELEE, false },
-
 };
 
 IMPLEMENT_ACTTABLE(CWeaponKnife);
@@ -71,54 +70,8 @@ IMPLEMENT_ACTTABLE(CWeaponKnife);
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-CWeaponKnife::CWeaponKnife( void )
+CWeaponKnife::CWeaponKnife(void)
 {
-}
-
-void CWeaponKnife::PrimaryAttack()
-{
-	CBasePlayer* pOwner = ToBasePlayer(GetOwner());
-	if (!pOwner)
-		return;
-
-	// Always play animation (both client + server)
-	pOwner->SetAnimation(PLAYER_ATTACK1);
-
-#ifndef CLIENT_DLL
-
-	// SERVER SIDE DAMAGE ONLY
-	Vector forward;
-	pOwner->EyeVectors(&forward);
-
-	Vector start = pOwner->Weapon_ShootPosition();
-	Vector end = start + forward * GetRange();
-
-	trace_t tr;
-	UTIL_TraceHull(start, end,
-		Vector(-16, -16, -16),
-		Vector(16, 16, 16),
-		MASK_SHOT_HULL,
-		pOwner,
-		COLLISION_GROUP_NONE,
-		&tr);
-
-	if (tr.m_pEnt)
-	{
-		CTakeDamageInfo info(this, pOwner, GetDamageForActivity(GetActivity()), DMG_CLUB);
-		tr.m_pEnt->TakeDamage(info);
-
-		WeaponSound(MELEE_HIT);
-	}
-	else
-	{
-		WeaponSound(MELEE_MISS);
-	}
-
-#endif
-
-	AddViewKick();
-
-	m_flNextPrimaryAttack = gpGlobals->curtime + GetFireRate();
 }
 
 //-----------------------------------------------------------------------------
@@ -126,7 +79,7 @@ void CWeaponKnife::PrimaryAttack()
 // Input  : hitActivity - currently played activity
 // Output : Damage amount
 //-----------------------------------------------------------------------------
-float CWeaponKnife::GetDamageForActivity( Activity hitActivity )
+float CWeaponKnife::GetDamageForActivity(Activity hitActivity)
 {
 	return 16.0f;
 }
@@ -134,67 +87,66 @@ float CWeaponKnife::GetDamageForActivity( Activity hitActivity )
 //-----------------------------------------------------------------------------
 // Purpose: Add in a view kick for this weapon
 //-----------------------------------------------------------------------------
-void CWeaponKnife::AddViewKick( void )
+void CWeaponKnife::AddViewKick(void)
 {
-	CBasePlayer *pPlayer  = ToBasePlayer( GetOwner() );
-	
-	if ( pPlayer == NULL )
+	CBasePlayer* pPlayer = ToBasePlayer(GetOwner());
+
+	if (pPlayer == NULL)
 		return;
 
 	QAngle punchAng;
 
-	punchAng.x = SharedRandomFloat( "crowbarpax", 1.0f, 2.0f );
-	punchAng.y = SharedRandomFloat( "crowbarpay", -2.0f, -1.0f );
+	punchAng.x = SharedRandomFloat("crowbarpax", 1.0f, 2.0f);
+	punchAng.y = SharedRandomFloat("crowbarpay", -2.0f, -1.0f);
 	punchAng.z = 0.0f;
-	
-	pPlayer->ViewPunch( punchAng ); 
-}
 
+	pPlayer->ViewPunch(punchAng);
+}
 
 #ifndef CLIENT_DLL
 
 //-----------------------------------------------------------------------------
 // Attempt to lead the target (needed because citizens can't hit manhacks with the crowbar!)
 //-----------------------------------------------------------------------------
-ConVar sk_knife_lead_time( "sk_knife_lead_time", "0.9" );
+ConVar sk_knife_lead_time("sk_knife_lead_time", "0.9");
 
-int CWeaponKnife::WeaponMeleeAttack1Condition( float flDot, float flDist )
+int CWeaponKnife::WeaponMeleeAttack1Condition(float flDot, float flDist)
 {
 	// Attempt to lead the target (needed because citizens can't hit manhacks with the crowbar!)
-	CAI_BaseNPC *pNPC	= GetOwner()->MyNPCPointer();
-	CBaseEntity *pEnemy = pNPC->GetEnemy();
+	CAI_BaseNPC* pNPC = GetOwner()->MyNPCPointer();
+	CBaseEntity* pEnemy = pNPC->GetEnemy();
 	if (!pEnemy)
 		return COND_NONE;
 
 	Vector vecVelocity;
-	vecVelocity = pEnemy->GetSmoothedVelocity( );
+	vecVelocity = pEnemy->GetSmoothedVelocity();
 
 	// Project where the enemy will be in a little while
 	float dt = sk_knife_lead_time.GetFloat();
 	dt += random->RandomFloat(-0.3f, 0.2f);
-	if ( dt < 0.0f )
+	if (dt < 0.0f)
 		dt = 0.0f;
 
 	Vector vecExtrapolatedPos;
-	VectorMA( pEnemy->WorldSpaceCenter(), dt, vecVelocity, vecExtrapolatedPos );
+	VectorMA(pEnemy->WorldSpaceCenter(), dt, vecVelocity, vecExtrapolatedPos);
 
 	Vector vecDelta;
-	VectorSubtract( vecExtrapolatedPos, pNPC->WorldSpaceCenter(), vecDelta );
+	VectorSubtract(vecExtrapolatedPos, pNPC->WorldSpaceCenter(), vecDelta);
 
-	if ( fabs( vecDelta.z ) > 70 )
+	if (fabs(vecDelta.z) > 70)
 	{
 		return COND_TOO_FAR_TO_ATTACK;
 	}
 
-	Vector vecForward = pNPC->BodyDirection2D( );
+	Vector vecForward = pNPC->BodyDirection2D();
 	vecDelta.z = 0.0f;
-	float flExtrapolatedDist = Vector2DNormalize( vecDelta.AsVector2D() );
+	float flExtrapolatedDist = Vector2DNormalize(vecDelta.AsVector2D());
 	if ((flDist > 64) && (flExtrapolatedDist > 64))
 	{
 		return COND_TOO_FAR_TO_ATTACK;
 	}
 
-	float flExtrapolatedDot = DotProduct2D( vecDelta.AsVector2D(), vecForward.AsVector2D() );
+	float flExtrapolatedDot = DotProduct2D(vecDelta.AsVector2D(), vecForward.AsVector2D());
 	if ((flDot < 0.7) && (flExtrapolatedDot < 0.7))
 	{
 		return COND_NOT_FACING_ATTACK;
@@ -206,14 +158,14 @@ int CWeaponKnife::WeaponMeleeAttack1Condition( float flDot, float flDist )
 //-----------------------------------------------------------------------------
 // Animation event handlers
 //-----------------------------------------------------------------------------
-void CWeaponKnife::HandleAnimEventMeleeHit(animevent_t *pEvent, CBaseCombatCharacter *pOperator)
+void CWeaponKnife::HandleAnimEventMeleeHit(animevent_t* pEvent, CBaseCombatCharacter* pOperator)
 {
 	// Trace up or down based on where the enemy is...
 	// But only if we're basically facing that direction
 	Vector vecDirection;
 	AngleVectors(GetAbsAngles(), &vecDirection);
 
-	CBaseEntity *pEnemy = pOperator->MyNPCPointer() ? pOperator->MyNPCPointer()->GetEnemy() : NULL;
+	CBaseEntity* pEnemy = pOperator->MyNPCPointer() ? pOperator->MyNPCPointer()->GetEnemy() : NULL;
 	if (pEnemy)
 	{
 		Vector vecDelta;
@@ -228,11 +180,17 @@ void CWeaponKnife::HandleAnimEventMeleeHit(animevent_t *pEvent, CBaseCombatChara
 		}
 	}
 
-
 	Vector vecEnd;
 	VectorMA(pOperator->Weapon_ShootPosition(), 50, vecDirection, vecEnd);
-	CBaseEntity *pHurt = pOperator->CheckTraceHullAttack(pOperator->Weapon_ShootPosition(), vecEnd,
-		Vector(-16, -16, -16), Vector(36, 36, 36), GetDamageForActivity(GetActivity()), DMG_CLUB, 0.75);
+	CBaseEntity* pHurt = pOperator->CheckTraceHullAttack(
+		pOperator->Weapon_ShootPosition(),
+		vecEnd,
+		Vector(-16, -16, -16),
+		Vector(36, 36, 36),
+		GetDamageForActivity(GetActivity()),
+		DMG_CLUB,
+		0.75f
+	);
 
 	// did I hit someone?
 	if (pHurt)
@@ -240,9 +198,16 @@ void CWeaponKnife::HandleAnimEventMeleeHit(animevent_t *pEvent, CBaseCombatChara
 		// play sound
 		WeaponSound(MELEE_HIT);
 
-		// Fake a trace impact, so the effects work out like a player's crowbaw
+		// Fake a trace impact, so the effects work out like a player's crowbar
 		trace_t traceHit;
-		UTIL_TraceLine(pOperator->Weapon_ShootPosition(), pHurt->GetAbsOrigin(), MASK_SHOT_HULL, pOperator, COLLISION_GROUP_NONE, &traceHit);
+		UTIL_TraceLine(
+			pOperator->Weapon_ShootPosition(),
+			pHurt->GetAbsOrigin(),
+			MASK_SHOT_HULL,
+			pOperator,
+			COLLISION_GROUP_NONE,
+			&traceHit
+		);
 		ImpactEffect(traceHit);
 	}
 	else
@@ -251,11 +216,10 @@ void CWeaponKnife::HandleAnimEventMeleeHit(animevent_t *pEvent, CBaseCombatChara
 	}
 }
 
-
 //-----------------------------------------------------------------------------
 // Animation event
 //-----------------------------------------------------------------------------
-void CWeaponKnife::Operator_HandleAnimEvent(animevent_t *pEvent, CBaseCombatCharacter *pOperator)
+void CWeaponKnife::Operator_HandleAnimEvent(animevent_t* pEvent, CBaseCombatCharacter* pOperator)
 {
 	switch (pEvent->event)
 	{
@@ -271,26 +235,22 @@ void CWeaponKnife::Operator_HandleAnimEvent(animevent_t *pEvent, CBaseCombatChar
 
 #endif
 
-
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CWeaponKnife::Drop( const Vector &vecVelocity )
+void CWeaponKnife::Drop(const Vector& vecVelocity)
 {
 #ifndef CLIENT_DLL
-	UTIL_Remove( this );
+	UTIL_Remove(this);
 #endif
 }
 
-float CWeaponKnife::GetRange( void )
+float CWeaponKnife::GetRange(void)
 {
-	return	CROWBAR_RANGE;	
+	return CROWBAR_RANGE;
 }
 
-float CWeaponKnife::GetFireRate( void )
+float CWeaponKnife::GetFireRate(void)
 {
-	return	CROWBAR_REFIRE;	
+	return CROWBAR_REFIRE;
 }
-
-

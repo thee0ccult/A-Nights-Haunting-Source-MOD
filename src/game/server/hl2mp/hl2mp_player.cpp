@@ -905,17 +905,24 @@ void CHL2MP_Player::PreThink(void)
 				SetupPlayerSoundsByModel("models2/humans/group03/male_07.mdl");
 				ResetAnimation();
 			}
-			// Restore weapon + viewmodel
+
+			// =========================================================
+			// FULL VIEWMODEL RESTORE (CRITICAL FIX)
+			// =========================================================
 			CBaseViewModel* vm = GetViewModel(0);
+			CBaseCombatWeapon* pWep = GetActiveWeapon();
+
 			if (vm)
 			{
 				vm->RemoveEffects(EF_NODRAW);
 			}
 
-			CBaseCombatWeapon* pWep = GetActiveWeapon();
 			if (pWep)
 			{
 				pWep->RemoveEffects(EF_NODRAW);
+
+				// FORCE VIEWMODEL RE-DEPLOY
+				pWep->Deploy();
 			}
 		}
 
@@ -1012,16 +1019,6 @@ void CHL2MP_Player::PreThink(void)
 				EmitSound("NPC_Crow.Alert");
 				m_flNextCrowSound = gpGlobals->curtime + 1.5f; // interval
 			}
-		}
-
-		// stop horizontal sliding only when NOT in crow leap
-		if (!m_bZombieLeapActive &&
-			!(m_nButtons & (IN_FORWARD | IN_BACK | IN_MOVELEFT | IN_MOVERIGHT)))
-		{
-			Vector vel = GetAbsVelocity();
-			vel.x = 0.0f;
-			vel.y = 0.0f;
-			SetAbsVelocity(vel);
 		}
 	}
 
@@ -1237,100 +1234,28 @@ Activity CHL2MP_Player::TranslateTeamActivity( Activity ActToTranslate )
 
 extern ConVar hl2_normspeed;
 
-// Set the activity based on an event or current state
+//-----------------------------------------------------------------------------
+// Purpose: Set the activity based on an event or current state.
+// Restores original HL2MP animation handling for Combine/Rebel/DM players.
+// TEAM_ZOMBIE only keeps a very small crow-airborne override.
+//-----------------------------------------------------------------------------
 void CHL2MP_Player::SetAnimation(PLAYER_ANIM playerAnim)
 {
 	// =========================================================
-	// ZOMBIE ANIMATION HANDLING
+	// ZOMBIE CROW OVERRIDE ONLY
+	// Keep the special crow fly animation while the zombie is
+	// actively in crow leap and actually using the crow model.
+	// Everything else falls through to the original HL2MP logic.
 	// =========================================================
-	if (GetTeamNumber() == TEAM_ZOMBIE)
+	if (GetTeamNumber() == TEAM_ZOMBIE &&
+		m_bZombieLeapActive &&
+		Q_stricmp(STRING(GetModelName()), "models/crow.mdl") == 0)
 	{
-		// Prevent interruption of attack animation
-		if (gpGlobals->curtime < m_flAttackAnimEndTime)
+		if (!(GetFlags() & FL_ONGROUND))
 		{
-			return;
-		}
-		float speed2D = GetAbsVelocity().Length2D();
-		bool bOnGround = (GetFlags() & FL_ONGROUND) != 0;
-
-
-		// Attack takes priority
-		if (playerAnim == PLAYER_ATTACK1)
-		{
-			int iAttackSeq = LookupSequence("Melee");
-			if (iAttackSeq < 0)
-				iAttackSeq = LookupSequence("BR2_Attack");
-
-			if (iAttackSeq >= 0)
-			{
-				ResetSequence(iAttackSeq);
-				SetCycle(0);
-				m_flPlaybackRate = 1.0f;
-
-				// LOCK animation
-				m_flAttackAnimEndTime = gpGlobals->curtime + 0.5f;
-
-				return;
-			}
-		}
-
-		if (speed2D < 5.0f && bOnGround && !(GetFlags() & FL_DUCKING))
-		{
-			int iIdle = LookupSequence("idle_angry");
-
-			if (iIdle < 0)
-				iIdle = LookupSequence("idle");
-
-			if (iIdle >= 0)
-			{
-				if (GetSequence() != iIdle)
-				{
-					ResetSequence(iIdle);
-					SetCycle(0);
-				}
-
-				m_flPlaybackRate = 1.0f;
-				return;
-			}
-		}
-
-		// Airborne handling
-		if (!bOnGround)
-		{
-			int iAir = -1;
-
-			// crow leap visual
-			if (m_bZombieLeapActive && Q_stricmp(STRING(GetModelName()), "models/crow.mdl") == 0)
-			{
-				iAir = LookupSequence("Fly01");
-				if (iAir < 0)
-					iAir = LookupSequence("Idle01");
-
-				if (iAir >= 0)
-				{
-					if (GetSequence() != iAir)
-					{
-						ResetSequence(iAir);
-						SetCycle(0);
-					}
-
-					m_flPlaybackRate = 1.0f;
-					return;
-				}
-			}
-			else if (m_bZombieLeapActive)
-			{
-				if (GetAbsVelocity().z > 50.0f)
-					iAir = LookupSequence("jump_holding_jump");
-				else if (GetAbsVelocity().z < -50.0f)
-					iAir = LookupSequence("jump_holding_glide");
-				else
-					iAir = LookupSequence("jump_holding_land");
-			}
-			else
-			{
-				iAir = LookupSequence("jump_gravgun");
-			}
+			int iAir = LookupSequence("Fly01");
+			if (iAir < 0)
+				iAir = LookupSequence("Idle01");
 
 			if (iAir >= 0)
 			{
@@ -1344,105 +1269,10 @@ void CHL2MP_Player::SetAnimation(PLAYER_ANIM playerAnim)
 				return;
 			}
 		}
-
-		// Ground locomotion
-		int iMoveSeq = -1;
-
-		// CROUCHING
-		if (GetFlags() & FL_DUCKING)
-		{
-			if (speed2D > 5.0f)
-			{
-				// crouch movement animation
-				iMoveSeq = LookupSequence("Crouch_walk_all");
-				if (iMoveSeq < 0)
-					iMoveSeq = LookupSequence("crouch_walk_all");
-			}
-			else
-			{
-				// crouch idle animation
-				iMoveSeq = LookupSequence("crouchidlehide");
-				if (iMoveSeq < 0)
-					iMoveSeq = LookupSequence("Crouch_walk_all");
-				if (iMoveSeq < 0)
-					iMoveSeq = LookupSequence("crouch_walk_all");
-				if (iMoveSeq < 0)
-					iMoveSeq = LookupSequence("idle_angry");
-			}
-
-			if (iMoveSeq >= 0)
-			{
-				if (GetSequence() != iMoveSeq)
-				{
-					ResetSequence(iMoveSeq);
-					SetCycle(0);
-				}
-
-				m_flPlaybackRate = 1.0f;
-				return;
-			}
-		}
-		else
-		{
-			// ALT = SPRINT (FAST RUN)
-			if (m_nButtons & IN_WALK)
-			{
-				iMoveSeq = LookupSequence("plaza_walk_all");
-
-				if (iMoveSeq >= 0)
-				{
-					if (GetSequence() != iMoveSeq)
-					{
-						ResetSequence(iMoveSeq);
-						SetCycle(0);
-					}
-
-					m_flPlaybackRate = 0.45f;
-					return;
-				}
-			}
-
-			// SHIFT = WALK (SLOW)
-			if (m_nButtons & IN_SPEED)
-			{
-				iMoveSeq = LookupSequence("run_all_panicked");
-
-				if (iMoveSeq >= 0)
-				{
-					if (GetSequence() != iMoveSeq)
-					{
-						ResetSequence(iMoveSeq);
-						SetCycle(0);
-					}
-
-					m_flPlaybackRate = 1.15f;
-					return;
-				}
-			}
-
-			// DEFAULT = RUN
-			iMoveSeq = LookupSequence("run_all");
-
-			if (iMoveSeq >= 0)
-			{
-				if (GetSequence() != iMoveSeq)
-				{
-					ResetSequence(iMoveSeq);
-					SetCycle(0);
-				}
-
-				m_flPlaybackRate = 0.90f;
-				return;
-			}
-		}
-
-		// Final fallback
-		BaseClass::SetAnimation(playerAnim);
-		return;
 	}
 
 	// =========================================================
-	// NORMAL HL2MP PLAYER ANIMATION HANDLING
+	// ORIGINAL HL2MP PLAYER ANIMATION HANDLING
 	// =========================================================
 	int animDesired;
 	float speed;
@@ -1481,6 +1311,15 @@ void CHL2MP_Player::SetAnimation(PLAYER_ANIM playerAnim)
 		else
 		{
 			idealActivity = ACT_HL2MP_GESTURE_RANGE_ATTACK;
+		}
+
+		// =========================================================
+		// CRITICAL FIX: ensure weapon drives viewmodel anim
+		// =========================================================
+		CBaseCombatWeapon* pWeapon = GetActiveWeapon();
+		if (pWeapon)
+		{
+			pWeapon->SendWeaponAnim(ACT_VM_PRIMARYATTACK);
 		}
 	}
 	else if (playerAnim == PLAYER_RELOAD)
@@ -1524,8 +1363,11 @@ void CHL2MP_Player::SetAnimation(PLAYER_ANIM playerAnim)
 
 	if (idealActivity == ACT_HL2MP_GESTURE_RANGE_ATTACK)
 	{
-		RestartGesture(Weapon_TranslateActivity(idealActivity));
+		Activity act = Weapon_TranslateActivity(idealActivity);
+
+		RestartGesture(act);
 		Weapon_SetActivity(Weapon_TranslateActivity(ACT_RANGE_ATTACK1), 0);
+
 		return;
 	}
 	else if (idealActivity == ACT_HL2MP_GESTURE_RELOAD)
@@ -1558,7 +1400,6 @@ void CHL2MP_Player::SetAnimation(PLAYER_ANIM playerAnim)
 		return;
 	}
 }
-
 
 extern int	gEvilImpulse101;
 //-----------------------------------------------------------------------------
@@ -1657,6 +1498,21 @@ bool CHL2MP_Player::BumpWeapon( CBaseCombatWeapon *pWeapon )
 
 }
 
+static CHL2MP_Player* GetCurrentZombiePlayer()
+{
+	for (int i = 1; i <= gpGlobals->maxClients; ++i)
+	{
+		CHL2MP_Player* pPlayer = ToHL2MPPlayer(UTIL_PlayerByIndex(i));
+		if (!pPlayer)
+			continue;
+
+		if (pPlayer->GetTeamNumber() == TEAM_ZOMBIE)
+			return pPlayer;
+	}
+
+	return NULL;
+}
+
 void CHL2MP_Player::ChangeTeam( int iTeam )
 {
 /*	if ( GetNextTeamChangeTime() >= gpGlobals->curtime )
@@ -1730,6 +1586,28 @@ void CHL2MP_Player::ChangeTeam( int iTeam )
 			bKill = true;
 		}
 	}
+	// =========================================================
+	// SINGLE ZOMBIE SAFETY NET
+	// =========================================================
+	if (iTeam == TEAM_ZOMBIE)
+	{
+		for (int i = 1; i <= gpGlobals->maxClients; ++i)
+		{
+			CHL2MP_Player* pPlayer = ToHL2MPPlayer(UTIL_PlayerByIndex(i));
+
+			if (!pPlayer)
+				continue;
+
+			// another zombie already exists
+			if (pPlayer != this && pPlayer->GetTeamNumber() == TEAM_ZOMBIE)
+			{
+				ClientPrint(this, HUD_PRINTCENTER, "Zombie slot is already taken.");
+				ClientPrint(this, HUD_PRINTTALK, "Only one zombie player is allowed.");
+				DevMsg("[ZOMBIE CHECK] Found player %d team %d\n", i, pPlayer->GetTeamNumber());
+				return; // HARD BLOCK
+			}
+		}
+	}
 
 	BaseClass::ChangeTeam( iTeam );
 
@@ -1757,35 +1635,57 @@ void CHL2MP_Player::ChangeTeam( int iTeam )
 	}
 }
 
-bool CHL2MP_Player::HandleCommand_JoinTeam( int team )
+bool CHL2MP_Player::HandleCommand_JoinTeam(int team)
 {
-	if ( !GetGlobalTeam( team ) || team == 0 )
+	if (!GetGlobalTeam(team) || team == 0)
 	{
-		Warning( "HandleCommand_JoinTeam( %d ) - invalid team index.\n", team );
+		Warning("HandleCommand_JoinTeam( %d ) - invalid team index.\n", team);
 		return false;
 	}
 
-	if ( team == TEAM_SPECTATOR )
+	// =========================================================
+	// SINGLE ZOMBIE SLOT LOCK
+	// Only one player on TEAM_ZOMBIE may exist at once.
+	// =========================================================
+	if (team == TEAM_ZOMBIE)
 	{
-		// Prevent this is the cvar is set
-		if ( !mp_allowspectators.GetInt() )
+		CHL2MP_Player* pCurrentZombie = GetCurrentZombiePlayer();
+
+		// If another player already owns the zombie slot, deny this join.
+		if (pCurrentZombie && pCurrentZombie != this)
 		{
-			ClientPrint( this, HUD_PRINTCENTER, "#Cannot_Be_Spectator" );
+			ClientPrint(this, HUD_PRINTCENTER, "Zombie slot is already taken.");
+			ClientPrint(this, HUD_PRINTTALK, "Only one zombie player is allowed at a time.");
 			return false;
 		}
 
-		if ( GetTeamNumber() != TEAM_UNASSIGNED && !IsDead() )
+		// Optional: if teamplay is required for zombie mode, hard-block here too.
+		if (!HL2MPRules()->IsTeamplay())
 		{
-			m_fNextSuicideTime = gpGlobals->curtime;	// allow the suicide to work
+			ClientPrint(this, HUD_PRINTCENTER, "Zombie team requires teamplay.");
+			ClientPrint(this, HUD_PRINTTALK, "Enable teamplay before joining the zombie team.");
+			return false;
+		}
+	}
 
-			CommitSuicide();
-
-			// add 1 to frags to balance out the 1 subtracted for killing yourself
-			IncrementFragCount( 1 );
+	if (team == TEAM_SPECTATOR)
+	{
+		if (!mp_allowspectators.GetInt())
+		{
+			ClientPrint(this, HUD_PRINTCENTER, "#Cannot_Be_Spectator");
+			return false;
 		}
 
-		ChangeTeam( TEAM_SPECTATOR );
+		if (GetTeamNumber() != TEAM_UNASSIGNED && !IsDead())
+		{
+			m_fNextSuicideTime = gpGlobals->curtime;
+			CommitSuicide();
 
+			// cancel self-kill frag loss
+			IncrementFragCount(1);
+		}
+
+		ChangeTeam(TEAM_SPECTATOR);
 		return true;
 	}
 	else
@@ -1794,9 +1694,7 @@ bool CHL2MP_Player::HandleCommand_JoinTeam( int team )
 		State_Transition(STATE_ACTIVE);
 	}
 
-	// Switch their actual team...
-	ChangeTeam( team );
-
+	ChangeTeam(team);
 	return true;
 }
 
