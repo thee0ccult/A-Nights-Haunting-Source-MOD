@@ -135,6 +135,29 @@ ConVar player_kills("player_kills", "0", FCVAR_ARCHIVE, "Number of player-vs-pla
 class CZombieKillAchievement : public CBaseAchievement
 {
 public:
+    virtual void Init() override
+    {
+        SetFlags(ACH_SAVE_GLOBAL);
+
+        int32 statVal = 0;
+
+        if (steamapicontext &&
+            steamapicontext->SteamUserStats() &&
+            steamapicontext->SteamUserStats()->GetStat("zombie_kills", &statVal))
+        {
+            zombie_kills.SetValue(statVal);
+            SetCount(statVal);
+
+            Msg("[Achievement] Init: Steam zombie_kills = %d\n", statVal);
+        }
+        else
+        {
+            SetCount(zombie_kills.GetInt());
+
+            Msg("[Achievement] Init: Fallback zombie_kills = %d\n",
+                zombie_kills.GetInt());
+        }
+    }
     virtual void HandleZombieKill()
     {
         if (!IsAchieved())
@@ -187,10 +210,10 @@ class CLASSNAME : public CZombieKillAchievement \
 public: \
     void Init() override \
     { \
-        SetFlags(ACH_SAVE_GLOBAL); \
+        CZombieKillAchievement::Init(); \
         SetGoal(GOAL); \
-        SetCount(zombie_kills.GetInt()); \
-        Msg("[Achievement] Init: Local zombie kills = %d/%d (" SHORTNAME ")\n", GetCount(), GetGoal()); \
+        Msg("[Achievement] Init: Local zombie kills = %d/%d (" SHORTNAME ")\n", \
+            GetCount(), GetGoal()); \
     } \
 }; \
 DECLARE_ACHIEVEMENT(CLASSNAME, ID, SHORTNAME, 5)
@@ -231,29 +254,12 @@ class CManhackKillAchievement : public CBaseAchievement
 public:
     virtual void HandleManhackKill()
     {
-        if (!IsAchieved())
-        {
-            IncrementCount();
-            int32 newCount = GetCount();
-
-            if (steamapicontext && steamapicontext->SteamUserStats())
-            {
-                steamapicontext->SteamUserStats()->SetStat("crow_kills", newCount);
-                steamapicontext->SteamUserStats()->StoreStats();
-
-                IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
-                CAchievementMgr* pMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
-                if (pMgr) pMgr->SetDirty(true);
-
-                manhack_kills.SetValue(newCount);
-            }
-            g_LeaderboardSync.PushStatToLeaderboard("crow_kills", "crow_kills");
-
-            if (newCount >= GetGoal())
-            {
-                Msg("[Achievement] %s completed!\n", GetName());
-            }
-        }
+        Msg(
+            "[Achievement] %s progress = %d/%d\n",
+            GetName(),
+            GetCount(),
+            GetGoal()
+        );
     }
 
     virtual int GetSteamStat() const
@@ -273,25 +279,32 @@ public:
         SetFlags(ACH_SAVE_GLOBAL);
 
         int32 statVal = 0;
-        if (steamapicontext && steamapicontext->SteamUserStats())
+
+        if (steamapicontext &&
+            steamapicontext->SteamUserStats() &&
+            steamapicontext->SteamUserStats()->GetStat("crow_kills", &statVal))
         {
-            if (steamapicontext->SteamUserStats()->GetStat("crow_kills", &statVal))
+            manhack_kills.SetValue(statVal);
+
+            if (GetCount() < statVal)
             {
-                manhack_kills.SetValue(statVal);
                 SetCount(statVal);
-            }
-            else
-            {
-                // fallback to ConVar if Steam stat not found
-                SetCount(manhack_kills.GetInt());
             }
         }
         else
         {
-            SetCount(manhack_kills.GetInt());
+            if (GetCount() < manhack_kills.GetInt())
+            {
+                SetCount(manhack_kills.GetInt());
+            }
         }
 
-        Msg("[Achievement] Init: Local crow kills = %d (Steam sync)\n", GetCount());
+        Msg(
+            "[Achievement] Init: %s crow count=%d goal=%d\n",
+            GetName(),
+            GetCount(),
+            GetGoal()
+        );
     }
 
     virtual void ForceSteamSync()
@@ -313,10 +326,10 @@ class CLASSNAME : public CManhackKillAchievement \
 public: \
     void Init() override \
     { \
-        SetFlags(ACH_SAVE_GLOBAL); \
+        CManhackKillAchievement::Init(); \
         SetGoal(GOAL); \
-        SetCount(manhack_kills.GetInt()); \
-        Msg("[Achievement] Init: Local crow kills = %d/%d (" SHORTNAME ")\n", GetCount(), GetGoal()); \
+        Msg("[Achievement] Init: Local crow kills = %d/%d (" SHORTNAME ")\n", \
+            GetCount(), GetGoal()); \
     } \
 }; \
 DECLARE_ACHIEVEMENT(CLASSNAME, ID, SHORTNAME, 5)
@@ -589,20 +602,14 @@ public:
     }
 
     // Public wrapper so client code can safely increment
+    // Player kill count is owned by player_kill_increment.
+    // This function only logs current synced progress.
     void HandlePlayerKill()
     {
-        IncrementCount();
-
-        ConVarRef player_kills("player_kills");
-        if (player_kills.IsValid())
-            player_kills.SetValue(GetCount());
-
-        if (steamapicontext && steamapicontext->SteamUserStats())
-        {
-            steamapicontext->SteamUserStats()->SetStat("player_kills", GetCount());
-            steamapicontext->SteamUserStats()->StoreStats();
-            g_LeaderboardSync.PushStatToLeaderboard("player_kills", "player_kills");
-        }
+        Msg("[Achievement] %s progress = %d/%d\n",
+            GetName(),
+            GetCount(),
+            GetGoal());
     }
 };
 
@@ -1123,29 +1130,75 @@ void __MsgFunc_ZombieKilled(bf_read& msg)
 // =======================================================
 // Client-side crow (manhack) kill increment handler
 // =======================================================
-CON_COMMAND_F(manhack_kill_increment, "Increment crow (manhack) kill achievement progress", FCVAR_CLIENTCMD_CAN_EXECUTE)
+CON_COMMAND_F(manhack_kill_increment,
+    "Increment crow (manhack) kill achievement progress",
+    FCVAR_CLIENTCMD_CAN_EXECUTE)
 {
-    // Walk through all achievements and update any crow-related ones
-    int count = g_AchievementMgrMod.GetAchievementCount();
-    for (int i = 0; i < count; ++i)
-    {
-        IAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByIndex(i);
-        if (!pAchievement)
-            continue;
+    int32 steamCount = 0;
+    int32 localCount = manhack_kills.GetInt();
 
-        // Only update our crow (manhack) kill achievements
-        CManhackKillAchievement* pCrowAch = dynamic_cast<CManhackKillAchievement*>(pAchievement);
-        if (pCrowAch)
+    if (steamapicontext && steamapicontext->SteamUserStats())
+    {
+        steamapicontext->SteamUserStats()->GetStat("crow_kills", &steamCount);
+    }
+
+    int32 baseCount = MAX(localCount, steamCount);
+    int32 newCount = baseCount + 1;
+
+    manhack_kills.SetValue(newCount);
+
+    if (steamapicontext && steamapicontext->SteamUserStats())
+    {
+        steamapicontext->SteamUserStats()->SetStat("crow_kills", newCount);
+        steamapicontext->SteamUserStats()->StoreStats();
+
+        IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
+        CAchievementMgr* pMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
+        if (pMgr)
+            pMgr->SetDirty(true);
+    }
+
+    IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
+    CAchievementMgr* pAchievementMgr =
+        dynamic_cast<CAchievementMgr*>(pBaseMgr);
+
+    if (pAchievementMgr)
+    {
+        int count = pAchievementMgr->GetAchievementCount();
+
+        for (int i = 0; i < count; ++i)
         {
-            pCrowAch->HandleManhackKill();
+            IAchievement* pAchievement =
+                pAchievementMgr->GetAchievementByIndex(i);
+
+            CManhackKillAchievement* pCrowAch =
+                dynamic_cast<CManhackKillAchievement*>(pAchievement);
+
+            if (pCrowAch)
+            {
+                pCrowAch->SetCount(newCount);
+
+                Msg("[Achievement] Synced %s to %d/%d\n",
+                    pCrowAch->GetName(),
+                    pCrowAch->GetCount(),
+                    pCrowAch->GetGoal());
+
+                if (!pCrowAch->IsAchieved() && newCount >= pCrowAch->GetGoal())
+                {
+                    Msg("[Achievement] Unlocking %s from crow_kills=%d\n",
+                        pCrowAch->GetName(),
+                        newCount);
+
+                    pAchievementMgr->AwardAchievement(pCrowAch->GetAchievementID());
+                }
+            }
         }
     }
 
-    Msg("[Achievement] Crow (manhack) kill increment processed client-side\n");
-
-#ifdef CLIENT_DLL
     g_LeaderboardSync.PushStatToLeaderboard("crow_kills", "crow_kills");
-#endif
+
+    Msg("[Achievement] Crow kill total now %d (local=%d steam=%d)\n",
+        newCount, localCount, steamCount);
 }
 
 // =======================================================
@@ -1202,54 +1255,86 @@ CON_COMMAND_F(combine_kill_increment, "Increment Combine soldier kill achievemen
 // =======================================================
 // Client-side Player Kill increment handler
 // =======================================================
-CON_COMMAND_F(player_kill_increment, "Increment Player kill achievement progress", FCVAR_CLIENTCMD_CAN_EXECUTE)
+CON_COMMAND_F(player_kill_increment,
+    "Increment Player kill achievement progress",
+    FCVAR_CLIENTCMD_CAN_EXECUTE)
 {
-    int count = g_AchievementMgrMod.GetAchievementCount();
-    for (int i = 0; i < count; ++i)
-    {
-        IAchievement* pAchievement = g_AchievementMgrMod.GetAchievementByIndex(i);
-        if (!pAchievement)
-            continue;
+    int32 steamCount = 0;
+    int32 localCount = player_kills.GetInt();
 
-        // We only care about Player Kill achievements
-        if (Q_stristr(pAchievement->GetName(), "MOD_GOT_BOP_KILLS") != nullptr)
+    if (steamapicontext && steamapicontext->SteamUserStats())
+    {
+        steamapicontext->SteamUserStats()->GetStat("player_kills", &steamCount);
+    }
+
+    int32 baseCount = MAX(localCount, steamCount);
+    int32 newCount = baseCount + 1;
+
+    player_kills.SetValue(newCount);
+
+    if (steamapicontext && steamapicontext->SteamUserStats())
+    {
+        steamapicontext->SteamUserStats()->SetStat("player_kills", newCount);
+        steamapicontext->SteamUserStats()->StoreStats();
+
+        IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
+        CAchievementMgr* pMgr =
+            dynamic_cast<CAchievementMgr*>(pBaseMgr);
+
+        if (pMgr)
+            pMgr->SetDirty(true);
+    }
+
+    IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
+    CAchievementMgr* pAchievementMgr =
+        dynamic_cast<CAchievementMgr*>(pBaseMgr);
+
+    if (pAchievementMgr)
+    {
+        int achievementCount =
+            pAchievementMgr->GetAchievementCount();
+
+        for (int i = 0; i < achievementCount; ++i)
         {
-            CPlayerKillAchievement* pPlayerAch = dynamic_cast<CPlayerKillAchievement*>(pAchievement);
+            IAchievement* pAchievement =
+                pAchievementMgr->GetAchievementByIndex(i);
+
+            CPlayerKillAchievement* pPlayerAch =
+                dynamic_cast<CPlayerKillAchievement*>(pAchievement);
+
             if (pPlayerAch)
             {
-                // Use our public wrapper (safe ? calls IncrementCount internally)
-                pPlayerAch->HandlePlayerKill();
+                pPlayerAch->SetCount(newCount);
 
-                int32 newCount = pPlayerAch->GetCount();
+                Msg("[Achievement] Synced %s to %d/%d\n",
+                    pPlayerAch->GetName(),
+                    pPlayerAch->GetCount(),
+                    pPlayerAch->GetGoal());
 
-                if (steamapicontext && steamapicontext->SteamUserStats())
+                if (!pPlayerAch->IsAchieved() &&
+                    newCount >= pPlayerAch->GetGoal())
                 {
-                    steamapicontext->SteamUserStats()->SetStat("player_kills", newCount);
-                    steamapicontext->SteamUserStats()->StoreStats();
+                    Msg("[Achievement] Unlocking %s from player_kills=%d\n",
+                        pPlayerAch->GetName(),
+                        newCount);
 
-                    IAchievementMgr* pBaseMgr = engine->GetAchievementMgr();
-                    CAchievementMgr* pMgr = dynamic_cast<CAchievementMgr*>(pBaseMgr);
-                    if (pMgr)
-                        pMgr->SetDirty(true);
-
-                    ConVarRef player_kills("player_kills");
-                    if (player_kills.IsValid())
-                        player_kills.SetValue(newCount);
-                }
-
-                if (newCount >= pPlayerAch->GetGoal())
-                {
-                    Msg("[Achievement] %s completed!\n", pAchievement->GetName());
+                    pAchievementMgr->AwardAchievement(
+                        pPlayerAch->GetAchievementID());
                 }
             }
         }
     }
 
-    Msg("[Achievement] Player kill increment processed client-side\n");
-
 #ifdef CLIENT_DLL
-    g_LeaderboardSync.PushStatToLeaderboard("player_kills", "player_kills");
+    g_LeaderboardSync.PushStatToLeaderboard(
+        "player_kills",
+        "player_kills");
 #endif
+
+    Msg("[Achievement] Player kill total now %d (local=%d steam=%d)\n",
+        newCount,
+        localCount,
+        steamCount);
 }
 
 #endif // GAME_DLL

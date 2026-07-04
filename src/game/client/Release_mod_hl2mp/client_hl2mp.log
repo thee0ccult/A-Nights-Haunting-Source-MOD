@@ -209,15 +209,13 @@ c:\anh\src\game\client\cdll_client_int.cpp(23): warning C4603: 'CURL_STATICLIB' 
   functionproxy.cpp
   fx_blood.cpp
   fx_cube.cpp
-  fx_explosion.cpp
-  fx_fleck.cpp
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winbase.h(59): warning C4005: 'INVALID_HANDLE_VALUE' : macro redefinition (cdll_client_int.cpp)
           c:\anh\src\common\xbox\xboxstubs.h(98) : see previous definition of 'INVALID_HANDLE_VALUE'
+  fx_explosion.cpp
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winbase.h(7558): warning C4005: 'GetCommandLine' : macro redefinition (cdll_client_int.cpp)
           c:\anh\src\public\tier0\protected_things.h(172) : see previous definition of 'GetCommandLine'
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\wincon.h(328): warning C4005: 'ReadConsoleInput' : macro redefinition (cdll_client_int.cpp)
           c:\anh\src\public\tier0\protected_things.h(238) : see previous definition of 'ReadConsoleInput'
-  fx_impact.cpp
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(290): warning C4005: 'RegCreateKey' : macro redefinition (cdll_client_int.cpp)
           c:\anh\src\public\tier0\protected_things.h(220) : see previous definition of 'RegCreateKey'
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(324): warning C4005: 'RegCreateKeyEx' : macro redefinition (cdll_client_int.cpp)
@@ -226,6 +224,7 @@ c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(636): warni
           c:\anh\src\public\tier0\protected_things.h(184) : see previous definition of 'RegOpenKey'
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(662): warning C4005: 'RegOpenKeyEx' : macro redefinition (cdll_client_int.cpp)
           c:\anh\src\public\tier0\protected_things.h(178) : see previous definition of 'RegOpenKeyEx'
+  fx_fleck.cpp
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(756): warning C4005: 'RegQueryValue' : macro redefinition (cdll_client_int.cpp)
           c:\anh\src\public\tier0\protected_things.h(208) : see previous definition of 'RegQueryValue'
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(813): warning C4005: 'RegQueryValueEx' : macro redefinition (cdll_client_int.cpp)
@@ -234,6 +233,7 @@ c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(929): warni
           c:\anh\src\public\tier0\protected_things.h(196) : see previous definition of 'RegSetValue'
 c:\program files (x86)\microsoft sdks\windows\v7.1a\include\winreg.h(958): warning C4005: 'RegSetValueEx' : macro redefinition (cdll_client_int.cpp)
           c:\anh\src\public\tier0\protected_things.h(190) : see previous definition of 'RegSetValueEx'
+  fx_impact.cpp
   fx_interpvalue.cpp
   fx_quad.cpp
   fx_shelleject.cpp

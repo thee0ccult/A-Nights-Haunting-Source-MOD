@@ -781,10 +781,28 @@ void CAchievementMgr::UploadUserData()
 		{
 			// --- CUSTOM: upload crow_kills stat ---
 			ConVarRef manhack_kills("manhack_kills");
+
 			if (manhack_kills.IsValid())
 			{
-				steamapicontext->SteamUserStats()->SetStat("crow_kills", manhack_kills.GetInt());
-				Msg("[Achievements] UploadUserData: crow_kills uploaded = %d\n", manhack_kills.GetInt());
+				steamapicontext->SteamUserStats()->SetStat(
+					"crow_kills",
+					manhack_kills.GetInt()
+				);
+
+				Msg(
+					"[Achievements] UploadUserData: crow_kills uploaded = %d\n",
+					manhack_kills.GetInt()
+				);
+
+				int verify = -1;
+
+				if (steamapicontext->SteamUserStats()->GetStat("crow_kills", &verify))
+				{
+					Msg(
+						"[Achievements] Verify Steam crow_kills = %d\n",
+						verify
+					);
+				}
 			}
 
 			// --- CUSTOM: upload metropolice_kills stat ---
@@ -807,8 +825,35 @@ void CAchievementMgr::UploadUserData()
 			ConVarRef player_kills("player_kills");
 			if (player_kills.IsValid())
 			{
-				steamapicontext->SteamUserStats()->SetStat("player_kills", player_kills.GetInt());
-				Msg("[Achievements] UploadUserData: player_kills uploaded = %d\n", player_kills.GetInt());
+				steamapicontext->SteamUserStats()->SetStat(
+					"player_kills",
+					player_kills.GetInt()
+				);
+
+				Msg(
+					"[Achievements] UploadUserData: player_kills uploaded = %d\n",
+					player_kills.GetInt()
+				);
+
+				int verify = -1;
+
+				if (steamapicontext->SteamUserStats()->GetStat(
+					"player_kills",
+					&verify))
+				{
+					Msg(
+						"[Achievements] Verify Steam player_kills = %d\n",
+						verify
+					);
+				}
+			}
+
+			// --- CUSTOM: upload zombie_kills stat ---
+			ConVarRef zombie_kills("zombie_kills");
+			if (zombie_kills.IsValid())
+			{
+				steamapicontext->SteamUserStats()->SetStat("zombie_kills", zombie_kills.GetInt());
+				Msg("[Achievements] UploadUserData: zombie_kills uploaded = %d\n", zombie_kills.GetInt());
 			}
 
 			// Upload all stats/achievements to Steam
@@ -2087,7 +2132,7 @@ void CAchievementMgr::UpdateStateFromSteam_Internal()
 			CBaseAchievement* pAch = m_mapAchievement[j];
 
 			// We only update achievements that listen for manhack kills
-			if (Q_stristr(pAch->GetName(), "ACH_MANHACK_KILLS") != nullptr)
+			if (Q_stristr(pAch->GetName(), "MOD_GOT_ZOP_KILLS") != nullptr)
 			{
 				pAch->SetCount(manhackKills);
 				if (manhackKills >= pAch->GetGoal() && !pAch->IsAchieved())
@@ -2203,6 +2248,43 @@ void CAchievementMgr::UpdateStateFromSteam_Internal()
 		Warning("[Achievements] UpdateStateFromSteam_Internal: failed to fetch player_kills stat\n");
 	}
 
+	// --- CUSTOM: sync zombie_kills counter from Steam ---
+	int32 zombieKills = 0;
+
+	if (steamapicontext->SteamUserStats()->GetStat("zombie_kills", &zombieKills))
+	{
+		Msg("[Achievements] UpdateStateFromSteam_Internal: zombie_kills stat synced, value = %d\n",
+			zombieKills);
+
+		// Update local ConVar
+		ConVarRef zombie_kills("zombie_kills");
+		if (zombie_kills.IsValid())
+			zombie_kills.SetValue(zombieKills);
+
+		// Push into our Zombie achievements
+		FOR_EACH_MAP(m_mapAchievement, j)
+		{
+			CBaseAchievement* pAch = m_mapAchievement[j];
+
+			if (Q_stristr(pAch->GetName(), "MOD_GOT_COP_KILLS") != nullptr)
+			{
+				pAch->SetCount(zombieKills);
+
+				if (zombieKills >= pAch->GetGoal() && !pAch->IsAchieved())
+				{
+					pAch->SetAchieved(true);
+
+					Msg("[Achievements] zombie_kills: auto-unlocked '%s' (goal=%d)\n",
+						pAch->GetName(),
+						pAch->GetGoal());
+				}
+			}
+		}
+	}
+	else
+	{
+		Warning("[Achievements] UpdateStateFromSteam_Internal: failed to fetch zombie_kills stat\n");
+	}
 
 	// Debug print at entry
 	Msg("[Achievements] UpdateStateFromSteam_Internal: syncing %d achievements from Steam...\n",
