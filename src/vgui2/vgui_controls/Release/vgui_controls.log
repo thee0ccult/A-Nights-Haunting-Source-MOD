@@ -1,8 +1,8 @@
 ﻿  Running VPC CRC Check - vgui_controls.vpc
   AnalogBar.cpp
   AnimatingImagePanel.cpp
-  AnimationController.cpp
   BitmapImagePanel.cpp
+  AnimationController.cpp
   BuildFactoryHelper.cpp
   BuildGroup.cpp
   BuildModeDialog.cpp

@@ -933,6 +933,115 @@ void InitSteamAPI()
 	}
 } */
 
+//-----------------------------------------------------------------------------
+// Face LIFT Fan-e-PACK DLC
+//-----------------------------------------------------------------------------
+#define ANH_FACE_LIFT_DLC_APPID ((AppId_t)4941980)
+#define ANH_FACE_LIFT_DLC_VPK   "anh_dlc_pak_dir.vpk"
+
+//-----------------------------------------------------------------------------
+// Face LIFT Fan-e-PACK DLC
+//-----------------------------------------------------------------------------
+static bool ANH_MountFaceLiftDLC()
+{
+#ifndef NO_STEAM
+	if (!filesystem)
+	{
+		Warning("[ANH DLC] Filesystem interface is unavailable.\n");
+		return false;
+	}
+
+	if (!steamapicontext || !steamapicontext->SteamApps())
+	{
+		Warning(
+			"[ANH DLC] SteamApps interface is unavailable; "
+			"Face LIFT Fan-e-PACK cannot be checked.\n"
+		);
+
+		return false;
+	}
+
+	ISteamApps* pSteamApps = steamapicontext->SteamApps();
+
+	// Ownership is separate from whether Steam has actually placed the
+	// depot files into the base game's installation directory.
+	if (!pSteamApps->BIsSubscribedApp(ANH_FACE_LIFT_DLC_APPID))
+	{
+		Msg(
+			"[ANH DLC] Face LIFT Fan-e-PACK is not owned by "
+			"the current Steam account.\n"
+		);
+
+		return false;
+	}
+
+	// Build an absolute path directly from the game's anhsource directory.
+	char szDLCVPK[MAX_PATH];
+	Q_snprintf(
+		szDLCVPK,
+		sizeof(szDLCVPK),
+		"%s\\%s",
+		engine->GetGameDirectory(),
+		ANH_FACE_LIFT_DLC_VPK
+	);
+
+	Q_FixSlashes(szDLCVPK);
+
+	// Do not rely exclusively on BIsDlcInstalled here. Steam can report the
+	// DLC entitlement as installed while the separately managed depot has
+	// not yet been materialized on disk.
+	if (!filesystem->FileExists(szDLCVPK, NULL))
+	{
+		const bool bSteamReportsInstalled =
+			pSteamApps->BIsDlcInstalled(ANH_FACE_LIFT_DLC_APPID);
+
+		Msg(
+			"[ANH DLC] DLC is owned, but its VPK is missing from disk.\n"
+		);
+
+		Msg(
+			"[ANH DLC] BIsDlcInstalled reports: %s\n",
+			bSteamReportsInstalled ? "true" : "false"
+		);
+
+		Msg(
+			"[ANH DLC] Expected VPK: %s\n",
+			szDLCVPK
+		);
+
+		Msg(
+			"[ANH DLC] Requesting depot installation from Steam...\n"
+		);
+
+		pSteamApps->InstallDLC(ANH_FACE_LIFT_DLC_APPID);
+
+		Msg(
+			"[ANH DLC] InstallDLC request sent. Check the Steam "
+			"Downloads page. Restart the game after completion.\n"
+		);
+
+		return false;
+	}
+
+	// The VPK is physically present. Mount it ahead of normal GAME content.
+	filesystem->AddSearchPath(
+		szDLCVPK,
+		"GAME",
+		PATH_ADD_TO_HEAD
+	);
+
+	Msg(
+		"[ANH DLC] Mounted Face LIFT Fan-e-PACK VPK: %s\n",
+		szDLCVPK
+	);
+
+	return true;
+#else
+	Msg("[ANH DLC] Steam support is disabled in this build.\n");
+	return false;
+#endif
+}
+
 // Purpose: Called when the DLL is first loaded.
 // Input  : engineFactory - 
 // Output : int
@@ -993,6 +1102,7 @@ int CHLClient::Init( CreateInterfaceFn appSystemFactory, CreateInterfaceFn physi
 		return false;
 	if ( (filesystem = (IFileSystem *)appSystemFactory(FILESYSTEM_INTERFACE_VERSION, NULL)) == NULL )
 		return false;
+	ANH_MountFaceLiftDLC(); //anh dlc mounting
 	if ( (random = (IUniformRandomStream *)appSystemFactory(VENGINE_CLIENT_RANDOM_INTERFACE_VERSION, NULL)) == NULL )
 		return false;
 	if ( (gameuifuncs = (IGameUIFuncs * )appSystemFactory( VENGINE_GAMEUIFUNCS_VERSION, NULL )) == NULL )
